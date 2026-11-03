@@ -1,39 +1,89 @@
 /* Granular Sampler: LV2 wrapper.
- * Stage 1a: an empty instrument, takes MIDI and outputs silence. */
+ * Stage 1b: the sample file is an LV2 parameter (atom:Path). It is loaded by the LV2 worker,
+ * saved in LV2 State and reported back to the host. Audio output is still silent. */
 #include <lv2/core/lv2.h>
 #include <lv2/atom/atom.h>
+#include <lv2/atom/forge.h>
 #include <lv2/atom/util.h>
 #include <lv2/midi/midi.h>
+#include <lv2/patch/patch.h>
+#include <lv2/state/state.h>
 #include <lv2/urid/urid.h>
+#include <lv2/worker/worker.h>
+#include <stdatomic.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "sample.h"
 
 #define GS_URI "urn:granularsampler:sampler"
+#define MAX_SECONDS 600.0   /* longest sample, in seconds of the file */
 
-/* Control input ports come first (0..P_END-1), see granular_sampler.ttl. */
-enum { P_LEVEL = 0, P_END, P_MIDI_IN = P_END, P_OUT_L, P_OUT_R };
+/* Control input ports come first (0..P_END-1): Zynthian numbers LV2 parameters from len(control ports)+1,
+ * so a control port with a higher index would be overwritten by a parameter in its list. */
+enum { P_LEVEL = 0, P_END,
+       P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
+       P_STATUS, P_SECONDS };   /* outputs for the widget */
 #define N_CTL P_END
+
+/* Value of the status output port. */
+enum { ST_EMPTY = 0, ST_LOADING, ST_LOADED, ST_ERROR };
+
+/* Worker messages (run -> worker) and responses (worker -> run). */
+enum { MSG_LOAD = 1, MSG_FREE };
+typedef struct { uint32_t type, seq; char path[GS_PATH_MAX]; } MsgLoad;
+typedef struct { uint32_t type; GsSample* s; } MsgFree;
+typedef struct { uint32_t seq; int err; GsSample* s; } MsgDone;
 
 typedef struct {
   const float* ctl[N_CTL];
   const LV2_Atom_Sequence* in;
+  LV2_Atom_Sequence* notify;
   float* out_l;
   float* out_r;
+  float* status_out;
+  float* seconds_out;
+
   LV2_URID_Map* map;
-  LV2_URID midi_Event;
+  LV2_Worker_Schedule* sched;
+  LV2_Atom_Forge forge;
+  LV2_URID midi_Event, atom_Object, atom_Path, atom_String, atom_URID;
+  LV2_URID patch_Set, patch_Get, patch_property, patch_value, p_sample;
+
+  GsSample* sample;            /* owned by the audio thread; swapped in work_response() */
+  char path[GS_PATH_MAX];      /* last requested path ("" = none), saved in State */
+  atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
+  int status;
+  int report;                  /* tell the host the current path in the next run() */
   double sr;
 } Sampler;
 
-static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* path,
+static int is_empty_path(const char* p) { return !p[0] || !strcmp(p, "_"); }   /* Zynthian sends "_" to clear */
+
+static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* bundle,
                               const LV2_Feature* const* f) {
-  (void)d; (void)path;
+  (void)d; (void)bundle;
   Sampler* S = (Sampler*)calloc(1, sizeof(Sampler));
   if (!S) return NULL;
-  for (int i = 0; f[i]; i++)
+  for (int i = 0; f[i]; i++) {
     if (!strcmp(f[i]->URI, LV2_URID__map)) S->map = (LV2_URID_Map*)f[i]->data;
-  if (!S->map) { free(S); return NULL; }
-  S->midi_Event = S->map->map(S->map->handle, LV2_MIDI__MidiEvent);
+    else if (!strcmp(f[i]->URI, LV2_WORKER__schedule)) S->sched = (LV2_Worker_Schedule*)f[i]->data;
+  }
+  if (!S->map || !S->sched) { free(S); return NULL; }
+  LV2_URID_Map* m = S->map;
+  S->midi_Event     = m->map(m->handle, LV2_MIDI__MidiEvent);
+  S->atom_Object    = m->map(m->handle, LV2_ATOM__Object);
+  S->atom_Path      = m->map(m->handle, LV2_ATOM__Path);
+  S->atom_String    = m->map(m->handle, LV2_ATOM__String);
+  S->atom_URID      = m->map(m->handle, LV2_ATOM__URID);
+  S->patch_Set      = m->map(m->handle, LV2_PATCH__Set);
+  S->patch_Get      = m->map(m->handle, LV2_PATCH__Get);
+  S->patch_property = m->map(m->handle, LV2_PATCH__property);
+  S->patch_value    = m->map(m->handle, LV2_PATCH__value);
+  S->p_sample       = m->map(m->handle, GS_URI "#sample");
+  lv2_atom_forge_init(&S->forge, m);
+  atomic_init(&S->req_seq, 0);
   S->sr = rate;
   return S;
 }
@@ -44,23 +94,184 @@ static void connect_port(LV2_Handle h, uint32_t port, void* data) {
   else if (port == P_MIDI_IN) S->in = (const LV2_Atom_Sequence*)data;
   else if (port == P_OUT_L) S->out_l = (float*)data;
   else if (port == P_OUT_R) S->out_r = (float*)data;
+  else if (port == P_NOTIFY) S->notify = (LV2_Atom_Sequence*)data;
+  else if (port == P_STATUS) S->status_out = (float*)data;
+  else if (port == P_SECONDS) S->seconds_out = (float*)data;
 }
 
 static void activate(LV2_Handle h) { (void)h; }
 static void deactivate(LV2_Handle h) { (void)h; }
 
-static void run(LV2_Handle h, uint32_t n) {
+/* ---------- worker (non-realtime thread) ---------- */
+/* Messages are copied out with memcpy: the host does not promise any alignment of `data`. */
+static LV2_Worker_Status work(LV2_Handle h, LV2_Worker_Respond_Function respond, LV2_Worker_Respond_Handle rh,
+                              uint32_t size, const void* data) {
   Sampler* S = (Sampler*)h;
-  LV2_ATOM_SEQUENCE_FOREACH(S->in, ev) {
-    (void)ev;   /* stage 2: notes start voices */
+  uint32_t type;
+  if (size < sizeof type) return LV2_WORKER_ERR_UNKNOWN;
+  memcpy(&type, data, sizeof type);
+  if (type == MSG_FREE && size == sizeof(MsgFree)) {
+    MsgFree fm;
+    memcpy(&fm, data, sizeof fm);
+    gs_sample_free(fm.s);
+    return LV2_WORKER_SUCCESS;
   }
-  memset(S->out_l, 0, n * sizeof(float));
-  memset(S->out_r, 0, n * sizeof(float));
+  if (type != MSG_LOAD || size <= offsetof(MsgLoad, path) || size > sizeof(MsgLoad)) return LV2_WORKER_ERR_UNKNOWN;
+  MsgLoad msg;
+  memcpy(&msg, data, size);
+  msg.path[size - offsetof(MsgLoad, path) - 1] = 0;
+  /* The file selector sends every file the cursor stops on: skip requests that are already replaced. */
+  if (msg.seq != atomic_load(&S->req_seq)) return LV2_WORKER_SUCCESS;
+  MsgDone r = { msg.seq, GS_LOAD_OK, NULL };
+  if (!is_empty_path(msg.path)) r.s = gs_sample_load(msg.path, MAX_SECONDS, &r.err);
+  respond(rh, sizeof r, &r);
+  return LV2_WORKER_SUCCESS;
 }
 
-static void cleanup(LV2_Handle h) { free(h); }
+/* Called in the audio thread after work() responded: swap the sample in, free the old one in the worker. */
+static LV2_Worker_Status work_response(LV2_Handle h, uint32_t size, const void* data) {
+  Sampler* S = (Sampler*)h;
+  if (size != sizeof(MsgDone)) return LV2_WORKER_ERR_UNKNOWN;
+  MsgDone r;
+  memcpy(&r, data, sizeof r);
+  GsSample* old = r.s;                               /* stale result: thrown away */
+  if (r.seq == atomic_load(&S->req_seq)) {
+    old = S->sample;
+    S->sample = r.s;
+    S->status = r.s ? ST_LOADED : (r.err ? ST_ERROR : ST_EMPTY);
+  }
+  if (old) {
+    MsgFree fm = { MSG_FREE, old };
+    S->sched->schedule_work(S->sched->handle, sizeof fm, &fm);
+  }
+  return LV2_WORKER_SUCCESS;
+}
 
-static const void* extension_data(const char* uri) { (void)uri; return NULL; }
+/* ---------- audio thread ---------- */
+static void request_load(Sampler* S, const char* path, uint32_t len) {
+  if (len >= GS_PATH_MAX) len = GS_PATH_MAX - 1;
+  memcpy(S->path, path, len);
+  S->path[len] = 0;
+  while (len && !S->path[len - 1]) len--;            /* atom strings carry their own terminator */
+  MsgLoad msg;
+  msg.type = MSG_LOAD;
+  msg.seq = atomic_load(&S->req_seq) + 1;
+  memcpy(msg.path, S->path, len + 1);
+  atomic_store(&S->req_seq, msg.seq);
+  S->status = is_empty_path(S->path) ? ST_EMPTY : ST_LOADING;
+  S->sched->schedule_work(S->sched->handle, (uint32_t)(offsetof(MsgLoad, path) + len + 1), &msg);
+}
+
+static void handle_patch_set(Sampler* S, const LV2_Atom_Object* obj) {
+  const LV2_Atom *prop = NULL, *val = NULL;
+  lv2_atom_object_get(obj, S->patch_property, &prop, S->patch_value, &val, 0);
+  if (!prop || prop->type != S->atom_URID || !val) return;
+  if (((const LV2_Atom_URID*)prop)->body != S->p_sample) return;
+  if (val->type != S->atom_Path && val->type != S->atom_String) return;
+  request_load(S, (const char*)LV2_ATOM_BODY_CONST(val), val->size);
+}
+
+/* patch:Set with the current path on the notify port: jalv prints it, Zynthian's controller follows. */
+static void report_path(Sampler* S) {
+  LV2_Atom_Forge* F = &S->forge;
+  const uint32_t len = (uint32_t)strlen(S->path);
+  lv2_atom_forge_frame_time(F, 0);
+  LV2_Atom_Forge_Frame fr;
+  if (!lv2_atom_forge_object(F, &fr, 0, S->patch_Set)) return;   /* buffer full: try in the next run */
+  lv2_atom_forge_key(F, S->patch_property);
+  lv2_atom_forge_urid(F, S->p_sample);
+  lv2_atom_forge_key(F, S->patch_value);
+  lv2_atom_forge_path(F, len ? S->path : "_", len ? len : 1);
+  lv2_atom_forge_pop(F, &fr);
+  S->report = 0;
+}
+
+static void run(LV2_Handle h, uint32_t n) {
+  Sampler* S = (Sampler*)h;
+  const uint32_t cap = S->notify->atom.size;
+  lv2_atom_forge_set_buffer(&S->forge, (uint8_t*)S->notify, cap);
+  LV2_Atom_Forge_Frame seq;
+  lv2_atom_forge_sequence_head(&S->forge, &seq, 0);
+
+  LV2_ATOM_SEQUENCE_FOREACH(S->in, ev) {
+    if (ev->body.type == S->atom_Object) {
+      const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
+      if (o->body.otype == S->patch_Set) handle_patch_set(S, o);
+      else if (o->body.otype == S->patch_Get) S->report = 1;
+    }
+    /* stage 2: MIDI notes start voices */
+  }
+  if (S->report) report_path(S);
+  lv2_atom_forge_pop(&S->forge, &seq);
+
+  memset(S->out_l, 0, n * sizeof(float));
+  memset(S->out_r, 0, n * sizeof(float));
+  if (S->status_out) *S->status_out = (float)S->status;
+  if (S->seconds_out) *S->seconds_out = S->sample ? (float)(S->sample->frames / S->sample->rate) : 0.0f;
+}
+
+static void cleanup(LV2_Handle h) {
+  Sampler* S = (Sampler*)h;
+  gs_sample_free(S->sample);
+  free(S);
+}
+
+/* ---------- state: the sample path goes into presets ---------- */
+static const void* get_feature(const LV2_Feature* const* f, const char* uri) {
+  for (int i = 0; f && f[i]; i++)
+    if (!strcmp(f[i]->URI, uri)) return f[i]->data;
+  return NULL;
+}
+
+static LV2_State_Status save(LV2_Handle h, LV2_State_Store_Function store, LV2_State_Handle sh,
+                             uint32_t flags, const LV2_Feature* const* features) {
+  (void)flags;
+  Sampler* S = (Sampler*)h;
+  if (is_empty_path(S->path)) return LV2_STATE_SUCCESS;
+  const LV2_State_Map_Path* mp = (const LV2_State_Map_Path*)get_feature(features, LV2_STATE__mapPath);
+  const LV2_State_Free_Path* fp = (const LV2_State_Free_Path*)get_feature(features, LV2_STATE__freePath);
+  char* apath = mp ? mp->abstract_path(mp->handle, S->path) : NULL;
+  const char* p = apath ? apath : S->path;
+  store(sh, S->p_sample, p, strlen(p) + 1, S->atom_Path, LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+  if (apath) { if (fp) fp->free_path(fp->handle, apath); else free(apath); }
+  return LV2_STATE_SUCCESS;
+}
+
+/* Not called concurrently with run(): load the file right here. */
+static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrieve, LV2_State_Handle sh,
+                                uint32_t flags, const LV2_Feature* const* features) {
+  (void)flags;
+  Sampler* S = (Sampler*)h;
+  size_t size = 0; uint32_t type = 0, vflags = 0;
+  const char* v = (const char*)retrieve(sh, S->p_sample, &size, &type, &vflags);
+  char* apath = NULL;
+  S->path[0] = 0;
+  if (v && size && (type == S->atom_Path || type == S->atom_String)) {
+    const LV2_State_Map_Path* mp = (const LV2_State_Map_Path*)get_feature(features, LV2_STATE__mapPath);
+    const LV2_State_Free_Path* fp = (const LV2_State_Free_Path*)get_feature(features, LV2_STATE__freePath);
+    apath = mp ? mp->absolute_path(mp->handle, v) : NULL;
+    const char* p = apath ? apath : v;
+    strncpy(S->path, p, GS_PATH_MAX - 1);
+    S->path[GS_PATH_MAX - 1] = 0;
+    if (apath) { if (fp) fp->free_path(fp->handle, apath); else free(apath); }
+  }
+  atomic_fetch_add(&S->req_seq, 1);                  /* a load still in the worker is now stale */
+  int err = GS_LOAD_OK;
+  GsSample* s = is_empty_path(S->path) ? NULL : gs_sample_load(S->path, MAX_SECONDS, &err);
+  gs_sample_free(S->sample);
+  S->sample = s;
+  S->status = s ? ST_LOADED : (err ? ST_ERROR : ST_EMPTY);
+  S->report = 1;                                     /* tell the host the restored path */
+  return LV2_STATE_SUCCESS;
+}
+
+static const void* extension_data(const char* uri) {
+  static const LV2_State_Interface state = { save, restore };
+  static const LV2_Worker_Interface worker = { work, work_response, NULL };
+  if (!strcmp(uri, LV2_STATE__interface)) return &state;
+  if (!strcmp(uri, LV2_WORKER__interface)) return &worker;
+  return NULL;
+}
 
 static const LV2_Descriptor desc = { GS_URI, instantiate, connect_port, activate,
                                      run, deactivate, cleanup, extension_data };

@@ -4,3 +4,4 @@ build/
 dist/
 build_test/
 __pycache__/
+samples/test_pad.wav
