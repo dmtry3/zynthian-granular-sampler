@@ -100,6 +100,7 @@ class Control:
     def __init__(self, root):
         self.main_frame = root
         self.layout = {"rows": 4}
+        self.screen_title = "Voice"
         self.wide = True
         self.shown = True
 
@@ -174,6 +175,17 @@ def main():
         fails += 0 if cond else 1
 
     check("widget sized to the window", wdg.width >= 400 and wdg.height >= 250)
+
+    def title():
+        items = c.find_withtag("title")
+        return c.itemcget(items[0], "text") if items else ""
+    check("knob page name at the top", title() == "Voice")
+    wdg.zyngui_control.screen_title = "Position"
+    pump(lambda: False, 0.05)
+    check("page name follows the knob page", title() == "Position")
+    title_items = c.find_withtag("title")
+    pump(lambda: False, 0.1)
+    check("page name not redrawn when unchanged", c.find_withtag("title") == title_items)
     check("empty: hint to tap", "tap to load" in info())
     check("empty: no waveform polygon", not [i for i in c.find_withtag("wave") if c.type(i) == "polygon"])
 

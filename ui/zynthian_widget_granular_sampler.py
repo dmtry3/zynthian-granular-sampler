@@ -4,10 +4,12 @@
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
 # - The waveform is read from the file here, in a background thread, and drawn once as one polygon.
 # - The plugin's own state comes from its output ports: status (0 empty, 1 loading, 2 loaded, 3 error), seconds.
+# - At the top, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
 import threading
 import tkinter
+import tkinter.font
 
 from zyngui import zynthian_gui_config
 from zyngui import zynthian_widget_base
@@ -76,6 +78,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.result = None           # (path, peaks or None, error) handed over by the thread
         self.wave_size = None        # canvas size the waveform was drawn for
         self.info = None             # text shown now, to redraw it only when it changes
+        self.title = None            # knob page name shown now
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
             bg=zynthian_gui_config.color_bg)
@@ -88,6 +91,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.widget_canvas.grid(row=0, column=0, sticky='news')
         self.wave_size = None
         self.info = None
+        self.title = None
         self.refresh_gui()
 
     # ---------- plugin access ----------
@@ -101,6 +105,23 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         z = self._sample_ctrl()
         p = str(z.value) if z is not None and z.value else ""
         return "" if p == "_" else p
+
+    def _page_title(self):
+        try:
+            return str(self.zyngui_control.screen_title or "")
+        except Exception:
+            return ""
+
+    def _header_h(self):
+        """Height of the page name line, from the real font metrics (Tk sizes are points, not pixels)."""
+        try:
+            f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=self._font_size())
+            return f.metrics("linespace") + 4
+        except Exception:
+            return 2 * self._font_size()
+
+    def _font_size(self):
+        return max(8, min(max(self.height, 20) // 14, 13))
 
     def _mon(self, key, default=0.0):
         try:
@@ -158,12 +179,13 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self._draw_wave()
             self.wave_size = size
         self._draw_info(path)
+        self._draw_title()
 
     def _draw_wave(self):
         c = self.widget_canvas
         c.delete("wave")
         w, h = max(self.width, 20), max(self.height, 20)
-        top, bottom = 4, h - max(16, h // 6)
+        top, bottom = self._header_h() + 2, h - max(16, h // 6)
         mid, half = (top + bottom) / 2.0, (bottom - top) / 2.0
         c.create_line(0, mid, w, mid, fill="#303030", tags="wave")
         p = self.peaks
@@ -185,6 +207,17 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         for k in range(len(lo) - 2, -1, -2):
             pts.extend((lo[k], lo[k + 1]))
         c.create_polygon(pts, fill=WAVE_COLOR, outline=WAVE_COLOR, tags="wave")
+
+    def _draw_title(self):
+        title = self._page_title()
+        if title == self.title:
+            return
+        self.title = title
+        c = self.widget_canvas
+        c.delete("title")
+        c.create_text(6, 2, anchor="nw", text=title, tags="title",
+                      fill=zynthian_gui_config.color_tx_off,
+                      font=(zynthian_gui_config.font_family, self._font_size()))
 
     def _draw_info(self, path):
         status = int(self._mon("status", 0))
