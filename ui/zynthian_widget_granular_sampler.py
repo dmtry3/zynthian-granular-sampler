@@ -2,14 +2,18 @@
 # -*- coding: utf-8 -*-
 # Granular Sampler widget: the Wave view.
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
-# - The waveform is read from the file here, in a background thread, and drawn once as one polygon.
+# - The waveform is read from the file here, in a background thread, and drawn once into an image:
+#   marks move over a plain image, which is cheap to redraw (a big filled polygon was not, on the Pi).
+# - Zynthian calls update() every 32 ms; monitors and marks are refreshed only every UPDATE_PERIOD.
 # - The plugin's own state comes from its output ports: status (0 empty, 1 loading, 2 loaded, 3 error), seconds.
 # - Window zone (from the Position and Window knobs), playhead and grain read positions (output ports
-#   playhead, grain1..16: 0..1 of the sample, -1 = none). The marks are moved, not recreated, on each update.
+#   playhead, grain1..16: 0..1 of the sample, -1 = none). The marks are moved, not recreated, and only
+#   when they changed.
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
 import threading
+import time
 import tkinter
 import tkinter.font
 
@@ -25,6 +29,9 @@ ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
 NGRAIN_MARKS = 16
+UPDATE_PERIOD = 0.08            # s: monitors and marks at ~12 per second, not at Zynthian's 30
+ZONE_BAND = 5                   # px: the Window zone is a band above the waveform
+GRAIN_STRIP = 9                 # px: grain marks are ticks in a strip between the band and the waveform
 
 
 def read_peaks(path, npeaks=NPEAKS):
@@ -87,11 +94,23 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.title = None            # knob page name shown now
         self.zone = None             # (position, window, size) the zone was drawn for
         self.marks = None            # canvas items: [playhead] + grain marks
+        self.mark_state = []         # last (x, shown) of each mark
+        self.wave_img = None         # PhotoImage of the waveform (kept: Tk drops images without a reference)
+        self.header_h = {}           # font size -> line height
+        self.next_update = 0.0
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
             bg=zynthian_gui_config.color_bg)
         self.widget_canvas.grid(sticky='news')
         self.widget_canvas.bind("<ButtonPress-1>", self._on_press)
+
+    def update(self):
+        """Zynthian calls this every 32 ms: each call also asks jalv for all monitors. Slow it down."""
+        now = time.monotonic()
+        if now < self.next_update:
+            return
+        self.next_update = now + UPDATE_PERIOD
+        super().update()
 
     def on_size(self, event):
         if not super().on_size(event):
@@ -123,11 +142,14 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
 
     def _header_h(self):
         """Height of the page name line, from the real font metrics (Tk sizes are points, not pixels)."""
-        try:
-            f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=self._font_size())
-            return f.metrics("linespace") + 4
-        except Exception:
-            return 2 * self._font_size()
+        fs = self._font_size()
+        if fs not in self.header_h:
+            try:
+                f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=fs)
+                self.header_h[fs] = f.metrics("linespace") + 4
+            except Exception:
+                self.header_h[fs] = 2 * fs
+        return self.header_h[fs]
 
     def _font_size(self):
         return max(8, min(max(self.height, 20) // 14, 13))
@@ -139,9 +161,13 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             return default
 
     def _area(self):
-        """Top and bottom of the waveform area."""
+        """Top and bottom of the waveform area (zone band and grain strip are just above it)."""
         h = max(self.height, 20)
-        return self._header_h() + 2, h - max(16, h // 6)
+        return self._header_h() + ZONE_BAND + GRAIN_STRIP + 4, h - max(16, h // 6)
+
+    def _strip(self):
+        top = self._area()[0]
+        return top - GRAIN_STRIP - 1, top - 1
 
     def _mon(self, key, default=0.0):
         try:
@@ -206,34 +232,39 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     def _draw_wave(self):
         c = self.widget_canvas
         c.delete("wave")
-        w, h = max(self.width, 20), max(self.height, 20)
+        self.wave_img = None
+        w = max(int(self.width), 20)
         top, bottom = self._area()
-        mid, half = (top + bottom) / 2.0, (bottom - top) / 2.0
-        c.create_line(0, mid, w, mid, fill="#303030", tags="wave")
-        c.tag_raise("marks")
+        hgt = max(int(bottom - top), 2)
+        img = tkinter.PhotoImage(width=w, height=hgt)
+        img.put(zynthian_gui_config.color_bg, to=(0, 0, w, hgt))
+        mid, half = hgt / 2.0, hgt / 2.0
+        img.put("#303030", to=(0, int(mid), w, int(mid) + 1))
         p = self.peaks
-        if not p:
-            return
-        # one value pair per screen column, then the outline as one polygon
-        cols = max(2, int(w))
-        hi, lo = [], []
-        n = len(p)
-        for x in range(cols):
-            i0 = x * n // cols
-            i1 = max(i0 + 1, (x + 1) * n // cols)
-            seg = p[i0:i1]
-            mn = min(s[0] for s in seg)
-            mx = max(s[1] for s in seg)
-            hi.extend((x, mid - max(mx, 0.0) * half))
-            lo.extend((x, mid - min(mn, 0.0) * half))
-        pts = hi
-        for k in range(len(lo) - 2, -1, -2):
-            pts.extend((lo[k], lo[k + 1]))
-        c.create_polygon(pts, fill=WAVE_COLOR, outline=WAVE_COLOR, tags="wave")
+        if p:
+            # one min/max pair per screen column; columns with the same extent go in one put()
+            n = len(p)
+            run = None                                    # [x0, y0, y1]
+            for x in range(w + 1):
+                if x < w:
+                    seg = p[x * n // w:max(x * n // w + 1, (x + 1) * n // w)]
+                    mx = max(s[1] for s in seg)
+                    mn = min(s[0] for s in seg)
+                    y0 = int(mid - max(min(mx, 1.0), 0.0) * half)
+                    y1 = max(int(mid - min(max(mn, -1.0), 0.0) * half), y0) + 1
+                if run and (x == w or (y0, y1) != (run[1], run[2])):
+                    img.put(WAVE_COLOR, to=(run[0], run[1], x, min(run[2], hgt)))
+                    run = None
+                if x < w and run is None:
+                    run = [x, y0, y1]
+        self.wave_img = img
+        c.create_image(0, top, anchor="nw", image=img, tags="wave")
+        c.tag_raise("zone")
         c.tag_raise("marks")
 
     def _draw_zone(self):
-        """Where the playhead loops: from Position, Window wide; wraps past the end like the engine."""
+        """Where the playhead loops: from Position, Window wide; wraps past the end like the engine.
+        A band above the waveform and a line at Position (on top of the image: drawn once per change)."""
         pos = min(max(self._zval("position", 0.0) / 100.0, 0.0), 1.0)
         win = min(max(self._zval("window", 100.0) / 100.0, 0.001), 1.0)
         key = (pos, win, self.width, self.height, bool(self.peaks))
@@ -246,12 +277,14 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             return
         w = max(self.width, 20)
         top, bottom = self._area()
+        b1 = self._strip()[0] - 1
+        b0 = b1 - ZONE_BAND
         x0, x1 = pos * w, (pos + win) * w
-        c.create_rectangle(x0, top, min(x1, w), bottom, fill=ZONE_COLOR, width=0, tags="zone")
+        c.create_rectangle(x0, b0, min(x1, w), b1, fill=ZONE_COLOR, width=0, tags="zone")
         if x1 > w:
-            c.create_rectangle(0, top, x1 - w, bottom, fill=ZONE_COLOR, width=0, tags="zone")
-        c.create_line(x0, top, x0, bottom, fill="#5c7a99", tags="zone")      # Position
-        c.tag_lower("zone")
+            c.create_rectangle(0, b0, x1 - w, b1, fill=ZONE_COLOR, width=0, tags="zone")
+        c.create_line(x0, b0, x0, bottom, fill="#5c7a99", tags="zone")      # Position
+        c.tag_raise("marks")
 
     def _draw_marks(self):
         c = self.widget_canvas
@@ -259,21 +292,33 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.marks = [c.create_line(0, 0, 0, 0, fill=PLAYHEAD_COLOR, width=2, state="hidden", tags="marks")]
             for _ in range(NGRAIN_MARKS):
                 self.marks.append(c.create_line(0, 0, 0, 0, fill=GRAIN_COLOR, width=1, state="hidden", tags="marks"))
+            self.mark_state = [None] * len(self.marks)
         w = max(self.width, 20)
         top, bottom = self._area()
-        mid, q = (top + bottom) / 2.0, (bottom - top) * 0.2
+        s0, s1 = self._strip()
         vals = [self._mon("playhead", -1.0)] + [self._mon("grain%d" % (i + 1), -1.0) for i in range(NGRAIN_MARKS)]
         show = bool(self.peaks)
-        for k, (item, v) in enumerate(zip(self.marks, vals)):
-            if show and 0.0 <= v <= 1.0:
-                x = v * w
-                if k == 0:
-                    c.coords(item, x, top, x, bottom)
-                else:
-                    c.coords(item, x, mid - q, x, mid + q)
-                c.itemconfigure(item, state="normal")
-            else:
+        # Tk redraws one rectangle around everything that changed: grain ticks (thin strip, full width) are
+        # flushed first, so the playhead (full height, narrow) is redrawn as a separate small rectangle.
+        for k in list(range(1, len(self.marks))) + [0]:
+            item, v = self.marks[k], vals[k]
+            if k == 0:
+                c.update_idletasks()
+            st = (int(v * w), top, bottom) if show and 0.0 <= v <= 1.0 else None
+            if st == self.mark_state[k]:
+                continue                                  # unchanged: no canvas work at all
+            prev = self.mark_state[k]
+            self.mark_state[k] = st
+            if st is None:
                 c.itemconfigure(item, state="hidden")
+                continue
+            x = st[0]
+            if k == 0:
+                c.coords(item, x, s0, x, bottom)
+            else:
+                c.coords(item, x, s0, x, s1)
+            if prev is None:
+                c.itemconfigure(item, state="normal")
 
     def _draw_title(self):
         title = self._page_title()

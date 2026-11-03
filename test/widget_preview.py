@@ -130,6 +130,9 @@ def main():
         print("Missing %s: run python3 scripts/gen_samples.py" % PAD)
         return 2
     mod = load_widget()
+    throttle = mod.UPDATE_PERIOD
+    if not show:
+        mod.UPDATE_PERIOD = 0.0          # scripted checks see every update; the throttle has its own check
     root = tkinter.Tk()
     root.geometry("480x300")
     proc = Processor()
@@ -152,6 +155,16 @@ def main():
                 return True
             time.sleep(0.01)
         return False
+
+    def wave_drawn():
+        """Waveform pixels in the image: the wave colour somewhere just above the middle line."""
+        imgs = [i for i in c.find_withtag("wave") if c.type(i) == "image"]
+        if len(imgs) != 1 or wdg.wave_img is None:
+            return False
+        img = wdg.wave_img
+        wc = tuple(int(mod.WAVE_COLOR[k:k + 2], 16) for k in (1, 3, 5))
+        y = img.height() // 2 - 2
+        return any(tuple(img.get(x, y)) == wc for x in range(0, img.width(), 7))
 
     def info():
         items = c.find_withtag("info")
@@ -211,7 +224,7 @@ def main():
     x = c.coords(c.find_withtag("title")[0])[0]
     check("page name at the right edge", x > wdg.width - 20 and c.itemcget(c.find_withtag("title")[0], "anchor") == "ne")
     check("empty: hint to tap", "tap to load" in info())
-    check("empty: no waveform polygon", not [i for i in c.find_withtag("wave") if c.type(i) == "polygon"])
+    check("empty: no waveform drawn", not wave_drawn())
 
     wdg._on_press(None)
     check("tap opens the file selector (nudge on the path controller)", sample.nudges == 1)
@@ -221,8 +234,8 @@ def main():
     proc.engine.status = 1
     got = pump(lambda: wdg.peaks_path == PAD)
     check("waveform read in the background", got and mod.NPEAKS - 8 <= len(wdg.peaks) <= mod.NPEAKS)
-    polys = [i for i in c.find_withtag("wave") if c.type(i) == "polygon"]
-    check("waveform drawn as one polygon", len(polys) == 1)
+    check("waveform drawn into one image", wave_drawn())
+    polys = [i for i in c.find_withtag("wave") if c.type(i) == "image"]
     check("status from the plugin: loading", "loading" in info() and "test_pad" in info())
     lo = min(p[0] for p in wdg.peaks)
     hi = max(p[1] for p in wdg.peaks)
@@ -247,6 +260,16 @@ def main():
     check("playhead and 2 grain marks shown", len(shown) == 3 and abs(c.coords(marks[0])[0] - 0.5 * W) < 1)
     check("marks above the waveform", c.find_all().index(marks[0]) > c.find_all().index(polys[0]) if
           polys[0] in c.find_all() else False)
+    s0, s1 = wdg._strip()
+    check("grain marks are ticks in the strip, playhead full height",
+          c.coords(marks[1])[1] == s0 and c.coords(marks[1])[3] == s1 and c.coords(marks[0])[3] > s1 + 50)
+    # unchanged marks: no canvas calls at all (checked by counting coords() calls)
+    calls = []
+    orig = c.coords
+    c.coords = lambda *a: calls.append(a) or orig(*a)
+    pump(lambda: False, 0.05)
+    c.coords = orig
+    check("unchanged marks are not touched", calls == [])
     proc.controllers_dict["position"].value = 80.0                     # 80 % + 50 % wraps past the end
     proc.engine.grains = []
     pump(lambda: False, 0.05)
@@ -267,15 +290,14 @@ def main():
     # resize redraws it
     root.geometry("360x200")
     pump(lambda: wdg.width < 400, 2)
-    check("waveform redrawn after resize", c.find_withtag("wave") != before and
-          len([i for i in c.find_withtag("wave") if c.type(i) == "polygon"]) == 1)
+    check("waveform redrawn after resize", c.find_withtag("wave") != before and wave_drawn() and
+          wdg.wave_img.width() == wdg.width)
 
     # plugin error, file the widget can't read
     sample.value = "/no/such/file.wav"
     proc.engine.status = 3
     pump(lambda: wdg.peaks_path == "/no/such/file.wav")
-    check("missing file: error shown, no waveform", "can't load" in info() and
-          not [i for i in c.find_withtag("wave") if c.type(i) == "polygon"])
+    check("missing file: error shown, no waveform", "can't load" in info() and not wave_drawn())
 
     # clear: Zynthian sends "_"
     sample.value = "_"
@@ -289,6 +311,19 @@ def main():
     sample.value = "/no/such/file.wav"
     pump(lambda: wdg.peaks_path == "/no/such/file.wav")
     check("quick change: the last file wins", wdg.peaks == [] and wdg.loading_path is None)
+
+    # Zynthian calls update() every 32 ms: the widget asks for monitors only every UPDATE_PERIOD
+    mod.UPDATE_PERIOD = throttle
+    polls = []
+    get = proc.engine.get_monitors_dict
+    proc.engine.get_monitors_dict = lambda: polls.append(1) or get()
+    t = time.monotonic()
+    while time.monotonic() - t < 1.0:
+        wdg.update()
+        root.update()
+        time.sleep(0.032)
+    proc.engine.get_monitors_dict = get
+    check("monitors polled about 12 times a second, not 30 (%d)" % len(polls), 9 <= len(polls) <= 14)
 
     root.destroy()
     print("All widget tests passed" if not fails else "%d FAILED" % fails)
