@@ -7,7 +7,9 @@
 #define GC_POOL      64     /* grains for all voices; when the pool is full, new grains are skipped */
 #define GC_BLOCK     32     /* control rate: scheduler and playhead are updated every GC_BLOCK samples */
 #define GC_WIN       1024   /* samples per window table */
-#define GC_SHAPES    33     /* window tables: Shape is quantized to 1/32 */
+#define GC_SHAPES    31     /* window tables: Shape is quantized to 1/30 (square, decay, bell, reverse exact) */
+#define GC_SHAPE_DECAY 10
+#define GC_SHAPE_BELL  20   /* loudness reference */
 #define GC_SCAN_DEAD 0.02f  /* |Scan| below this is 0 (freeze) */
 #define GC_LEVELS    3      /* source levels: level k is the sample at 1/2^k rate, band-limited */
 #define GC_MIP_UP    1.5f   /* a grain reading faster than this switches to the next level */
@@ -30,7 +32,7 @@ typedef struct {
   float window;     /* 0..1: zone the playhead loops in, fraction of the sample from position */
   float size_ms;    /* grain length */
   float density;    /* grains per second */
-  float shape;      /* 0..1: narrow Gauss -> Hann (0.5) -> Tukey -> almost rectangular */
+  float shape;      /* 0..1: square 0 -> decay 1/3 -> bell 2/3 -> reverse 1 (Beads) */
   float chaos;      /* 0..1: even rhythm -> random (Poisson) */
   float root;       /* MIDI note played at the original pitch */
 } GcParams;
@@ -81,7 +83,7 @@ typedef struct {
   uint64_t born, skipped; /* statistics: grains born and skipped because the pool was full */
   double last_start;      /* start frame (level 0) of the newest grain */
   int last_level;         /* level of the newest grain */
-  float win_gain[GC_SHAPES];               /* loudness compensation of each window (Hann = 1) */
+  float win_gain[GC_SHAPES];               /* loudness compensation of each window (bell = 1) */
   float win[GC_SHAPES][GC_WIN + 1];
 } GrainCore;
 

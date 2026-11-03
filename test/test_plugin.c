@@ -62,7 +62,7 @@ static void work_all(void) {
 /* ---------- ports ---------- */
 #define NFR 64
 /* control inputs 0..8: position scan spray window size density shape chaos level */
-static float ctls[9] = { 0, 100, 0, 100, 100, 20, 50, 0, 0.8f };
+static float ctls[9] = { 0, 100, 0, 100, 100, 20, 67, 0, 0.8f };
 static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16];
 enum { P_MIDI_IN = 9, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
   run_once();
   CHECK(playhead == -1.0f);                                       /* voice idle */
   /* sample-accurate note: nothing before frame 40 of the block */
-  ctls[6] = 100;                                                  /* almost rectangular window: sound at once */
+  ctls[6] = 0;                                                    /* square window: sound at once */
   in_midi(40, 0x90, 60, 127); run_once();
   mx = 0;
   for (int i = 0; i < 40; i++) mx = fmaxf(mx, fabsf(out_l[i]));

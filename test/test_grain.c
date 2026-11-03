@@ -66,18 +66,30 @@ static double run_rms(const GcParams* p, double secs) {
 }
 
 /* ---------- tests ---------- */
+static int argmax(const float* w) {
+  int k = 0;
+  for (int i = 0; i <= GC_WIN; i++) if (w[i] > w[k]) k = i;
+  return k;
+}
 static void test_windows(void) {
   gc_init(&G, SR, 1);
   for (int s = 0; s < GC_SHAPES; s++) {
     CHECK(G.win[s][0] == 0.0f && G.win[s][GC_WIN] == 0.0f);
-    CHECK(fabsf(G.win[s][GC_WIN / 2] - 1.0f) < 1e-3f);
+    CHECK(G.win[s][argmax(G.win[s])] > 0.99f);
     for (int i = 0; i <= GC_WIN; i++) CHECK(G.win[s][i] >= 0.0f && G.win[s][i] <= 1.0f + 1e-6f);
+    /* no click: the first and last 1 % of the table stay low */
+    CHECK(G.win[s][GC_WIN / 100] < 0.6f && G.win[s][GC_WIN - GC_WIN / 100] < 0.6f);
   }
-  double a0 = 0, a16 = 0, a32 = 0;
-  for (int i = 0; i <= GC_WIN; i++) { a0 += G.win[0][i]; a16 += G.win[16][i]; a32 += G.win[32][i]; }
-  CHECK(a0 < a16 && a16 < a32);                     /* narrow Gauss < Hann < almost rectangular */
-  CHECK(fabs(a16 / GC_WIN - 0.5) < 0.01);           /* Hann area */
-  CHECK(G.win_gain[16] == 1.0f && G.win_gain[0] > 1.2f && G.win_gain[32] < 0.9f);   /* loudness compensation */
+  const float* sq = G.win[0];
+  const float* dc = G.win[GC_SHAPE_DECAY];
+  const float* bl = G.win[GC_SHAPE_BELL];
+  const float* rv = G.win[GC_SHAPES - 1];
+  CHECK(sq[GC_WIN / 10] == 1.0f && sq[GC_WIN / 2] == 1.0f && sq[GC_WIN * 9 / 10] == 1.0f);   /* square */
+  CHECK(argmax(dc) < GC_WIN / 20 && dc[GC_WIN / 2] < 0.1f);                                 /* decay */
+  CHECK(argmax(rv) > GC_WIN * 9 / 10 && rv[GC_WIN / 2] < 0.6f);                             /* reverse */
+  for (int i = 0; i <= GC_WIN; i++) CHECK(fabsf(bl[i] - bl[GC_WIN - i]) < 1e-3f);           /* bell symmetric */
+  CHECK(fabsf(bl[GC_WIN / 4] + bl[GC_WIN * 3 / 4] - 1.0f) < 0.01f);    /* bells overlapping by half add up to 1 */
+  CHECK(G.win_gain[GC_SHAPE_BELL] == 1.0f && G.win_gain[0] < 0.9f && G.win_gain[GC_SHAPE_DECAY] > 1.2f);
 }
 
 static void test_silence(void) {
@@ -111,7 +123,7 @@ static void test_note_cycle(void) {
   CHECK(G.born == 1 && L[0] == 0.0f && L[100] > 0.0f);  /* first grain starts at once */
   int bad = 0;
   float peak = run(&p, 1.0, &bad);
-  /* two Hann grains overlap: they sum to a constant 0.5 / sqrt(2) */
+  /* two bell grains overlap by half: they sum to a constant 0.5 / sqrt(2) */
   CHECK(bad == 0 && fabsf(peak - 0.5f / sqrtf(2.0f)) < 0.01f);
   CHECK(G.born >= 40 && G.born <= 42);              /* density 40/s, chaos 0 */
   gc_note_off(&G, 60);
@@ -162,7 +174,7 @@ static void test_position_scan(void) {
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
 
-  p.position = 0.5f; p.scan = 0.0f; p.size_ms = 20; p.density = 10; p.shape = 1.0f;
+  p.position = 0.5f; p.scan = 0.0f; p.size_ms = 20; p.density = 10; p.shape = 0.0f;
   gc_note_on(&G, &p, 60, 127);
   run(&p, 2.0, NULL);
   CHECK(fabs(G.voice.playhead - 0.5 * (n - 1)) < 1.0);   /* freeze */
@@ -214,14 +226,14 @@ static void test_no_end_jump(void) {
   Src s = make_src(n, SR, 1, f_ramp);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  p.position = 0.999f; p.scan = 0.0f; p.size_ms = 100; p.density = 20; p.shape = 1.0f;
+  p.position = 0.999f; p.scan = 0.0f; p.size_ms = 100; p.density = 20; p.shape = 0.0f;
   gc_note_on(&G, &p, 60, 127);
   float prev = 0, jump = 0;
   for (int k = 0; k < SR / BUF; k++) {
     gc_process(&G, &p, L, R, BUF);
     for (int i = 0; i < BUF; i++) { jump = fmaxf(jump, fabsf(L[i] - prev)); prev = L[i]; }
   }
-  CHECK(jump < 0.02f);                              /* only the window's smooth edges */
+  CHECK(jump < 0.05f);                              /* only the window's edges; a jump to the start is ~0.6 */
   for (int i = 0; i < GC_POOL; i++)
     if (G.grains[i].active) CHECK(G.grains[i].idx + (int64_t)(G.grains[i].remain * G.grains[i].inc) < n);
   free_src(&s);
@@ -233,13 +245,14 @@ static void test_loop_short(void) {
   Src s = make_src(1000, SR, 1, f_half);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  p.position = 0.99f; p.scan = 0.0f; p.size_ms = 100; p.density = 5; p.shape = 1.0f;
+  p.position = 0.99f; p.scan = 0.0f; p.size_ms = 100; p.density = 5; p.shape = 0.0f;
   gc_note_on(&G, &p, 84, 127);                      /* 4x speed: the grain crosses the end many times */
   int bad = 0;
-  const float top = 0.5f * G.win_gain[GC_SHAPES - 1];  /* constant 0.5 through the flat window */
+  const float top = 0.5f * G.win_gain[0];            /* constant 0.5 through the square window */
   float peak = run(&p, 0.5, &bad);
   CHECK(bad == 0 && fabsf(peak - top) < 1e-4f);
   G.interp = GC_INTERP_HERMITE;
+  gc_all_off(&G);                                   /* the last grain of the first note must not overlap */
   gc_note_on(&G, &p, 84, 127);
   peak = run(&p, 0.5, &bad);
   CHECK(bad == 0 && fabsf(peak - top) < 1e-4f);
@@ -329,7 +342,7 @@ static void test_hermite_matches_at_unity(void) {
 /* Replacing the sample while grains play: no jump, the old grains fade and then release the old sample. */
 static void test_swap_fade(void) {
   GcParams p; gc_default_params(&p);
-  p.size_ms = 200; p.density = 20; p.shape = 1.0f;
+  p.size_ms = 200; p.density = 20; p.shape = 0.0f;
   Src a = make_src(SR, SR, 1, f_half), b = make_src(SR, SR, 1, f_half);
   gc_init(&G, SR, 1);
   const uint32_t ga = gc_set_source(&G, &a.src);

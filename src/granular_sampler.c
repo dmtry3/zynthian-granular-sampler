@@ -258,7 +258,7 @@ static void read_params(Sampler* S) {
   p->window   = ctl(S, P_WINDOW, 100.0f) * 0.01f;
   p->size_ms  = ctl(S, P_SIZE, 100.0f);
   p->density  = ctl(S, P_DENSITY, 20.0f);
-  p->shape    = ctl(S, P_SHAPE, 50.0f) * 0.01f;
+  p->shape    = ctl(S, P_SHAPE, 67.0f) * 0.01f;
   p->chaos    = ctl(S, P_CHAOS, 0.0f) * 0.01f;
 }
 

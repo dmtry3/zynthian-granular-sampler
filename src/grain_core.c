@@ -24,19 +24,44 @@ void gc_enable_ftz(void) {
 #endif
 }
 
-/* Window families, blended by s in 0..1: Gauss(narrow) 0 -> Hann 0.5 -> Tukey 50% 0.75 -> Tukey 10% 1. */
-static double tukey(double x, double a) {
-  if (x < a / 2) return 0.5 * (1 - cos(2 * M_PI * x / a));
-  if (x > 1 - a / 2) return 0.5 * (1 - cos(2 * M_PI * (1 - x) / a));
-  return 1.0;
+/* Grain envelopes after Mutable Instruments Beads (grain_envelope.h): attack, sustain and release
+ * with a smoothstep blend. Shape 0 = square, 1/3 = decay (fast attack, t^4 release), 2/3 = bell,
+ * 1 = reverse. Beads keeps edges >= 0.5 ms / 10 ms; tables are normalized to the grain length,
+ * so the edges are kept >= 2 % / 4 % of the grain instead (a square window would click). */
+#define EDGE_ATTACK  0.02
+#define EDGE_RELEASE 0.04
+static double smoothstep(double t) { return t * t * (3.0 - 2.0 * t); }
+static void envelope_shape(double shape, double* att, double* sus, double* rel, double* smooth) {
+  const double sustain = fmax(1.0 - 3.0 * shape, 0.0);
+  double s = (shape - 1.0 / 3.0) * 1.5;
+  if (s < 0.0) s = 0.0;
+  else if (s < 0.5) s = s * s * s * 4.0;
+  const double attack = s;
+  const double release = (1.0 - attack) * (1.0 - sustain);
+  *smooth = attack < 0.5 ? 2.0 * attack : 2.0 - 2.0 * attack;
+  double a = fmax(attack, EDGE_ATTACK), r = fmax(release, EDGE_RELEASE);
+  double u = sustain;
+  const double total = a + u + r;                   /* minimum edges: take the time from the others */
+  if (total > 1.0) {
+    const double extra = total - 1.0;
+    if (u >= extra) u -= extra;
+    else {                                          /* no sustain left: shorten the longer edge */
+      const double over = extra - u;
+      u = 0.0;
+      if (a > r) a -= over; else r -= over;
+    }
+  }
+  *att = a; *sus = u; *rel = 1.0 - a - u;
 }
-static double window_value(double x, double s) {
-  const double gauss = exp(-0.5 * pow((x - 0.5) / 0.12, 2.0));
-  const double hann = 0.5 * (1 - cos(2 * M_PI * x));
-  const double t50 = tukey(x, 0.5), t10 = tukey(x, 0.1);
-  if (s < 0.5) { double t = s * 2; return gauss + t * (hann - gauss); }
-  if (s < 0.75) { double t = (s - 0.5) * 4; return hann + t * (t50 - hann); }
-  double t = (s - 0.75) * 4; return t50 + t * (t10 - t50);
+static double window_value(double x, double shape) {
+  double a, u, r, sm;
+  envelope_shape(shape, &a, &u, &r, &sm);
+  if (x <= 0.0 || x >= 1.0) return 0.0;
+  if (x < a) { const double t = x / a; return t + (smoothstep(t) - t) * sm; }
+  if (x < a + u) return 1.0;
+  const double t = (1.0 - x) / r;                   /* 1 -> 0 over the release */
+  const double base = (t * t) * (t * t);
+  return base + (smoothstep(t) - base) * sm;
 }
 
 void gc_init(GrainCore* g, float sr, uint32_t seed) {
@@ -53,19 +78,18 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
       g->win[s][i] = (float)window_value((double)i / GC_WIN, (double)s / (GC_SHAPES - 1));
       e += (double)g->win[s][i] * g->win[s][i];
     }
-    g->win[s][0] = g->win[s][GC_WIN] = 0.0f;   /* the Gauss tails start at ~0.0003: make the ends exact */
     rms[s] = sqrt(e / GC_WIN);
   }
   /* Overlapping grains add up by power: a window with less energy than Hann gets louder, up to 2x. */
   for (int s = 0; s < GC_SHAPES; s++) {
-    const double k = rms[(GC_SHAPES - 1) / 2] / rms[s];
+    const double k = rms[GC_SHAPE_BELL] / rms[s];
     g->win_gain[s] = (float)(k < 0.5 ? 0.5 : k > 2.0 ? 2.0 : k);
   }
 }
 
 void gc_default_params(GcParams* p) {
   p->position = 0.0f; p->scan = 1.0f; p->spray = 0.0f; p->window = 1.0f;
-  p->size_ms = 100.0f; p->density = 20.0f; p->shape = 0.5f; p->chaos = 0.0f;
+  p->size_ms = 100.0f; p->density = 20.0f; p->shape = 2.0f / 3.0f; p->chaos = 0.0f;
   p->root = 60.0f;
 }
 
