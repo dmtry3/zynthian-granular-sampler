@@ -186,6 +186,8 @@ def main():
     title_items = c.find_withtag("title")
     pump(lambda: False, 0.1)
     check("page name not redrawn when unchanged", c.find_withtag("title") == title_items)
+    x = c.coords(c.find_withtag("title")[0])[0]
+    check("page name at the right edge", x > wdg.width - 20 and c.itemcget(c.find_withtag("title")[0], "anchor") == "ne")
     check("empty: hint to tap", "tap to load" in info())
     check("empty: no waveform polygon", not [i for i in c.find_withtag("wave") if c.type(i) == "polygon"])
 

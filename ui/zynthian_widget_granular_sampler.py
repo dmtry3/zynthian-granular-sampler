@@ -4,7 +4,7 @@
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
 # - The waveform is read from the file here, in a background thread, and drawn once as one polygon.
 # - The plugin's own state comes from its output ports: status (0 empty, 1 loading, 2 loaded, 3 error), seconds.
-# - At the top, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
+# - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
 import threading
@@ -215,7 +215,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.title = title
         c = self.widget_canvas
         c.delete("title")
-        c.create_text(6, 2, anchor="nw", text=title, tags="title",
+        c.create_text(max(self.width, 20) - 6, 2, anchor="ne", text=title, tags="title",
                       fill=zynthian_gui_config.color_tx_off,
                       font=(zynthian_gui_config.font_family, self._font_size()))
 
