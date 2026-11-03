@@ -7,7 +7,7 @@ if ! pkg-config --exists lv2 sndfile; then
     exit 1
 fi
 mkdir -p "$B"
-cp "$ROOT/lv2/manifest.ttl" "$ROOT/lv2/granular_sampler.ttl" "$B/"
+cp "$ROOT/lv2/manifest.ttl" "$ROOT/lv2/granular_sampler.ttl" "$ROOT/lv2/presets.ttl" "$B/"
 # Pi 5 (Cortex-A76): tuned build; elsewhere (WSL) a generic one, only to check that it compiles.
 CPU=""
 [ "$(uname -m)" = "aarch64" ] && CPU="-mcpu=cortex-a76"
