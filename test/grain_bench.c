@@ -1,5 +1,6 @@
 /* grain_bench: CPU cost of grain_core. Only numbers measured on the Pi 5 count.
- *   grain_bench [sample file]               measure at 16, 32 and 64 grains, linear and Hermite
+ *   grain_bench [sample file]               one voice at 16, 32 and 64 grains, linear and Hermite;
+ *                                           then 8 voices (a chord) sharing the whole pool
  *   grain_bench sample.wav --wav out        also render 10 s for listening:
  *       out_linear.wav, out_hermite.wav     the two interpolations (notes from -12 to +19 semitones)
  *       out_nolevels.wav                    linear without band-limited levels: the aliasing they remove
@@ -38,6 +39,7 @@ static void measure(int grains, int interp) {
   GcParams p;
   setup(&p, grains);
   G.interp = interp;
+  gc_set_voices(&G, 1, 0);
   gc_note_on(&G, &p, 67, 100);              /* a fifth up: fractional read step, interpolation in use */
   for (int k = 0; k < SR / PERIOD; k++) gc_process(&G, &p, l, r, PERIOD);   /* 1 s warm-up: pool fills */
   const long periods = (long)(SECONDS * SR / PERIOD);
@@ -55,12 +57,39 @@ static void measure(int grains, int interp) {
   gc_all_off(&G);
 }
 
+/* 8 voices, a chord, each wanting pool/8 grains: the stage 3 case (8 voices, all grains busy). */
+static void measure_poly(int interp) {
+  static float l[PERIOD], r[PERIOD];
+  GcParams p;
+  setup(&p, GC_POOL / GC_VOICES);
+  p.attack_ms = 5; p.release_ms = 500; p.spread = 0.5f;
+  G.interp = interp;
+  gc_set_voices(&G, GC_VOICES, 0);
+  const int chord[GC_VOICES] = { 48, 55, 60, 63, 67, 70, 74, 79 };
+  for (int v = 0; v < GC_VOICES; v++) gc_note_on(&G, &p, chord[v], 100);
+  for (int k = 0; k < SR / PERIOD; k++) gc_process(&G, &p, l, r, PERIOD);
+  const long periods = (long)(SECONDS * SR / PERIOD);
+  double active = 0, sink = 0;
+  const double t0 = cpu_now();
+  for (long k = 0; k < periods; k++) {
+    gc_process(&G, &p, l, r, PERIOD);
+    active += G.nactive;
+    sink += l[k & (PERIOD - 1)];
+  }
+  const double cpu = cpu_now() - t0;
+  printf("%-8s %d voices, pool %d: %5.1f active, %6.2f %% of one core, %6.2f us per period%s\n",
+         interp ? "hermite" : "linear", gc_active_voices(&G), GC_POOL, active / periods, 100.0 * cpu / SECONDS,
+         1e6 * cpu / periods, sink == 12345.0 ? "!" : "");
+  gc_all_off(&G);
+}
+
 static void render(const char* prefix, const char* name, int interp, int levels) {
   char path[512];
   snprintf(path, sizeof path, "%s_%s.wav", prefix, name);
   GcParams p;
   setup(&p, 24);
   p.size_ms = 150.0f; p.density = 60.0f; p.scan = 0.5f; p.spray = 0.1f;
+  gc_set_voices(&G, 1, 0);
   G.interp = interp;
   G.use_levels = levels;
   G.rng = 12345;
@@ -120,6 +149,8 @@ int main(int argc, char** argv) {
     measure(32, interp);
     measure(64, interp);
   }
+  measure_poly(GC_INTERP_LINEAR);
+  measure_poly(GC_INTERP_HERMITE);
   if (wav) {
     render(wav, "linear", GC_INTERP_LINEAR, 1);
     render(wav, "hermite", GC_INTERP_HERMITE, 1);

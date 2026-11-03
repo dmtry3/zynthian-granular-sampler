@@ -103,7 +103,8 @@ static void test_silence(void) {
   Src s = make_src(SR, SR, 1, f_half);
   gc_set_source(&G, &s.src);
   gc_note_off(&G, 60);
-  CHECK(run(&p, 0.1, NULL) == 0.0f);                /* no note */
+  run(&p, 1.0, NULL);                               /* the release of that note is over */
+  CHECK(gc_active_voices(&G) == 0 && run(&p, 0.1, NULL) == 0.0f);   /* no note */
   gc_note_on(&G, &p, 60, 127);
   run(&p, 0.05, NULL);
   gc_set_source(&G, NULL);                          /* sample removed while playing: grains fade out */
@@ -114,7 +115,7 @@ static void test_silence(void) {
 
 static void test_note_cycle(void) {
   GcParams p; gc_default_params(&p);
-  p.size_ms = 50; p.density = 40;
+  p.size_ms = 50; p.density = 40; p.release_ms = 10;
   gc_init(&G, SR, 1);
   Src s = make_src(SR, SR, 1, f_half);
   gc_set_source(&G, &s.src);
@@ -127,14 +128,13 @@ static void test_note_cycle(void) {
   CHECK(bad == 0 && fabsf(peak - 0.5f / sqrtf(2.0f)) < 0.01f);
   CHECK(G.born >= 40 && G.born <= 42);              /* density 40/s, chaos 0 */
   gc_note_off(&G, 60);
-  uint64_t born = G.born;
-  run(&p, 0.06, NULL);                              /* longer than one grain */
-  CHECK(G.born == born && G.nactive == 0 && G.voice.note == -1);
+  run(&p, 0.03, NULL);                              /* release 10 ms to -60 dB, -80 dB a little later */
+  CHECK(G.voices[0].stage == GC_V_IDLE && G.nactive == 0 && G.voices[0].note == -1);
   CHECK(run(&p, 0.05, NULL) == 0.0f);
   gc_note_on(&G, &p, 60, 127);
   gc_note_off(&G, 61);                              /* another key: the voice keeps playing */
   run(&p, 0.1, NULL);
-  CHECK(G.voice.gate == 1 && G.nactive > 0);
+  CHECK(G.voices[0].gate == 1 && G.nactive > 0);
   gc_all_off(&G);
   CHECK(G.nactive == 0 && run(&p, 0.05, NULL) == 0.0f);
   free_src(&s);
@@ -177,30 +177,30 @@ static void test_position_scan(void) {
   p.position = 0.5f; p.scan = 0.0f; p.size_ms = 20; p.density = 10; p.shape = 0.0f;
   gc_note_on(&G, &p, 60, 127);
   run(&p, 2.0, NULL);
-  CHECK(fabs(G.voice.playhead - 0.5 * (n - 1)) < 1.0);   /* freeze */
+  CHECK(fabs(G.voices[0].playhead - 0.5 * (n - 1)) < 1.0);   /* freeze */
   CHECK(fabs(G.last_start - 0.5 * (n - 1)) < 1.0);
 
   p.scan = 0.01f;                                   /* inside the dead zone: still frozen */
   run(&p, 1.0, NULL);
-  CHECK(fabs(G.voice.playhead - 0.5 * (n - 1)) < 1.0);
+  CHECK(fabs(G.voices[0].playhead - 0.5 * (n - 1)) < 1.0);
 
   p.scan = 1.0f;                                    /* realtime: one second moves 48000 frames */
   run(&p, 1.0, NULL);
-  CHECK(fabs(G.voice.playhead - (0.5 * (n - 1) + SR)) < 2 * BUF);
+  CHECK(fabs(G.voices[0].playhead - (0.5 * (n - 1) + SR)) < 2 * BUF);
 
   p.scan = -2.0f;                                   /* backwards, twice as fast */
-  double ph = G.voice.playhead;
+  double ph = G.voices[0].playhead;
   run(&p, 0.5, NULL);
-  CHECK(fabs(G.voice.playhead - (ph - SR)) < 2 * BUF);
+  CHECK(fabs(G.voices[0].playhead - (ph - SR)) < 2 * BUF);
 
   /* window: the playhead loops inside [position, position + window) */
   p.position = 0.2f; p.window = 0.1f; p.scan = 2.0f;
   gc_note_on(&G, &p, 60, 127);
-  CHECK(fabs(G.voice.playhead - 0.2 * (n - 1)) < 1.0);   /* new note starts at Position */
+  CHECK(fabs(G.voices[0].playhead - 0.2 * (n - 1)) < 1.0);   /* new note starts at Position */
   int inside = 1;
   for (int k = 0; k < 2000; k++) {
     gc_process(&G, &p, L, R, BUF);
-    if (G.voice.playhead < 0.2 * (n - 1) - 1 || G.voice.playhead > 0.2 * (n - 1) + 0.1 * n + 1) inside = 0;
+    if (G.voices[0].playhead < 0.2 * (n - 1) - 1 || G.voices[0].playhead > 0.2 * (n - 1) + 0.1 * n + 1) inside = 0;
   }
   CHECK(inside);
 
@@ -360,6 +360,162 @@ static void test_swap_fade(void) {
   free_src(&a); free_src(&b);
 }
 
+/* ---------- voices ---------- */
+static GcParams poly_params(void) {
+  GcParams p; gc_default_params(&p);
+  p.size_ms = 40; p.density = 50; p.attack_ms = 1; p.release_ms = 10; p.scan = 0.0f;
+  return p;
+}
+static int voice_of(int note) {
+  for (int i = 0; i < GC_VOICES; i++)
+    if (G.voices[i].note == note && G.voices[i].stage != GC_V_IDLE) return i;
+  return -1;
+}
+
+static void test_poly(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 100);
+  gc_note_on(&G, &p, 64, 100);
+  gc_note_on(&G, &p, 67, 100);
+  run(&p, 0.1, NULL);
+  CHECK(gc_active_voices(&G) == 3 && voice_of(60) >= 0 && voice_of(64) >= 0 && voice_of(67) >= 0);
+  int per[GC_VOICES] = { 0 };
+  for (int i = 0; i < GC_POOL; i++) if (G.grains[i].active) per[G.grains[i].voice]++;
+  CHECK(per[voice_of(60)] > 0 && per[voice_of(64)] > 0 && per[voice_of(67)] > 0);
+  const int v64 = voice_of(64);
+  gc_note_on(&G, &p, 64, 100);                      /* same key again: same voice */
+  CHECK(voice_of(64) == v64 && gc_active_voices(&G) == 3);
+  gc_note_off(&G, 64);
+  run(&p, 0.05, NULL);
+  CHECK(gc_active_voices(&G) == 2 && voice_of(64) < 0);
+  for (int i = 0; i < GC_POOL; i++) if (G.grains[i].active) CHECK(G.grains[i].voice != v64);
+  gc_all_notes_off(&G);
+  run(&p, 0.05, NULL);
+  CHECK(gc_active_voices(&G) == 0 && G.nactive == 0 && run(&p, 0.02, NULL) == 0.0f);
+  free_src(&s);
+}
+
+static void test_steal(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_voices(&G, 2, 0);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  gc_note_on(&G, &p, 62, 100); run(&p, 0.05, NULL);
+  gc_note_on(&G, &p, 64, 100);                      /* no free voice: the oldest (60) fades in 5 ms */
+  const int v = voice_of(60);
+  CHECK(v >= 0 && G.voices[v].stage == GC_V_STEAL);
+  float prev = L[BUF - 1], jump = 0;
+  for (int k = 0; k < 4; k++) {
+    gc_process(&G, &p, L, R, BUF);
+    for (int i = 0; i < BUF; i++) { jump = fmaxf(jump, fabsf(L[i] - prev)); prev = L[i]; }
+  }
+  CHECK(voice_of(64) == v && voice_of(60) < 0 && voice_of(62) >= 0);
+  CHECK(jump < 0.05f);                              /* the stolen voice faded, no click */
+  /* a quiet voice in release is stolen before an older held one */
+  const int v62 = voice_of(62);
+  gc_note_off(&G, 64); run(&p, 0.005, NULL);        /* 64 is in release; 62 is older but held */
+  CHECK(G.voices[v].stage == GC_V_RELEASE);
+  gc_note_on(&G, &p, 65, 100);
+  CHECK(G.voices[v].stage == GC_V_STEAL && G.voices[v].pending_note == 65);
+  CHECK(G.voices[v62].stage == GC_V_SUSTAIN && G.voices[v62].note == 62);
+  run(&p, 0.02, NULL);
+  CHECK(voice_of(62) == v62 && voice_of(65) == v);
+  /* released during the steal fade: starts and releases */
+  gc_note_on(&G, &p, 67, 100);
+  gc_note_off(&G, 67);
+  run(&p, 0.1, NULL);
+  CHECK(voice_of(67) < 0);
+  free_src(&s);
+}
+
+static void test_envelope(void) {
+  GcParams p = poly_params();
+  p.size_ms = 100; p.density = 40; p.shape = 0.0f;  /* square grains overlapping: steady level */
+  p.attack_ms = 200; p.release_ms = 300;
+  Src s = make_src(SR * 2, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  run(&p, 0.05, NULL);
+  CHECK(G.voices[0].stage == GC_V_ATTACK && fabsf(G.voices[0].env - 0.25f) < 0.02f);   /* linear attack */
+  run(&p, 0.2, NULL);
+  CHECK(G.voices[0].stage == GC_V_SUSTAIN && G.voices[0].env == 1.0f);
+  gc_note_off(&G, 60);
+  run(&p, 0.3, NULL);                               /* release time: -60 dB */
+  CHECK(G.voices[0].stage == GC_V_RELEASE && fabsf(G.voices[0].env - 0.001f) < 0.0005f);
+  CHECK(G.nactive > 0);                             /* grains are still born in release */
+  run(&p, 0.2, NULL);
+  CHECK(G.voices[0].stage == GC_V_IDLE && G.nactive == 0);
+  /* retrigger in release: the level goes up from where it is, no jump to 0 */
+  gc_note_on(&G, &p, 60, 127); run(&p, 0.3, NULL);
+  gc_note_off(&G, 60); run(&p, 0.05, NULL);
+  const float e = G.voices[0].env;
+  gc_note_on(&G, &p, 60, 127);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].env > e && G.voices[0].stage == GC_V_ATTACK);
+  free_src(&s);
+}
+
+static void test_mono(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_voices(&G, 8, 1);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  const uint32_t age = G.voices[0].age;
+  gc_note_on(&G, &p, 64, 100);                      /* legato: same voice, envelope goes on */
+  CHECK(gc_active_voices(&G) == 1 && G.voices[0].note == 64 && G.voices[0].age == age &&
+        G.voices[0].stage == GC_V_SUSTAIN);
+  run(&p, 0.05, NULL);
+  int pitch_ok = 0;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active && fabsf(G.grains[i].inc - exp2f(4.0f / 12.0f)) < 1e-4f) pitch_ok = 1;
+  CHECK(pitch_ok);
+  gc_note_off(&G, 64);                              /* back to the held key */
+  CHECK(G.voices[0].note == 60 && G.voices[0].gate);
+  gc_note_off(&G, 60);
+  CHECK(G.voices[0].stage == GC_V_RELEASE);
+  run(&p, 0.05, NULL);
+  CHECK(gc_active_voices(&G) == 0);
+  gc_set_voices(&G, 8, 0);                          /* back to Poly */
+  gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100);
+  CHECK(gc_active_voices(&G) == 2);
+  free_src(&s);
+}
+
+static void test_spread(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  run(&p, 0.1, NULL);
+  float centre = 0.0f;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active) { CHECK(G.grains[i].gl == G.grains[i].gr); centre = G.grains[i].gl; }
+  CHECK(centre > 0.0f);
+  p.spread = 1.0f;
+  int left = 0, right = 0;
+  for (int k = 0; k < 40; k++) {
+    run(&p, 0.02, NULL);
+    for (int i = 0; i < GC_POOL; i++) {
+      const GcGrain* gr = &G.grains[i];
+      if (!gr->active) continue;
+      CHECK(fabsf(fmaxf(gr->gl, gr->gr) - centre) < 1e-6f);   /* balance law: the louder side keeps unity */
+      if (gr->gl > gr->gr * 1.2f) left++;
+      if (gr->gr > gr->gl * 1.2f) right++;
+    }
+  }
+  CHECK(left > 5 && right > 5);
+  free_src(&s);
+}
+
 int main(void) {
   test_windows();
   test_silence();
@@ -373,6 +529,11 @@ int main(void) {
   test_antialias();
   test_hermite_matches_at_unity();
   test_swap_fade();
+  test_poly();
+  test_steal();
+  test_envelope();
+  test_mono();
+  test_spread();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

@@ -1,10 +1,15 @@
 /* Granular engine without LV2: tested in WSL and benchmarked on the Pi as a plain program.
- * Stage 2: one voice. Grains come from a shared pool; their parameters are fixed at birth. */
+ * Voices (Poly/Mono) each have a playhead, a grain scheduler and an Attack/Release envelope applied to
+ * the sum of their grains. Grains come from a shared pool; their parameters are fixed at birth. */
 #ifndef GRAIN_CORE_H
 #define GRAIN_CORE_H
 #include <stdint.h>
 
+#ifndef GC_POOL
 #define GC_POOL      64     /* grains for all voices; when the pool is full, new grains are skipped */
+#endif                      /* (the bench builds other sizes to find the limit on the Pi) */
+#define GC_VOICES    8
+#define GC_HELD      16     /* Mono: keys remembered to return to */
 #define GC_BLOCK     32     /* control rate: scheduler and playhead are updated every GC_BLOCK samples */
 #define GC_WIN       1024   /* samples per window table */
 #define GC_SHAPES    31     /* window tables: Shape is quantized to 1/30 (square, decay, bell, reverse exact) */
@@ -22,6 +27,10 @@
 #define GC_DENS_MAX    200.0f
 #define GC_SCAN_MAX    2.0f    /* x realtime, both directions */
 #define GC_WINDOW_MIN  0.001f  /* fraction of the sample */
+#define GC_ATTACK_MIN  1.0f    /* ms */
+#define GC_ATTACK_MAX  10000.0f
+#define GC_RELEASE_MIN 10.0f   /* ms, to -60 dB */
+#define GC_RELEASE_MAX 20000.0f
 
 enum { GC_INTERP_LINEAR = 0, GC_INTERP_HERMITE };
 
@@ -35,6 +44,9 @@ typedef struct {
   float shape;      /* 0..1: square 0 -> decay 1/3 -> bell 2/3 -> reverse 1 (Beads) */
   float chaos;      /* 0..1: even rhythm -> random (Poisson) */
   float root;       /* MIDI note played at the original pitch */
+  float attack_ms;  /* voice envelope: linear rise from the current level */
+  float release_ms; /* exponential fall, time to -60 dB */
+  float spread;     /* 0..1: random pan of each grain */
 } GcParams;
 
 /* The sample as the engine reads it: interleaved stereo, GC_LEVELS rates, each level followed by
@@ -58,16 +70,24 @@ typedef struct {
   float inc;              /* read step per output sample (pitch, file rate, level) */
   float wph, wstep;       /* window phase in table samples */
   const float* win;       /* window table */
-  float gain;
+  float gl, gr;           /* left and right gain: loudness, velocity, pan */
   float fade, fstep;      /* extra gain ramp: 1 and 0, or a fade-out after a sample swap */
+  int voice;              /* its voice: the voice envelope is applied to the sum of its grains */
 } GcGrain;
 
+enum { GC_V_IDLE = 0, GC_V_ATTACK, GC_V_SUSTAIN, GC_V_RELEASE, GC_V_STEAL };
+
 typedef struct {
+  int stage;              /* GC_V_*: grains are born in attack, sustain and release */
   int note;               /* -1 = idle */
-  int gate;               /* key held: grains are born */
+  int gate;               /* key held */
   float vel;              /* 0..1 */
   double playhead;        /* in frames of level 0; double: samples are longer than float can index exactly */
   float next;             /* samples until the next grain */
+  float env;              /* envelope level at the start of the next block */
+  float steal_step;       /* GC_V_STEAL: fall per sample, to 0 in GC_FADE samples */
+  int pending_note, pending_vel, pending_off;   /* note to start when the steal fade is over */
+  uint32_t age;           /* note-on order: the oldest voice is stolen first */
 } GcVoice;
 
 typedef struct {
@@ -76,8 +96,14 @@ typedef struct {
   uint32_t gen;           /* incremented by every gc_set_source */
   int interp;             /* GC_INTERP_* */
   int use_levels;         /* 0: always level 0 (to compare in tests and the bench) */
+  int nvoices;            /* 1..GC_VOICES voices in Poly */
+  int mono;               /* 1: one voice, legato, back to a held key on release */
+  int held[GC_HELD], nheld;
+  uint32_t age;
+  int last_voice;         /* voice of the newest note: its playhead is shown in the widget */
   uint32_t rng;
-  GcVoice voice;
+  GcVoice voices[GC_VOICES];
+  float vbuf[GC_VOICES][2][GC_BLOCK];    /* sum of each voice's grains in the current block */
   GcGrain grains[GC_POOL];
   int nactive;
   uint64_t born, skipped; /* statistics: grains born and skipped because the pool was full */
@@ -95,7 +121,11 @@ uint32_t gc_set_source(GrainCore* g, const GcSource* s);
 int gc_gen_busy(const GrainCore* g, uint32_t gen);
 void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel);
 void gc_note_off(GrainCore* g, int note);
-void gc_all_off(GrainCore* g);
+void gc_all_notes_off(GrainCore* g);    /* every voice goes to release (CC 123) */
+void gc_all_off(GrainCore* g);          /* silence now: grains and voices stopped (CC 120) */
+/* Poly with n voices (1..GC_VOICES) or Mono. Voices above n finish their sound. */
+void gc_set_voices(GrainCore* g, int n, int mono);
+int gc_active_voices(const GrainCore* g);
 /* Writes n samples (not adds). */
 void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uint32_t n);
 /* Flush denormals to zero in this thread (call at the start of run()). */

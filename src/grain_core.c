@@ -68,7 +68,8 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   memset(g, 0, sizeof *g);
   g->sr = sr;
   g->rng = seed ? seed : 0x9E3779B9u;
-  g->voice.note = -1;
+  for (int i = 0; i < GC_VOICES; i++) g->voices[i].note = -1;
+  g->nvoices = GC_VOICES;
   g->interp = GC_INTERP_LINEAR;
   g->use_levels = 1;
   double rms[GC_SHAPES];
@@ -91,6 +92,7 @@ void gc_default_params(GcParams* p) {
   p->position = 0.0f; p->scan = 1.0f; p->spray = 0.0f; p->window = 1.0f;
   p->size_ms = 100.0f; p->density = 20.0f; p->shape = 2.0f / 3.0f; p->chaos = 0.0f;
   p->root = 60.0f;
+  p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
 }
 
 uint32_t gc_set_source(GrainCore* g, const GcSource* s) {
@@ -129,26 +131,128 @@ static double wrap(double x, double len) {
   return x < 0 ? x + len : x;
 }
 
-void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
-  GcVoice* v = &g->voice;
+/* ---------- voices ---------- */
+static void kill_voice_grains(GrainCore* g, int v) {
+  for (int i = 0; i < GC_POOL; i++)
+    if (g->grains[i].active && g->grains[i].voice == v) { g->grains[i].active = 0; g->nactive--; }
+}
+
+/* Starts a note on a voice; the envelope rises from where it is (a retrigger does not click). */
+static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int vel) {
+  GcVoice* v = &g->voices[vi];
+  v->stage = GC_V_ATTACK;
   v->note = note; v->gate = 1;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
   v->playhead = g->src.frames[0] ? window_start(g, p) : 0.0;   /* every note starts reading at Position */
   v->next = 0.0f;                                              /* first grain right away */
+  v->age = ++g->age;
+  g->last_voice = vi;
+}
+
+static void voice_release(GcVoice* v) {
+  v->gate = 0;
+  if (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN) v->stage = GC_V_RELEASE;
+}
+
+/* Poly: the voice to steal: the quietest one in release, else the oldest. */
+static int steal_candidate(const GrainCore* g) {
+  int best = -1;
+  for (int i = 0; i < g->nvoices; i++)
+    if (g->voices[i].stage == GC_V_RELEASE && (best < 0 || g->voices[i].env < g->voices[best].env)) best = i;
+  if (best >= 0) return best;
+  for (int i = 0; i < g->nvoices; i++)
+    if (best < 0 || g->voices[i].age < g->voices[best].age) best = i;
+  return best;
+}
+
+static void held_remove(GrainCore* g, int note) {
+  int k = 0;
+  for (int i = 0; i < g->nheld; i++) if (g->held[i] != note) g->held[k++] = g->held[i];
+  g->nheld = k;
+}
+
+void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
+  if (g->mono) {
+    held_remove(g, note);
+    if (g->nheld == GC_HELD) { memmove(g->held, g->held + 1, sizeof(int) * (GC_HELD - 1)); g->nheld--; }
+    g->held[g->nheld++] = note;
+    GcVoice* v = &g->voices[0];
+    if (v->gate && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
+      v->note = note;                     /* legato: new pitch for new grains, envelope and playhead go on */
+      return;
+    }
+    voice_start(g, p, 0, note, vel);
+    return;
+  }
+  for (int i = 0; i < g->nvoices; i++)    /* the same key again: its own voice */
+    if (g->voices[i].note == note && g->voices[i].stage != GC_V_IDLE && g->voices[i].stage != GC_V_STEAL) {
+      voice_start(g, p, i, note, vel);
+      return;
+    }
+  for (int i = 0; i < g->nvoices; i++)
+    if (g->voices[i].stage == GC_V_IDLE) { voice_start(g, p, i, note, vel); return; }
+  const int i = steal_candidate(g);
+  GcVoice* v = &g->voices[i];
+  if (v->stage != GC_V_STEAL) {
+    v->stage = GC_V_STEAL;
+    v->steal_step = v->env / (float)GC_FADE;
+    if (v->steal_step <= 0.0f) v->steal_step = 1.0f;
+  }
+  v->gate = 0;
+  v->pending_note = note; v->pending_vel = vel; v->pending_off = 0;
+  v->age = ++g->age;
 }
 
 void gc_note_off(GrainCore* g, int note) {
-  if (g->voice.note == note) g->voice.gate = 0;
+  if (g->mono) {
+    held_remove(g, note);
+    GcVoice* v = &g->voices[0];
+    if (v->note != note || !v->gate) return;
+    if (g->nheld > 0) v->note = g->held[g->nheld - 1];   /* back to the key still held */
+    else voice_release(v);
+    return;
+  }
+  for (int i = 0; i < GC_VOICES; i++) {
+    GcVoice* v = &g->voices[i];
+    if (v->stage == GC_V_STEAL && v->pending_note == note) v->pending_off = 1;
+    else if (v->note == note && v->gate) voice_release(v);
+  }
+}
+
+void gc_all_notes_off(GrainCore* g) {
+  g->nheld = 0;
+  for (int i = 0; i < GC_VOICES; i++) {
+    voice_release(&g->voices[i]);
+    if (g->voices[i].stage == GC_V_STEAL) g->voices[i].pending_off = 1;
+  }
 }
 
 void gc_all_off(GrainCore* g) {
-  g->voice.gate = 0;
+  g->nheld = 0;
+  for (int i = 0; i < GC_VOICES; i++) {
+    GcVoice* v = &g->voices[i];
+    v->stage = GC_V_IDLE; v->gate = 0; v->note = -1; v->env = 0.0f;
+  }
   for (int i = 0; i < GC_POOL; i++) g->grains[i].active = 0;
   g->nactive = 0;
 }
 
-static void spawn(GrainCore* g, const GcParams* p, int delay) {
-  GcVoice* v = &g->voice;
+void gc_set_voices(GrainCore* g, int n, int mono) {
+  n = n < 1 ? 1 : n > GC_VOICES ? GC_VOICES : n;
+  if (mono == g->mono && n == g->nvoices) return;
+  if (mono != g->mono) gc_all_notes_off(g);   /* switching mode: everything releases */
+  g->mono = mono;
+  g->nvoices = mono ? 1 : n;
+}
+
+int gc_active_voices(const GrainCore* g) {
+  int n = 0;
+  for (int i = 0; i < GC_VOICES; i++) if (g->voices[i].stage != GC_V_IDLE) n++;
+  return n;
+}
+
+static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
+  GcVoice* v = &g->voices[vi];
   if (g->nactive >= GC_POOL) { g->skipped++; return; }
   GcGrain* gr = NULL;
   for (int i = 0; i < GC_POOL; i++) if (!g->grains[i].active) { gr = &g->grains[i]; break; }
@@ -176,6 +280,9 @@ static void spawn(GrainCore* g, const GcParams* p, int delay) {
   float overlap = dens * size_s;
   if (overlap > (float)GC_POOL) overlap = (float)GC_POOL;
   const int shape = (int)lrintf(clampf(p->shape, 0.0f, 1.0f) * (GC_SHAPES - 1));
+  const float gain = v->vel * g->win_gain[shape] / sqrtf(overlap > 1.0f ? overlap : 1.0f);
+  /* Stereo Spread: random pan, balance law (as Clouds for stereo sources): the centre keeps unity gain */
+  const float pan = 0.5f + clampf(p->spread, 0.0f, 1.0f) * (rnd(g) - 0.5f);
 
   gr->active = 1;
   gr->delay = delay;
@@ -189,9 +296,11 @@ static void spawn(GrainCore* g, const GcParams* p, int delay) {
   gr->win = g->win[shape];
   gr->wph = 0.0f;
   gr->wstep = (float)GC_WIN / (float)len;
-  gr->gain = v->vel * g->win_gain[shape] / sqrtf(overlap > 1.0f ? overlap : 1.0f);
+  gr->gl = gain * (pan > 0.5f ? 2.0f * (1.0f - pan) : 1.0f);
+  gr->gr = gain * (pan < 0.5f ? 2.0f * pan : 1.0f);
   gr->fade = 1.0f;
   gr->fstep = 0.0f;
+  gr->voice = vi;
   g->last_level = lv;
   g->nactive++;
   g->born++;
@@ -231,7 +340,7 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   const float* restrict s = gr->data;
   const float* restrict w = gr->win;
   const int64_t frames = gr->frames;
-  const float inc = gr->inc, gain = gr->gain, wstep = gr->wstep, fstep = gr->fstep;
+  const float inc = gr->inc, gl = gr->gl, gn = gr->gr, wstep = gr->wstep, fstep = gr->fstep;
   const float frac = gr->frac, wph = gr->wph, fade = gr->fade;
   const int64_t idx = gr->idx;
   float* restrict dl = ol + d;
@@ -251,14 +360,14 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
       int64_t j = idx + k, jm = j - 1;
       if (!fast) { j %= frames; jm = j ? j - 1 : frames - 1; }   /* guard frames cover j+1, j+2 */
       const float* p = s + 2 * j;
-      const float a = gain * w[(int)(wph + (float)i * wstep)] * (fade + (float)i * fstep);
+      const float a = w[(int)(wph + (float)i * wstep)] * (fade + (float)i * fstep);
       if (hermite_on) {
         const float* q = s + 2 * jm;
-        dl[i] += a * hermite(q[0], p[0], p[2], p[4], t);
-        dr[i] += a * hermite(q[1], p[1], p[3], p[5], t);
+        dl[i] += a * gl * hermite(q[0], p[0], p[2], p[4], t);
+        dr[i] += a * gn * hermite(q[1], p[1], p[3], p[5], t);
       } else {
-        dl[i] += a * (p[0] + t * (p[2] - p[0]));
-        dr[i] += a * (p[1] + t * (p[3] - p[1]));
+        dl[i] += a * gl * (p[0] + t * (p[2] - p[0]));
+        dr[i] += a * gn * (p[1] + t * (p[3] - p[1]));
       }
     }
   } else if (hermite_on) {
@@ -268,9 +377,9 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
       const float t = pf - (float)k;
       /* indexed loads: with a pointer and p[-2] gcc made this loop 2x slower (measured) */
       const int64_t j = idx + k, jm = j - 1, j1 = j + 1, j2 = j + 2;
-      const float a = gain * w[(int)(wph + (float)i * wstep)];
-      dl[i] += a * hermite(s[2 * jm], s[2 * j], s[2 * j1], s[2 * j2], t);
-      dr[i] += a * hermite(s[2 * jm + 1], s[2 * j + 1], s[2 * j1 + 1], s[2 * j2 + 1], t);
+      const float a = w[(int)(wph + (float)i * wstep)];
+      dl[i] += a * gl * hermite(s[2 * jm], s[2 * j], s[2 * j1], s[2 * j2], t);
+      dr[i] += a * gn * hermite(s[2 * jm + 1], s[2 * j + 1], s[2 * j1 + 1], s[2 * j2 + 1], t);
     }
   } else {
     for (int i = 0; i < cnt; i++) {
@@ -278,9 +387,9 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
       const int k = (int)pf;
       const float t = pf - (float)k;
       const float* p = s + 2 * (idx + k);
-      const float a = gain * w[(int)(wph + (float)i * wstep)];
-      dl[i] += a * (p[0] + t * (p[2] - p[0]));
-      dr[i] += a * (p[1] + t * (p[3] - p[1]));
+      const float a = w[(int)(wph + (float)i * wstep)];
+      dl[i] += a * gl * (p[0] + t * (p[2] - p[0]));
+      dr[i] += a * gn * (p[1] + t * (p[3] - p[1]));
     }
   }
   const float total = frac + (float)cnt * inc;
@@ -294,12 +403,39 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   if (gr->remain <= 0) { gr->active = 0; g->nactive--; }
 }
 
+/* Envelope level at the end of a block of m samples; sets *done when the voice has finished. */
+static float voice_env_end(GrainCore* g, const GcParams* p, GcVoice* v, int m, int* done) {
+  float e = v->env;
+  *done = 0;
+  switch (v->stage) {
+    case GC_V_ATTACK: {
+      const float a = clampf(p->attack_ms, GC_ATTACK_MIN, GC_ATTACK_MAX) * 0.001f * g->sr;
+      e += (float)m / a;
+      if (e >= 1.0f) { e = 1.0f; v->stage = GC_V_SUSTAIN; }
+      break;
+    }
+    case GC_V_SUSTAIN:
+      e = 1.0f;
+      break;
+    case GC_V_RELEASE: {
+      const float r = clampf(p->release_ms, GC_RELEASE_MIN, GC_RELEASE_MAX) * 0.001f * g->sr;
+      e *= expf(-6.9077553f * (float)m / r);        /* ln(1000): -60 dB after release_ms */
+      if (e < 1e-4f) { e = 0.0f; *done = 1; }       /* -80 dB: the voice is over */
+      break;
+    }
+    case GC_V_STEAL:
+      e -= v->steal_step * (float)m;
+      if (e <= 0.0f) { e = 0.0f; *done = 1; }
+      break;
+  }
+  return e;
+}
+
 void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uint32_t n) {
   memset(out_l, 0, n * sizeof(float));
   memset(out_r, 0, n * sizeof(float));
-  GcVoice* v = &g->voice;
   const int have = g->src.frames[0] > 0;
-  if (!have && !g->nactive) return;
+  if (!have && !g->nactive && !gc_active_voices(g)) return;
   const double wstart = have ? window_start(g, p) : 0.0, wlen = have ? window_len(g, p) : 1.0;
   float scan = clampf(p->scan, -GC_SCAN_MAX, GC_SCAN_MAX);
   if (fabsf(scan) < GC_SCAN_DEAD) scan = 0.0f;
@@ -307,19 +443,58 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
 
   for (uint32_t off = 0; off < n; off += GC_BLOCK) {
     const int m = (int)(n - off < GC_BLOCK ? n - off : GC_BLOCK);
-    if (v->note >= 0) {
-      while (have && v->gate && v->next < (float)m) {
-        spawn(g, p, v->next > 0.0f ? (int)v->next : 0);
-        v->next += next_interval(g, p);
+    float e0[GC_VOICES], e1[GC_VOICES];
+    int done[GC_VOICES], any = 0;
+    for (int vi = 0; vi < GC_VOICES; vi++) {
+      GcVoice* v = &g->voices[vi];
+      done[vi] = 0;
+      if (v->stage == GC_V_IDLE) continue;
+      any = 1;
+      if (v->stage != GC_V_STEAL) {              /* grains are born while the voice sounds, also in release */
+        while (have && v->next < (float)m) {
+          spawn(g, p, vi, v->next > 0.0f ? (int)v->next : 0);
+          v->next += next_interval(g, p);
+        }
+        v->next -= (float)m;
+        if (v->next < 0.0f) v->next = 0.0f;
+        /* the playhead loops inside the window */
+        if (have) v->playhead = wstart + wrap(v->playhead + (double)(scan * ratio * (float)m) - wstart, wlen);
       }
-      v->next -= (float)m;
-      if (v->next < 0.0f) v->next = 0.0f;
-      /* the playhead loops inside the window */
-      if (have) v->playhead = wstart + wrap(v->playhead + (double)(scan * ratio * (float)m) - wstart, wlen);
-      if ((!v->gate || !have) && g->nactive == 0) v->note = -1;
+      e0[vi] = v->env;
+      e1[vi] = voice_env_end(g, p, v, m, &done[vi]);
+      v->env = e1[vi];
     }
-    if (!g->nactive) continue;
-    for (int i = 0; i < GC_POOL; i++)
-      if (g->grains[i].active) render_grain(g, &g->grains[i], out_l + off, out_r + off, m);
+    if (!any && !g->nactive) continue;
+    memset(g->vbuf, 0, sizeof g->vbuf);
+
+    for (int i = 0; i < GC_POOL; i++) {
+      GcGrain* gr = &g->grains[i];
+      if (gr->active) render_grain(g, gr, g->vbuf[gr->voice][0], g->vbuf[gr->voice][1], m);
+    }
+
+    /* the voice envelope on the sum of its grains, ramped across the block */
+    for (int vi = 0; vi < GC_VOICES; vi++) {
+      GcVoice* v = &g->voices[vi];
+      if (v->stage == GC_V_IDLE && !done[vi]) continue;
+      const float* bl = g->vbuf[vi][0];
+      const float* br = g->vbuf[vi][1];
+      const float a = e0[vi], step = (e1[vi] - e0[vi]) / (float)m;
+      float* ol = out_l + off;
+      float* orr = out_r + off;
+      for (int i = 0; i < m; i++) {
+        const float e = a + step * (float)(i + 1);
+        ol[i] += e * bl[i];
+        orr[i] += e * br[i];
+      }
+      if (!done[vi]) continue;
+      kill_voice_grains(g, vi);
+      if (v->stage == GC_V_STEAL) {               /* stolen: the waiting note starts from silence */
+        v->env = 0.0f;
+        voice_start(g, p, vi, v->pending_note, v->pending_vel);
+        if (v->pending_off) voice_release(v);
+      } else {
+        v->stage = GC_V_IDLE; v->note = -1; v->gate = 0; v->env = 0.0f;
+      }
+    }
   }
 }
