@@ -61,10 +61,12 @@ static void work_all(void) {
 
 /* ---------- ports ---------- */
 #define NFR 64
-/* control inputs 0..8: position scan spray window size density shape chaos level */
-static float ctls[9] = { 0, 100, 0, 100, 100, 20, 67, 0, 0.8f };
+/* control inputs: position scan spray window | size density shape chaos | attack release spread level */
+#define NCTL 12
+enum { C_SHAPE = 6, C_ATTACK = 8, C_RELEASE = 9, C_LEVEL = 11 };
+static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 10, 50, 0, 0.8f };
 static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16];
-enum { P_MIDI_IN = 9, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
+enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
 static LV2_Atom_Forge forge;
 static LV2_Atom_Forge_Frame in_frame;
@@ -105,30 +107,60 @@ static void run_once(void) {
   in_begin();
 }
 
-/* Path reported on the notify port in the last run(), or NULL. */
-static const char* reported_path(void) {
+/* Value of `prop` reported on the notify port in the last run(), or NULL. */
+static const LV2_Atom* reported(const char* prop) {
   LV2_ATOM_SEQUENCE_FOREACH(&notify_buf.seq, ev) {
     const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
     if (ev->body.type != U(LV2_ATOM__Object) || o->body.otype != U(LV2_PATCH__Set)) continue;
-    const LV2_Atom* v = NULL;
-    lv2_atom_object_get(o, U(LV2_PATCH__value), &v, 0);
-    if (v && v->type == U(LV2_ATOM__Path)) return (const char*)LV2_ATOM_BODY_CONST(v);
+    const LV2_Atom *k = NULL, *v = NULL;
+    lv2_atom_object_get(o, U(LV2_PATCH__property), &k, U(LV2_PATCH__value), &v, 0);
+    if (k && v && ((const LV2_Atom_URID*)k)->body == U(prop)) return v;
   }
   return NULL;
 }
+static const char* reported_path(void) {
+  const LV2_Atom* v = reported("urn:granularsampler:sampler#sample");
+  return v && v->type == U(LV2_ATOM__Path) ? (const char*)LV2_ATOM_BODY_CONST(v) : NULL;
+}
+static int reported_int(const char* prop, int def) {
+  const LV2_Atom* v = reported(prop);
+  return v && v->type == U(LV2_ATOM__Int) ? ((const LV2_Atom_Int*)v)->body : def;
+}
+#define P_MODE "urn:granularsampler:sampler#mode"
+#define P_VOICES "urn:granularsampler:sampler#voices"
+/* patch:Set of a number, as Zynthian sends it (a float) */
+static void in_set_float(const char* prop, float val) {
+  LV2_Atom_Forge_Frame f;
+  lv2_atom_forge_frame_time(&forge, 0);
+  lv2_atom_forge_object(&forge, &f, 0, U(LV2_PATCH__Set));
+  lv2_atom_forge_key(&forge, U(LV2_PATCH__property));
+  lv2_atom_forge_urid(&forge, U(prop));
+  lv2_atom_forge_key(&forge, U(LV2_PATCH__value));
+  lv2_atom_forge_float(&forge, val);
+  lv2_atom_forge_pop(&forge, &f);
+}
 
-/* ---------- state: one stored value is enough for this plugin ---------- */
-static char st_val[2048]; static size_t st_size; static uint32_t st_key, st_type;
+/* ---------- state: a few keys ---------- */
+typedef struct { uint32_t key, type; size_t size; char val[2048]; } StVal;
+static StVal st[8];
+static int nst = 0;
+static StVal* st_find(uint32_t key) {
+  for (int i = 0; i < nst; i++) if (st[i].key == key) return &st[i];
+  return NULL;
+}
 static LV2_State_Status store(LV2_State_Handle h, uint32_t key, const void* v, size_t size, uint32_t type, uint32_t fl) {
   (void)h; (void)fl;
-  st_key = key; st_size = size; st_type = type; memcpy(st_val, v, size);
+  StVal* e = st_find(key);
+  if (!e) e = &st[nst++];
+  e->key = key; e->size = size; e->type = type; memcpy(e->val, v, size);
   return LV2_STATE_SUCCESS;
 }
 static const void* retrieve(LV2_State_Handle h, uint32_t key, size_t* size, uint32_t* type, uint32_t* fl) {
   (void)h;
-  if (key != st_key || !st_size) return NULL;
-  *size = st_size; *type = st_type; *fl = 0;
-  return st_val;
+  const StVal* e = st_find(key);
+  if (!e) return NULL;
+  *size = e->size; *type = e->type; *fl = 0;
+  return e->val;
 }
 
 int main(int argc, char** argv) {
@@ -149,7 +181,7 @@ int main(int argc, char** argv) {
   wi = (const LV2_Worker_Interface*)d->extension_data(LV2_WORKER__interface);
   const LV2_State_Interface* si = (const LV2_State_Interface*)d->extension_data(LV2_STATE__interface);
   CHECK(wi && si);
-  for (int i = 0; i < 9; i++) d->connect_port(inst, i, &ctls[i]);
+  for (int i = 0; i < NCTL; i++) d->connect_port(inst, i, &ctls[i]);
   d->connect_port(inst, P_MIDI_IN, &in_buf);
   d->connect_port(inst, P_OUT_L, out_l);
   d->connect_port(inst, P_OUT_R, out_r);
@@ -186,19 +218,35 @@ int main(int argc, char** argv) {
   in_set_path("st.wav"); run_once(); work_all(); run_once();
   in_get(); run_once();
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
+  CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);   /* defaults: Poly, 8 */
   run_once();
   CHECK(reported_path() == NULL);                                 /* answered once */
+
+  /* mode and voices arrive as floats from Zynthian; out-of-range values are clamped */
+  in_set_float(P_MODE, 1.0f); in_set_float(P_VOICES, 4.0f); run_once();
+  in_get(); run_once();
+  CHECK(reported_int(P_MODE, -1) == 1 && reported_int(P_VOICES, -1) == 4);
+  in_set_float(P_VOICES, 99.0f); in_set_float(P_MODE, 0.0f); run_once();
+  in_get(); run_once();
+  CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);
+  in_set_float(P_MODE, 1.0f); in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
   const LV2_Feature* none[] = { NULL };
   CHECK(si->save(inst, store, NULL, 0, none) == LV2_STATE_SUCCESS);
-  CHECK(st_key == U("urn:granularsampler:sampler#sample") && st_type == U(LV2_ATOM__Path) && !strcmp(st_val, "st.wav"));
+  const StVal* sv = st_find(U("urn:granularsampler:sampler#sample"));
+  CHECK(sv && sv->type == U(LV2_ATOM__Path) && !strcmp(sv->val, "st.wav"));
+  CHECK(st_find(U(P_MODE)) && *(const int32_t*)st_find(U(P_MODE))->val == 1);
+  CHECK(st_find(U(P_VOICES)) && *(const int32_t*)st_find(U(P_VOICES))->val == 3);
+  in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
   CHECK(status == 0);
   CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
   run_once();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
-  CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored path */
+  CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored values */
+  CHECK(reported_int(P_MODE, -1) == 1 && reported_int(P_VOICES, -1) == 3);
+  in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
 
   /* a load still in the worker when a state is restored must not replace the restored sample */
   in_set_path("mono.wav"); run_once();
@@ -217,11 +265,11 @@ int main(int argc, char** argv) {
   CHECK(peak > 0.0f);                                             /* a note plays the sample */
   CHECK(playhead >= 0.0f && playhead <= 1.0f);
   CHECK(grains[0] >= 0.0f && grains[0] <= 1.0f && grains[15] == -1.0f);   /* few grains: the rest is -1 */
-  ctls[8] = 0.0f; run_once(); run_once();
+  ctls[C_LEVEL] = 0.0f; run_once(); run_once();
   float mx = 0;
   for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]) + fabsf(out_r[i]));
   CHECK(mx == 0.0f);                                              /* Level 0 */
-  ctls[8] = 0.8f;
+  ctls[C_LEVEL] = 0.8f;
   in_midi(0, 0xB0, 120, 0); run_once();                           /* All Sound Off */
   mx = 0;
   for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]));
@@ -229,7 +277,7 @@ int main(int argc, char** argv) {
   run_once();
   CHECK(playhead == -1.0f);                                       /* voice idle */
   /* sample-accurate note: nothing before frame 40 of the block */
-  ctls[6] = 0;                                                    /* square window: sound at once */
+  ctls[C_SHAPE] = 0;                                                    /* square window: sound at once */
   in_midi(40, 0x90, 60, 127); run_once();
   mx = 0;
   for (int i = 0; i < 40; i++) mx = fmaxf(mx, fabsf(out_l[i]));
