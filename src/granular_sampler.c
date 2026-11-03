@@ -28,7 +28,8 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
        P_LEVEL, P_END,
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
        P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };   /* outputs for the widget */
-#define N_GRAIN_PORTS 16                              /* grain1..16: read positions of some active grains */
+#define N_GRAIN_PORTS 16
+#define N_RETIRED 8                              /* grain1..16: read positions of some active grains */
 #define N_CTL P_END
 
 /* Value of the status output port. */
@@ -58,6 +59,9 @@ typedef struct {
   LV2_URID patch_Set, patch_Get, patch_property, patch_value, p_sample;
 
   GsSample* sample;            /* owned by the audio thread; swapped in work_response() */
+  /* Replaced samples: their grains fade out for GC_FADE samples, then they go to the worker to be freed. */
+  struct { GsSample* s; uint32_t gen; } retired[N_RETIRED];
+  int nretired;
   char path[GS_PATH_MAX];      /* last requested path ("" = none), saved in State */
   atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
   int status;
@@ -69,10 +73,48 @@ typedef struct {
 } Sampler;
 
 /* The engine plays the current sample (audio thread, or restore() which is not concurrent with run()). */
-static void use_sample(Sampler* S) {
+static uint32_t use_sample(Sampler* S) {
   const GsSample* s = S->sample;
-  if (s) gc_set_source(&S->core, s->data[0], s->data[1], s->frames, (float)s->rate);
-  else gc_set_source(&S->core, NULL, NULL, 0, 0);
+  if (!s) return gc_set_source(&S->core, NULL);
+  GcSource src;
+  memset(&src, 0, sizeof src);
+  for (int k = 0; k < GC_LEVELS && k < GS_LEVELS && s->data[k]; k++) {
+    src.data[k] = s->data[k];
+    src.frames[k] = s->frames[k];
+    src.nlevels = k + 1;
+  }
+  src.rate = (float)s->rate;
+  return gc_set_source(&S->core, &src);
+}
+
+static void free_in_worker(Sampler* S, GsSample* s) {
+  MsgFree fm = { MSG_FREE, s };
+  S->sched->schedule_work(S->sched->handle, sizeof fm, &fm);
+}
+
+/* Audio thread: the new sample plays, the old one waits until its grains have faded out. */
+static void swap_sample(Sampler* S, GsSample* s) {
+  GsSample* old = S->sample;
+  const uint32_t old_gen = S->core.gen;
+  S->sample = s;
+  use_sample(S);
+  if (!old) return;
+  if (S->nretired == N_RETIRED) {                    /* very fast swaps: cut the fading grains short */
+    gc_all_off(&S->core);
+    for (int i = 0; i < S->nretired; i++) free_in_worker(S, S->retired[i].s);
+    S->nretired = 0;
+  }
+  S->retired[S->nretired].s = old;
+  S->retired[S->nretired].gen = old_gen;
+  S->nretired++;
+}
+
+static void free_retired(Sampler* S) {
+  for (int i = 0; i < S->nretired;)
+    if (!gc_gen_busy(&S->core, S->retired[i].gen)) {
+      free_in_worker(S, S->retired[i].s);
+      S->retired[i] = S->retired[--S->nretired];
+    } else i++;
 }
 
 static int is_empty_path(const char* p) { return !p[0] || !strcmp(p, "_"); }   /* Zynthian sends "_" to clear */
@@ -155,17 +197,12 @@ static LV2_Worker_Status work_response(LV2_Handle h, uint32_t size, const void* 
   if (size != sizeof(MsgDone)) return LV2_WORKER_ERR_UNKNOWN;
   MsgDone r;
   memcpy(&r, data, sizeof r);
-  GsSample* old = r.s;                               /* stale result: thrown away */
-  if (r.seq == atomic_load(&S->req_seq)) {
-    old = S->sample;
-    S->sample = r.s;
-    S->status = r.s ? ST_LOADED : (r.err ? ST_ERROR : ST_EMPTY);
-    use_sample(S);
+  if (r.seq != atomic_load(&S->req_seq)) {          /* stale result: thrown away */
+    if (r.s) free_in_worker(S, r.s);
+    return LV2_WORKER_SUCCESS;
   }
-  if (old) {
-    MsgFree fm = { MSG_FREE, old };
-    S->sched->schedule_work(S->sched->handle, sizeof fm, &fm);
-  }
+  S->status = r.s ? ST_LOADED : (r.err ? ST_ERROR : ST_EMPTY);
+  swap_sample(S, r.s);
   return LV2_WORKER_SUCCESS;
 }
 
@@ -242,14 +279,16 @@ static void render(Sampler* S, uint32_t from, uint32_t to) {
 /* Read positions for the widget: 0..1 of the sample, -1 = none. */
 static void write_monitors(Sampler* S) {
   const GrainCore* g = &S->core;
-  const double inv = g->frames ? 1.0 / (double)g->frames : 0.0;
-  if (S->playhead_out) *S->playhead_out = (g->frames && g->voice.note >= 0) ? (float)(g->voice.playhead * inv) : -1.0f;
+  const int64_t f0 = g->src.frames[0];
+  if (S->playhead_out) *S->playhead_out = (f0 && g->voice.note >= 0) ? (float)(g->voice.playhead / (double)f0) : -1.0f;
   int k = 0;
-  for (int i = 0; i < GC_POOL && k < N_GRAIN_PORTS; i++)
-    if (g->grains[i].active && g->frames) {
-      if (S->grain_out[k]) *S->grain_out[k] = (float)((double)g->grains[i].idx * inv);
+  for (int i = 0; i < GC_POOL && k < N_GRAIN_PORTS; i++) {
+    const GcGrain* gr = &g->grains[i];
+    if (gr->active && gr->gen == g->gen && gr->frames) {      /* grains of the current sample, on any level */
+      if (S->grain_out[k]) *S->grain_out[k] = (float)((double)gr->idx / (double)gr->frames);
       k++;
     }
+  }
   for (; k < N_GRAIN_PORTS; k++)
     if (S->grain_out[k]) *S->grain_out[k] = -1.0f;
 }
@@ -291,13 +330,15 @@ static void run(LV2_Handle h, uint32_t n) {
   S->level = target;
 
   if (S->status_out) *S->status_out = (float)S->status;
-  if (S->seconds_out) *S->seconds_out = S->sample ? (float)(S->sample->frames / S->sample->rate) : 0.0f;
+  if (S->seconds_out) *S->seconds_out = S->sample ? (float)(S->sample->frames[0] / S->sample->rate) : 0.0f;
+  if (S->nretired) free_retired(S);
   write_monitors(S);
 }
 
 static void cleanup(LV2_Handle h) {
   Sampler* S = (Sampler*)h;
   gs_sample_free(S->sample);
+  for (int i = 0; i < S->nretired; i++) gs_sample_free(S->retired[i].s);
   free(S);
 }
 
@@ -343,7 +384,11 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
   atomic_fetch_add(&S->req_seq, 1);                  /* a load still in the worker is now stale */
   int err = GS_LOAD_OK;
   GsSample* s = is_empty_path(S->path) ? NULL : gs_sample_load(S->path, MAX_SECONDS, &err);
+  /* not concurrent with run(): stop the grains, then free the old sample and the retired ones here */
+  gc_all_off(&S->core);
   gs_sample_free(S->sample);
+  for (int i = 0; i < S->nretired; i++) gs_sample_free(S->retired[i].s);
+  S->nretired = 0;
   S->sample = s;
   S->status = s ? ST_LOADED : (err ? ST_ERROR : ST_EMPTY);
   use_sample(S);

@@ -44,11 +44,22 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   g->sr = sr;
   g->rng = seed ? seed : 0x9E3779B9u;
   g->voice.note = -1;
-  g->rate_ratio = 1.0f;
+  g->interp = GC_INTERP_LINEAR;
+  g->use_levels = 1;
+  double rms[GC_SHAPES];
   for (int s = 0; s < GC_SHAPES; s++) {
-    for (int i = 0; i <= GC_WIN; i++)
+    double e = 0;
+    for (int i = 0; i <= GC_WIN; i++) {
       g->win[s][i] = (float)window_value((double)i / GC_WIN, (double)s / (GC_SHAPES - 1));
+      e += (double)g->win[s][i] * g->win[s][i];
+    }
     g->win[s][0] = g->win[s][GC_WIN] = 0.0f;   /* the Gauss tails start at ~0.0003: make the ends exact */
+    rms[s] = sqrt(e / GC_WIN);
+  }
+  /* Overlapping grains add up by power: a window with less energy than Hann gets louder, up to 2x. */
+  for (int s = 0; s < GC_SHAPES; s++) {
+    const double k = rms[(GC_SHAPES - 1) / 2] / rms[s];
+    g->win_gain[s] = (float)(k < 0.5 ? 0.5 : k > 2.0 ? 2.0 : k);
   }
 }
 
@@ -58,20 +69,35 @@ void gc_default_params(GcParams* p) {
   p->root = 60.0f;
 }
 
-void gc_set_source(GrainCore* g, const float* l, const float* r, int64_t frames, float file_rate) {
-  for (int i = 0; i < GC_POOL; i++) g->grains[i].active = 0;
-  g->nactive = 0;
-  if (!l || frames < 2) { g->data[0] = g->data[1] = NULL; g->frames = 0; return; }
-  g->data[0] = l; g->data[1] = r ? r : l;
-  g->frames = frames;
-  g->rate_ratio = file_rate > 0 ? file_rate / g->sr : 1.0f;
+uint32_t gc_set_source(GrainCore* g, const GcSource* s) {
+  for (int i = 0; i < GC_POOL; i++) {
+    GcGrain* gr = &g->grains[i];
+    if (!gr->active || gr->fstep < 0.0f) continue;
+    if (gr->remain > GC_FADE) gr->remain = GC_FADE;
+    gr->fstep = -gr->fade / (float)gr->remain;
+  }
+  g->gen++;
+  memset(&g->src, 0, sizeof g->src);
+  if (s && s->nlevels > 0 && s->data[0] && s->frames[0] >= 2) {
+    g->src = *s;
+    if (g->src.nlevels > GC_LEVELS) g->src.nlevels = GC_LEVELS;
+    while (g->src.nlevels > 1 && (!s->data[g->src.nlevels - 1] || s->frames[g->src.nlevels - 1] < 2))
+      g->src.nlevels--;
+  }
+  return g->gen;
+}
+
+int gc_gen_busy(const GrainCore* g, uint32_t gen) {
+  int n = 0;
+  for (int i = 0; i < GC_POOL; i++) if (g->grains[i].active && g->grains[i].gen == gen) n++;
+  return n;
 }
 
 static double window_start(const GrainCore* g, const GcParams* p) {
-  return (double)clampf(p->position, 0.0f, 1.0f) * (double)(g->frames - 1);
+  return (double)clampf(p->position, 0.0f, 1.0f) * (double)(g->src.frames[0] - 1);
 }
 static double window_len(const GrainCore* g, const GcParams* p) {
-  double w = (double)clampf(p->window, GC_WINDOW_MIN, 1.0f) * (double)g->frames;
+  double w = (double)clampf(p->window, GC_WINDOW_MIN, 1.0f) * (double)g->src.frames[0];
   return w < 2.0 ? 2.0 : w;
 }
 static double wrap(double x, double len) {
@@ -83,8 +109,8 @@ void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
   GcVoice* v = &g->voice;
   v->note = note; v->gate = 1;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
-  v->playhead = window_start(g, p);      /* Scan: every note starts reading at Position */
-  v->next = 0.0f;                        /* first grain right away */
+  v->playhead = g->src.frames[0] ? window_start(g, p) : 0.0;   /* every note starts reading at Position */
+  v->next = 0.0f;                                              /* first grain right away */
 }
 
 void gc_note_off(GrainCore* g, int note) {
@@ -108,21 +134,41 @@ static void spawn(GrainCore* g, const GcParams* p, int delay) {
   const float dens = clampf(p->density, GC_DENS_MIN, GC_DENS_MAX);
   const double wlen = window_len(g, p);
   double start = v->playhead + (double)((rnd(g) * 2.0f - 1.0f) * clampf(p->spray, 0.0f, 1.0f) * 0.5f) * wlen;
-  start = wrap(start, (double)g->frames);
-  const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
-  const float overlap = dens * size_s;
-
+  start = wrap(start, (double)g->src.frames[0]);
   g->last_start = start;
+  const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
+
+  /* Pitched up: read a band-limited level at a lower rate, so nothing folds back above Nyquist. */
+  float inc = (g->src.rate > 0 ? g->src.rate / g->sr : 1.0f) * exp2f(((float)v->note - p->root) / 12.0f);
+  int lv = 0;
+  while (g->use_levels && lv + 1 < g->src.nlevels && inc > GC_MIP_UP) { inc *= 0.5f; start *= 0.5; lv++; }
+  const int64_t frames = g->src.frames[lv];
+  /* Do not run over the end of the sample (a jump to its start would click): start earlier if it fits. */
+  const double span = (double)len * inc + 3.0;
+  if (span < (double)frames - 2.0 && start > (double)frames - 2.0 - span) start = (double)frames - 2.0 - span;
+  if (start < 0.0) start = 0.0;
+
+  /* Loudness: grains add up by power. The overlap cannot exceed the pool. */
+  float overlap = dens * size_s;
+  if (overlap > (float)GC_POOL) overlap = (float)GC_POOL;
+  const int shape = (int)lrintf(clampf(p->shape, 0.0f, 1.0f) * (GC_SHAPES - 1));
+
   gr->active = 1;
   gr->delay = delay;
   gr->remain = len;
+  gr->gen = g->gen;
+  gr->data = g->src.data[lv];
+  gr->frames = frames;
   gr->idx = (int64_t)start;
   gr->frac = (float)(start - (double)gr->idx);
-  gr->inc = g->rate_ratio * exp2f(((float)v->note - p->root) / 12.0f);
-  gr->win = g->win[(int)lrintf(clampf(p->shape, 0.0f, 1.0f) * (GC_SHAPES - 1))];
+  gr->inc = inc;
+  gr->win = g->win[shape];
   gr->wph = 0.0f;
   gr->wstep = (float)GC_WIN / (float)len;
-  gr->gain = v->vel / sqrtf(overlap > 1.0f ? overlap : 1.0f);   /* keeps loudness when grains overlap */
+  gr->gain = v->vel * g->win_gain[shape] / sqrtf(overlap > 1.0f ? overlap : 1.0f);
+  gr->fade = 1.0f;
+  gr->fstep = 0.0f;
+  g->last_level = lv;
   g->nactive++;
   g->born++;
 }
@@ -141,43 +187,76 @@ static float next_interval(GrainCore* g, const GcParams* p) {
   return base * j;
 }
 
-/* Adds one grain into out[0..m). */
+/* 4-point, 3rd-order Hermite (Laurent de Soras), as in Mutable Instruments Clouds/Beads. */
+static inline float hermite(float xm1, float x0, float x1, float x2, float t) {
+  const float c = (x1 - xm1) * 0.5f;
+  const float v = x0 - x1;
+  const float w = c + v;
+  const float a = w + v + (x2 - x0) * 0.5f;
+  const float b = w + a;
+  return ((a * t - b) * t + c) * t + x0;
+}
+
+/* Adds one grain into out[0..m). Sample data is interleaved stereo. */
 static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* restrict orr, int m) {
   const int d = gr->delay;
-  gr->delay = 0;
   if (d >= m) { gr->delay = d - m; return; }
+  gr->delay = 0;
   int cnt = m - d;
   if (cnt > gr->remain) cnt = gr->remain;
-  const float* restrict L = g->data[0];
-  const float* restrict R = g->data[1];
+  const float* restrict s = gr->data;
   const float* restrict w = gr->win;
-  const int64_t frames = g->frames;
-  const float inc = gr->inc, gain = gr->gain, wstep = gr->wstep;
-  const float frac = gr->frac, wph = gr->wph;
+  const int64_t frames = gr->frames;
+  const float inc = gr->inc, gain = gr->gain, wstep = gr->wstep, fstep = gr->fstep;
+  const float frac = gr->frac, wph = gr->wph, fade = gr->fade;
   const int64_t idx = gr->idx;
   float* restrict dl = ol + d;
   float* restrict dr = orr + d;
+  const int64_t last = idx + (int64_t)(frac + (float)cnt * inc);    /* last integer frame read */
+  /* fast path: all frames needed (j-1 .. j+2) exist without wrapping; levels end with guard frames */
+  const int fast = idx >= 1 && last + 2 < frames + 2;
 
-  if (idx + (int64_t)(frac + (float)cnt * inc) + 2 < frames) {
-    for (int i = 0; i < cnt; i++) {                       /* fast path: no wrap inside this block */
+  const int hermite_on = g->interp == GC_INTERP_HERMITE;
+
+  if (!fast || fstep != 0.0f) {
+    /* general path: wraps at the end (short samples) and fades out (sample swap); rarely used */
+    for (int i = 0; i < cnt; i++) {
       const float pf = frac + (float)i * inc;
       const int k = (int)pf;
-      const float f = pf - (float)k;
-      const int64_t j = idx + k;
+      const float t = pf - (float)k;
+      int64_t j = idx + k, jm = j - 1;
+      if (!fast) { j %= frames; jm = j ? j - 1 : frames - 1; }   /* guard frames cover j+1, j+2 */
+      const float* p = s + 2 * j;
+      const float a = gain * w[(int)(wph + (float)i * wstep)] * (fade + (float)i * fstep);
+      if (hermite_on) {
+        const float* q = s + 2 * jm;
+        dl[i] += a * hermite(q[0], p[0], p[2], p[4], t);
+        dr[i] += a * hermite(q[1], p[1], p[3], p[5], t);
+      } else {
+        dl[i] += a * (p[0] + t * (p[2] - p[0]));
+        dr[i] += a * (p[1] + t * (p[3] - p[1]));
+      }
+    }
+  } else if (hermite_on) {
+    for (int i = 0; i < cnt; i++) {
+      const float pf = frac + (float)i * inc;
+      const int k = (int)pf;
+      const float t = pf - (float)k;
+      /* indexed loads: with a pointer and p[-2] gcc made this loop 2x slower (measured) */
+      const int64_t j = idx + k, jm = j - 1, j1 = j + 1, j2 = j + 2;
       const float a = gain * w[(int)(wph + (float)i * wstep)];
-      dl[i] += a * (L[j] + f * (L[j + 1] - L[j]));
-      dr[i] += a * (R[j] + f * (R[j + 1] - R[j]));
+      dl[i] += a * hermite(s[2 * jm], s[2 * j], s[2 * j1], s[2 * j2], t);
+      dr[i] += a * hermite(s[2 * jm + 1], s[2 * j + 1], s[2 * j1 + 1], s[2 * j2 + 1], t);
     }
   } else {
-    for (int i = 0; i < cnt; i++) {                       /* reaches the end: wrap to the start */
+    for (int i = 0; i < cnt; i++) {
       const float pf = frac + (float)i * inc;
       const int k = (int)pf;
-      const float f = pf - (float)k;
-      int64_t j = (idx + k) % frames;
-      int64_t j1 = j + 1 < frames ? j + 1 : 0;
+      const float t = pf - (float)k;
+      const float* p = s + 2 * (idx + k);
       const float a = gain * w[(int)(wph + (float)i * wstep)];
-      dl[i] += a * (L[j] + f * (L[j1] - L[j]));
-      dr[i] += a * (R[j] + f * (R[j1] - R[j]));
+      dl[i] += a * (p[0] + t * (p[2] - p[0]));
+      dr[i] += a * (p[1] + t * (p[3] - p[1]));
     }
   }
   const float total = frac + (float)cnt * inc;
@@ -186,6 +265,7 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   gr->frac = total - (float)adv;
   gr->wph = wph + (float)cnt * wstep;
   if (gr->wph > (float)GC_WIN) gr->wph = (float)GC_WIN;
+  gr->fade = fade + (float)cnt * fstep;
   gr->remain -= cnt;
   if (gr->remain <= 0) { gr->active = 0; g->nactive--; }
 }
@@ -193,24 +273,26 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
 void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uint32_t n) {
   memset(out_l, 0, n * sizeof(float));
   memset(out_r, 0, n * sizeof(float));
-  if (!g->frames) return;
   GcVoice* v = &g->voice;
-  const double wstart = window_start(g, p), wlen = window_len(g, p);
+  const int have = g->src.frames[0] > 0;
+  if (!have && !g->nactive) return;
+  const double wstart = have ? window_start(g, p) : 0.0, wlen = have ? window_len(g, p) : 1.0;
   float scan = clampf(p->scan, -GC_SCAN_MAX, GC_SCAN_MAX);
   if (fabsf(scan) < GC_SCAN_DEAD) scan = 0.0f;
+  const float ratio = g->src.rate > 0 ? g->src.rate / g->sr : 1.0f;
 
   for (uint32_t off = 0; off < n; off += GC_BLOCK) {
     const int m = (int)(n - off < GC_BLOCK ? n - off : GC_BLOCK);
     if (v->note >= 0) {
-      while (v->gate && v->next < (float)m) {
+      while (have && v->gate && v->next < (float)m) {
         spawn(g, p, v->next > 0.0f ? (int)v->next : 0);
         v->next += next_interval(g, p);
       }
       v->next -= (float)m;
       if (v->next < 0.0f) v->next = 0.0f;
       /* the playhead loops inside the window */
-      v->playhead = wstart + wrap(v->playhead + (double)(scan * g->rate_ratio * (float)m) - wstart, wlen);
-      if (!v->gate && g->nactive == 0) v->note = -1;
+      if (have) v->playhead = wstart + wrap(v->playhead + (double)(scan * ratio * (float)m) - wstart, wlen);
+      if ((!v->gate || !have) && g->nactive == 0) v->note = -1;
     }
     if (!g->nactive) continue;
     for (int i = 0; i < GC_POOL; i++)
