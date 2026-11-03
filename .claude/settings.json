@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(~/projects/zynthian-generative-arp/**)",
+      "Write(~/projects/zynthian-generative-arp/**)",
+      "Edit(~/projects/zynthian-midi-looper/**)",
+      "Write(~/projects/zynthian-midi-looper/**)"
+    ]
+  }
+}
