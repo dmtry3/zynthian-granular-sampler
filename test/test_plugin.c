@@ -2,6 +2,7 @@
  * patch:Set / patch:Get on the control port, State save and restore. No jalv needed.
  * Usage: test_plugin <path to granular_sampler.so> (run from build_test/, after test_sample made st.wav) */
 #include <dlfcn.h>
+#include <math.h>
 #include <lv2/atom/atom.h>
 #include <lv2/atom/forge.h>
 #include <lv2/atom/util.h>
@@ -60,7 +61,10 @@ static void work_all(void) {
 
 /* ---------- ports ---------- */
 #define NFR 64
-static float level = 0.8f, out_l[NFR], out_r[NFR], status, seconds;
+/* control inputs 0..8: position scan spray window size density shape chaos level */
+static float ctls[9] = { 0, 100, 0, 100, 100, 20, 50, 0, 0.8f };
+static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16];
+enum { P_MIDI_IN = 9, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
 static LV2_Atom_Forge forge;
 static LV2_Atom_Forge_Frame in_frame;
@@ -78,6 +82,12 @@ static void in_set_path(const char* path) {
   lv2_atom_forge_key(&forge, U(LV2_PATCH__value));
   lv2_atom_forge_path(&forge, path, (uint32_t)strlen(path));
   lv2_atom_forge_pop(&forge, &f);
+}
+static void in_midi(uint32_t frame, uint8_t st, uint8_t d1, uint8_t d2) {
+  const uint8_t msg[3] = { st, d1, d2 };
+  lv2_atom_forge_frame_time(&forge, frame);
+  lv2_atom_forge_atom(&forge, 3, U("http://lv2plug.in/ns/ext/midi#MidiEvent"));
+  lv2_atom_forge_write(&forge, msg, 3);
 }
 static void in_get(void) {
   LV2_Atom_Forge_Frame f;
@@ -139,13 +149,15 @@ int main(int argc, char** argv) {
   wi = (const LV2_Worker_Interface*)d->extension_data(LV2_WORKER__interface);
   const LV2_State_Interface* si = (const LV2_State_Interface*)d->extension_data(LV2_STATE__interface);
   CHECK(wi && si);
-  d->connect_port(inst, 0, &level);
-  d->connect_port(inst, 1, &in_buf);
-  d->connect_port(inst, 2, out_l);
-  d->connect_port(inst, 3, out_r);
-  d->connect_port(inst, 4, &notify_buf);
-  d->connect_port(inst, 5, &status);
-  d->connect_port(inst, 6, &seconds);
+  for (int i = 0; i < 9; i++) d->connect_port(inst, i, &ctls[i]);
+  d->connect_port(inst, P_MIDI_IN, &in_buf);
+  d->connect_port(inst, P_OUT_L, out_l);
+  d->connect_port(inst, P_OUT_R, out_r);
+  d->connect_port(inst, P_NOTIFY, &notify_buf);
+  d->connect_port(inst, P_STATUS, &status);
+  d->connect_port(inst, P_SECONDS, &seconds);
+  d->connect_port(inst, P_PLAYHEAD, &playhead);
+  for (int i = 0; i < 16; i++) d->connect_port(inst, P_GRAIN0 + i, &grains[i]);
   lv2_atom_forge_init(&forge, &map);
   d->activate(inst);
 
@@ -193,6 +205,45 @@ int main(int argc, char** argv) {
   CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
   work_all(); run_once();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
+
+  /* ---------- sound (stage 2) ---------- */
+  CHECK(status == 2);                                             /* st.wav is loaded */
+  in_midi(0, 0x90, 60, 100); run_once();
+  float peak = 0;
+  for (int k = 0; k < 20; k++) {
+    for (int i = 0; i < NFR; i++) if (fabsf(out_l[i]) > peak) peak = fabsf(out_l[i]);
+    run_once();
+  }
+  CHECK(peak > 0.0f);                                             /* a note plays the sample */
+  CHECK(playhead >= 0.0f && playhead <= 1.0f);
+  CHECK(grains[0] >= 0.0f && grains[0] <= 1.0f && grains[15] == -1.0f);   /* few grains: the rest is -1 */
+  ctls[8] = 0.0f; run_once(); run_once();
+  float mx = 0;
+  for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]) + fabsf(out_r[i]));
+  CHECK(mx == 0.0f);                                              /* Level 0 */
+  ctls[8] = 0.8f;
+  in_midi(0, 0xB0, 120, 0); run_once();                           /* All Sound Off */
+  mx = 0;
+  for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]));
+  CHECK(mx == 0.0f && grains[0] == -1.0f);
+  run_once();
+  CHECK(playhead == -1.0f);                                       /* voice idle */
+  /* sample-accurate note: nothing before frame 40 of the block */
+  ctls[6] = 100;                                                  /* almost rectangular window: sound at once */
+  in_midi(40, 0x90, 60, 127); run_once();
+  mx = 0;
+  for (int i = 0; i < 40; i++) mx = fmaxf(mx, fabsf(out_l[i]));
+  float after = 0;
+  for (int i = 41; i < NFR; i++) after = fmaxf(after, fabsf(out_l[i]));
+  CHECK(mx == 0.0f && after > 0.0f);
+  in_midi(0, 0x80, 60, 0);
+  for (int k = 0; k < 100; k++) run_once();                       /* 100 ms grains finish */
+  CHECK(playhead == -1.0f && grains[0] == -1.0f);
+  /* a new sample while playing: no stale pointers (ASan) */
+  in_midi(0, 0x90, 60, 127); run_once();
+  in_set_path("mono.wav"); run_once(); work_all();
+  for (int k = 0; k < 10; k++) run_once();
+  CHECK(status == 2);
 
   work_all();
   d->deactivate(inst);

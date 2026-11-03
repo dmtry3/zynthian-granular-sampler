@@ -12,6 +12,6 @@ cp "$ROOT/lv2/manifest.ttl" "$ROOT/lv2/granular_sampler.ttl" "$B/"
 CPU=""
 [ "$(uname -m)" = "aarch64" ] && CPU="-mcpu=cortex-a76"
 gcc -O3 $CPU -fPIC -shared -Wall -Wextra $(pkg-config --cflags lv2 sndfile) \
-    -o "$B/granular_sampler.so" "$ROOT/src/granular_sampler.c" "$ROOT/src/sample.c" \
+    -o "$B/granular_sampler.so" "$ROOT/src/granular_sampler.c" "$ROOT/src/grain_core.c" "$ROOT/src/sample.c" \
     $(pkg-config --libs sndfile) -lm
 echo "Built: $B"

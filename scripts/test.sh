@@ -8,7 +8,7 @@ gcc -O2 -Wall -Wextra $(pkg-config --cflags sndfile) -o "$ROOT/build_test/test_s
     "$ROOT/test/test_sample.c" "$ROOT/src/sample.c" $(pkg-config --libs sndfile) -lm
 gcc -O2 -Wall -Wextra -o "$ROOT/build_test/test_grain" "$ROOT/test/test_grain.c" "$ROOT/src/grain_core.c" -lm
 gcc -O2 -Wall -Wextra $(pkg-config --cflags lv2) -o "$ROOT/build_test/test_plugin" \
-    "$ROOT/test/test_plugin.c" -ldl
+    "$ROOT/test/test_plugin.c" -ldl -lm
 cd "$ROOT/build_test"
 ./test_sample
 ./test_grain

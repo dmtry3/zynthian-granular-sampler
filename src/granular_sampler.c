@@ -1,6 +1,6 @@
-/* Granular Sampler: LV2 wrapper.
- * Stage 1b: the sample file is an LV2 parameter (atom:Path). It is loaded by the LV2 worker,
- * saved in LV2 State and reported back to the host. Audio output is still silent. */
+/* Granular Sampler: LV2 wrapper around grain_core.
+ * The sample file is an LV2 parameter (atom:Path), loaded by the LV2 worker, saved in LV2 State.
+ * Stage 2: one voice, knob pages Position and Grain, read positions on output ports for the widget. */
 #include <lv2/core/lv2.h>
 #include <lv2/atom/atom.h>
 #include <lv2/atom/forge.h>
@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "grain_core.h"
 #include "sample.h"
 
 #define GS_URI "urn:granularsampler:sampler"
@@ -22,9 +23,12 @@
 
 /* Control input ports come first (0..P_END-1): Zynthian numbers LV2 parameters from len(control ports)+1,
  * so a control port with a higher index would be overwritten by a parameter in its list. */
-enum { P_LEVEL = 0, P_END,
+enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
+       P_SIZE, P_DENSITY, P_SHAPE, P_CHAOS,           /* page Grain */
+       P_LEVEL, P_END,
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
-       P_STATUS, P_SECONDS };   /* outputs for the widget */
+       P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };   /* outputs for the widget */
+#define N_GRAIN_PORTS 16                              /* grain1..16: read positions of some active grains */
 #define N_CTL P_END
 
 /* Value of the status output port. */
@@ -44,6 +48,8 @@ typedef struct {
   float* out_r;
   float* status_out;
   float* seconds_out;
+  float* playhead_out;
+  float* grain_out[N_GRAIN_PORTS];
 
   LV2_URID_Map* map;
   LV2_Worker_Schedule* sched;
@@ -57,7 +63,17 @@ typedef struct {
   int status;
   int report;                  /* tell the host the current path in the next run() */
   double sr;
+  float level;                 /* last applied level, ramped to the port value over a block */
+  GcParams params;
+  GrainCore core;
 } Sampler;
+
+/* The engine plays the current sample (audio thread, or restore() which is not concurrent with run()). */
+static void use_sample(Sampler* S) {
+  const GsSample* s = S->sample;
+  if (s) gc_set_source(&S->core, s->data[0], s->data[1], s->frames, (float)s->rate);
+  else gc_set_source(&S->core, NULL, NULL, 0, 0);
+}
 
 static int is_empty_path(const char* p) { return !p[0] || !strcmp(p, "_"); }   /* Zynthian sends "_" to clear */
 
@@ -85,6 +101,9 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
   lv2_atom_forge_init(&S->forge, m);
   atomic_init(&S->req_seq, 0);
   S->sr = rate;
+  S->level = -1.0f;
+  gc_init(&S->core, (float)rate, (uint32_t)(uintptr_t)S ^ 0x5EEDu);
+  gc_default_params(&S->params);
   return S;
 }
 
@@ -97,6 +116,8 @@ static void connect_port(LV2_Handle h, uint32_t port, void* data) {
   else if (port == P_NOTIFY) S->notify = (LV2_Atom_Sequence*)data;
   else if (port == P_STATUS) S->status_out = (float*)data;
   else if (port == P_SECONDS) S->seconds_out = (float*)data;
+  else if (port == P_PLAYHEAD) S->playhead_out = (float*)data;
+  else if (port >= P_GRAIN0 && port < P_GRAIN0 + N_GRAIN_PORTS) S->grain_out[port - P_GRAIN0] = (float*)data;
 }
 
 static void activate(LV2_Handle h) { (void)h; }
@@ -139,6 +160,7 @@ static LV2_Worker_Status work_response(LV2_Handle h, uint32_t size, const void* 
     old = S->sample;
     S->sample = r.s;
     S->status = r.s ? ST_LOADED : (r.err ? ST_ERROR : ST_EMPTY);
+    use_sample(S);
   }
   if (old) {
     MsgFree fm = { MSG_FREE, old };
@@ -186,28 +208,91 @@ static void report_path(Sampler* S) {
   S->report = 0;
 }
 
+static float ctl(const Sampler* S, int port, float def) {
+  const float* p = S->ctl[port];
+  return p ? *p : def;
+}
+
+static void read_params(Sampler* S) {
+  GcParams* p = &S->params;
+  p->position = ctl(S, P_POSITION, 0.0f) * 0.01f;
+  p->scan     = ctl(S, P_SCAN, 100.0f) * 0.01f;
+  p->spray    = ctl(S, P_SPRAY, 0.0f) * 0.01f;
+  p->window   = ctl(S, P_WINDOW, 100.0f) * 0.01f;
+  p->size_ms  = ctl(S, P_SIZE, 100.0f);
+  p->density  = ctl(S, P_DENSITY, 20.0f);
+  p->shape    = ctl(S, P_SHAPE, 50.0f) * 0.01f;
+  p->chaos    = ctl(S, P_CHAOS, 0.0f) * 0.01f;
+}
+
+static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
+  const uint8_t* b = (const uint8_t*)LV2_ATOM_BODY_CONST(&ev->body);
+  if (ev->body.size < 3) return;
+  const uint8_t type = b[0] & 0xF0;
+  if (type == 0x90 && b[2] > 0) gc_note_on(&S->core, &S->params, b[1] & 0x7F, b[2]);
+  else if (type == 0x80 || type == 0x90) gc_note_off(&S->core, b[1] & 0x7F);
+  else if (type == 0xB0 && b[1] == 120) gc_all_off(&S->core);                       /* All Sound Off */
+  else if (type == 0xB0 && b[1] == 123) gc_note_off(&S->core, S->core.voice.note);  /* All Notes Off */
+}
+
+static void render(Sampler* S, uint32_t from, uint32_t to) {
+  if (to > from) gc_process(&S->core, &S->params, S->out_l + from, S->out_r + from, to - from);
+}
+
+/* Read positions for the widget: 0..1 of the sample, -1 = none. */
+static void write_monitors(Sampler* S) {
+  const GrainCore* g = &S->core;
+  const double inv = g->frames ? 1.0 / (double)g->frames : 0.0;
+  if (S->playhead_out) *S->playhead_out = (g->frames && g->voice.note >= 0) ? (float)(g->voice.playhead * inv) : -1.0f;
+  int k = 0;
+  for (int i = 0; i < GC_POOL && k < N_GRAIN_PORTS; i++)
+    if (g->grains[i].active && g->frames) {
+      if (S->grain_out[k]) *S->grain_out[k] = (float)((double)g->grains[i].idx * inv);
+      k++;
+    }
+  for (; k < N_GRAIN_PORTS; k++)
+    if (S->grain_out[k]) *S->grain_out[k] = -1.0f;
+}
+
 static void run(LV2_Handle h, uint32_t n) {
   Sampler* S = (Sampler*)h;
+  gc_enable_ftz();
+  read_params(S);
   const uint32_t cap = S->notify->atom.size;
   lv2_atom_forge_set_buffer(&S->forge, (uint8_t*)S->notify, cap);
   LV2_Atom_Forge_Frame seq;
   lv2_atom_forge_sequence_head(&S->forge, &seq, 0);
 
+  uint32_t done = 0;                                 /* audio rendered up to here: events are sample-accurate */
   LV2_ATOM_SEQUENCE_FOREACH(S->in, ev) {
-    if (ev->body.type == S->atom_Object) {
+    uint32_t f = (uint32_t)ev->time.frames;
+    if (f > n) f = n;
+    if (f > done) { render(S, done, f); done = f; }
+    if (ev->body.type == S->midi_Event) handle_midi(S, ev);
+    else if (ev->body.type == S->atom_Object) {
       const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
       if (o->body.otype == S->patch_Set) handle_patch_set(S, o);
       else if (o->body.otype == S->patch_Get) S->report = 1;
     }
-    /* stage 2: MIDI notes start voices */
   }
+  render(S, done, n);
   if (S->report) report_path(S);
   lv2_atom_forge_pop(&S->forge, &seq);
 
-  memset(S->out_l, 0, n * sizeof(float));
-  memset(S->out_r, 0, n * sizeof(float));
+  /* Level, ramped over the block so turning the knob does not click */
+  const float target = ctl(S, P_LEVEL, 0.8f);
+  const float start = S->level < 0.0f ? target : S->level;
+  const float step = n ? (target - start) / (float)n : 0.0f;
+  for (uint32_t i = 0; i < n; i++) {
+    const float a = start + step * (float)(i + 1);
+    S->out_l[i] *= a;
+    S->out_r[i] *= a;
+  }
+  S->level = target;
+
   if (S->status_out) *S->status_out = (float)S->status;
   if (S->seconds_out) *S->seconds_out = S->sample ? (float)(S->sample->frames / S->sample->rate) : 0.0f;
+  write_monitors(S);
 }
 
 static void cleanup(LV2_Handle h) {
@@ -261,6 +346,7 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
   gs_sample_free(S->sample);
   S->sample = s;
   S->status = s ? ST_LOADED : (err ? ST_ERROR : ST_EMPTY);
+  use_sample(S);
   S->report = 1;                                     /* tell the host the restored path */
   return LV2_STATE_SUCCESS;
 }

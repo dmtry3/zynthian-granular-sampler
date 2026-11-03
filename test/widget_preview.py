@@ -80,20 +80,31 @@ class PathCtrl:
         self.value = str(v)
 
 
+class NumCtrl:
+    def __init__(self, sym, value):
+        self.symbol, self.value = sym, value
+
+
 class Engine:
     def __init__(self):
         self.status = 0
         self.seconds = 0.0
+        self.playhead = -1.0
+        self.grains = []
 
     def get_monitors_dict(self):
-        return {"status": float(self.status), "seconds": float(self.seconds)}
+        m = {"status": float(self.status), "seconds": float(self.seconds), "playhead": float(self.playhead)}
+        for i in range(16):
+            m["grain%d" % (i + 1)] = float(self.grains[i]) if i < len(self.grains) else -1.0
+        return m
 
 
 class Processor:
     def __init__(self):
         self.engine = Engine()
         self.id = 1
-        self.controllers_dict = {"sample": PathCtrl("sample")}
+        self.controllers_dict = {"sample": PathCtrl("sample"),
+                                 "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0)}
 
 
 class Control:
@@ -160,9 +171,20 @@ def main():
             root.after(500, done)
         sample.on_select = select
 
-        def tick():
+        import random
+
+        def tick():                       # a fake voice: playhead runs, grains around it
+            if proc.engine.status == 2:
+                pos = proc.controllers_dict["position"].value / 100.0
+                win = proc.controllers_dict["window"].value / 100.0
+                ph = proc.engine.playhead if proc.engine.playhead >= 0 else pos
+                ph = pos + ((ph - pos + 0.005) % max(win, 0.001))
+                proc.engine.playhead = ph % 1.0
+                proc.engine.grains = [(ph + random.uniform(-0.03, 0.03)) % 1.0 for _ in range(10)]
             wdg.update()
             root.after(50, tick)
+        proc.controllers_dict["position"].value = 30.0
+        proc.controllers_dict["window"].value = 50.0
         tick()
         root.mainloop()
         return 0
@@ -209,6 +231,33 @@ def main():
     proc.engine.status, proc.engine.seconds = 2, 6.0
     pump(lambda: False, 0.05)
     check("status from the plugin: loaded, length", info() == "test_pad  6.0 s")
+
+    # zone, playhead and grain marks
+    proc.controllers_dict["position"].value = 25.0
+    proc.controllers_dict["window"].value = 50.0
+    proc.engine.playhead = 0.5
+    proc.engine.grains = [0.4, 0.6]
+    pump(lambda: False, 0.05)
+    zones = [i for i in c.find_withtag("zone") if c.type(i) == "rectangle"]
+    W = wdg.width
+    check("window zone from Position 25 % to 75 %", len(zones) == 1 and
+          abs(c.coords(zones[0])[0] - 0.25 * W) < 1 and abs(c.coords(zones[0])[2] - 0.75 * W) < 1)
+    marks = wdg.marks
+    shown = [m for m in marks if c.itemcget(m, "state") != "hidden"]
+    check("playhead and 2 grain marks shown", len(shown) == 3 and abs(c.coords(marks[0])[0] - 0.5 * W) < 1)
+    check("marks above the waveform", c.find_all().index(marks[0]) > c.find_all().index(polys[0]) if
+          polys[0] in c.find_all() else False)
+    proc.controllers_dict["position"].value = 80.0                     # 80 % + 50 % wraps past the end
+    proc.engine.grains = []
+    pump(lambda: False, 0.05)
+    zones = [i for i in c.find_withtag("zone") if c.type(i) == "rectangle"]
+    check("zone past the end wraps to the start", len(zones) == 2)
+    check("marks reused, not recreated", wdg.marks is marks and
+          len([m for m in marks if c.itemcget(m, "state") != "hidden"]) == 1)
+    proc.controllers_dict["position"].value = 0.0
+    proc.controllers_dict["window"].value = 100.0
+    proc.engine.playhead = -1.0
+    pump(lambda: False, 0.05)
 
     # redraws do not rebuild the waveform (it is drawn once per file and size)
     before = c.find_withtag("wave")
