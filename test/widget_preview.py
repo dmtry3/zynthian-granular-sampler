@@ -83,6 +83,11 @@ class PathCtrl:
 class NumCtrl:
     def __init__(self, sym, value):
         self.symbol, self.value = sym, value
+        self.writes = 0
+
+    def set_value(self, v, send=True):
+        self.value = v
+        self.writes += 1
 
 
 class Engine:
@@ -104,7 +109,13 @@ class Processor:
         self.engine = Engine()
         self.id = 1
         self.controllers_dict = {"sample": PathCtrl("sample"),
-                                 "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0)}
+                                 "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0),
+                                 "shape": NumCtrl("shape", 67.0), "size": NumCtrl("size", 100.0),
+                                 "density": NumCtrl("density", 20.0),
+                                 "mode": NumCtrl("mode", 0), "voices": NumCtrl("voices", 8)}
+
+    def v(self, sym):
+        return self.controllers_dict[sym].value
 
 
 class Control:
@@ -311,6 +322,72 @@ def main():
     sample.value = "/no/such/file.wav"
     pump(lambda: wdg.peaks_path == "/no/such/file.wav")
     check("quick change: the last file wins", wdg.peaks == [] and wdg.loading_path is None)
+
+    # ---------- tabs ----------
+    class Tap:
+        def __init__(self, x, y):
+            self.x, self.y = x, y
+
+    sample.value = PAD
+    proc.engine.status = 2
+    pump(lambda: wdg.peaks_path == PAD)
+    img_before = wdg.wave_img
+    check("two tabs: Wave and Grain", len(wdg.tab_boxes) == 2 and wdg.tab == 0)
+    nudges = sample.nudges
+    hh = wdg._header_h()
+    x0, x1 = wdg.tab_boxes[1]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("tap on the Grain tab switches to it, not the file selector",
+          wdg.tab == 1 and sample.nudges == nudges)
+    check("Grain tab: no waveform and no marks", not c.find_withtag("wave") and not c.find_withtag("marks"))
+    lines = [i for i in c.find_withtag("grain") if c.type(i) == "line"]
+    check("Grain tab: window shape curve", len(lines) == 1 and len(c.coords(lines[0])) == 2 * 65)
+
+    def curve_mid_y():
+        ln = [i for i in c.find_withtag("grain") if c.type(i) == "line"][0]
+        co = c.coords(ln)
+        return co[65], co[1]            # y at x = 0.5, y at x = 0
+    bell_mid, _ = curve_mid_y()
+    proc.controllers_dict["shape"].value = 0.0           # square
+    pump(lambda: False, 0.05)
+    sq_mid, sq_start = curve_mid_y()
+    proc.controllers_dict["shape"].value = 100.0 / 3     # decay: low in the middle
+    pump(lambda: False, 0.05)
+    dc_mid, _ = curve_mid_y()
+    check("shape curve follows the Shape knob (square high, decay low in the middle)",
+          abs(sq_mid - bell_mid) < 2 and dc_mid > bell_mid + 20 and sq_start > sq_mid)
+
+    def press_button(sym, value):
+        for bx0, by0, bx1, by1, s_, v_ in wdg.buttons:
+            if s_ == sym and v_ == value:
+                wdg._on_press(Tap((bx0 + bx1) / 2, (by0 + by1) / 2))
+                return True
+        return False
+    check("voices buttons 1..8 in Poly", len([b for b in wdg.buttons if b[4] == "voices"]) == 8)
+    press_button("voices", 4)
+    check("tap on voices 4 sets voices = 4", proc.v("voices") == 4)
+    press_button("mode", 1)
+    check("tap on Mono sets mode = 1", proc.v("mode") == 1)
+    check("in Mono the voices buttons are disabled", not [b for b in wdg.buttons if b[4] == "voices"])
+    writes = proc.controllers_dict["voices"].writes
+    press_button("voices", 2)
+    check("tap on a disabled voices button does nothing", proc.controllers_dict["voices"].writes == writes)
+    press_button("mode", 0)
+    check("back to Poly", proc.v("mode") == 0 and len([b for b in wdg.buttons if b[4] == "voices"]) == 8)
+    items = c.find_withtag("grain")
+    pump(lambda: False, 0.1)
+    check("Grain tab not redrawn when nothing changed", c.find_withtag("grain") == items)
+
+    x0, x1 = wdg.tab_boxes[0]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    proc.engine.playhead = 0.3
+    pump(lambda: False, 0.05)
+    check("back to Wave: the same waveform image, not rebuilt; marks shown",
+          wdg.tab == 0 and wdg.wave_img is img_before and wave_drawn() and
+          c.itemcget(wdg.marks[0], "state") == "normal")
+    wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
+    check("tap on the waveform still opens the file selector", sample.nudges == nudges + 1)
 
     # Zynthian calls update() every 32 ms: the widget asks for monitors only every UPDATE_PERIOD
     mod.UPDATE_PERIOD = throttle
