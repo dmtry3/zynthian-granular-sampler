@@ -24,7 +24,8 @@
 # Mod:
 # - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
 #   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
-# - LFO 1/2: a tap changes the shape, Free/Key sync; Env 1/2 shape and Mod Depth: finger up/down.
+# - LFO 1/2: a tap changes the shape; the sync button: a tap = Free / Key / Tempo, in Tempo finger up/down
+#   picks the cycle length (4 bars .. 1/32); Env 1/2 shape and Mod Depth: finger up/down.
 # Tabs and knob pages go together: a tap on a tab selects its knob page (Wave -> Position, Grain, Pitch,
 # Filter, Mod) through Zynthian's control screen; turning to such a page shows its tab.
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
@@ -53,6 +54,9 @@ MOD_SRCS = [("lfo1", "LFO1"), ("lfo2", "LFO2"), ("env1", "Env1"), ("env2", "Env2
 MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", "Size"), ("density", "Dens"),
             ("pitch", "Pitch"), ("pan", "Pan"), ("level", "Lvl"), ("cutoff", "Cut")]
 LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
+LFO_SYNCS = ["Free", "Key", "Tempo"]
+LFO_DIVS = ["4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
+DIV_PX = 12                     # px of finger movement per tempo division
 TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod"]   # knob page (port group) of each tab
 MOD_DSTS_SHORT = ["Pos", "Scn", "Spr", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
 MOD_POS = (77, 171, 247)        # positive cells: blue
@@ -817,7 +821,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
 
     def _draw_mod_side(self):
         vals = tuple(int(round(self._zval(b[0], 0))) for b in self._side_boxes())
-        key = (vals, self.width, self.height)
+        divs = (int(round(self._zval("lfo1_div", 4))), int(round(self._zval("lfo2_div", 4))))
+        key = (vals, divs, self.width, self.height)
         if key == self.mod_side:
             return
         self.mod_side = key
@@ -829,10 +834,14 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         for (sym, kind, x0, y0, x1, y1, label), v in zip(self._side_boxes(), vals):
             c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=BUTTON_OFF, tags="modside")
             if kind == "sync":
-                on = v == 1
+                on = v >= 1
+                if v == 2:
+                    text = "\u2669 " + LFO_DIVS[min(max(divs[0 if sym == "lfo1_sync" else 1], 0), len(LFO_DIVS) - 1)]
+                else:
+                    text = LFO_SYNCS[min(max(v, 0), 1)]
                 c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=(BUTTON_ON if on else BUTTON_OFF),
                                    tags="modside")
-                c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=("Key" if on else "Free"), tags="modside",
+                c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=text, tags="modside",
                               fill=("#000000" if on else tx), font=(fam, fsmall))
                 continue
             # label and value on top, a picture of the shape below
@@ -871,7 +880,13 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     if kind == "shape":
                         self._zset(bsym, (int(round(self._zval(bsym, 0))) + 1) % len(LFO_SHAPES))
                     elif kind == "sync":
-                        self._zset(bsym, 1 - int(round(self._zval(bsym, 0))))
+                        # a tap (no movement, see _on_release) cycles Free/Key/Tempo; in Tempo a drag sets the division
+                        dsym = bsym.replace("_sync", "_div")
+                        self.sync_press = (bsym, event.y)
+                        if int(round(self._zval(bsym, 0))) == 2:
+                            self.drag = (dsym, int(round(self._zval(dsym, 4))), event.y, 0, len(LFO_DIVS) - 1,
+                                         1.0 / DIV_PX)    # finger up = shorter cycle, faster
+                        return
                     else:
                         sym = bsym
                     break
@@ -900,6 +915,11 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
 
     def _on_release(self, event):
         self.drag = None
+        sp = getattr(self, "sync_press", None)
+        self.sync_press = None
+        if sp and (event is None or abs(event.y - sp[1]) < 6):      # a tap on a sync button: next mode
+            self._zset(sp[0], (int(round(self._zval(sp[0], 0))) + 1) % len(LFO_SYNCS))
+            self.refresh_gui()
 
     # ---------- Filter tab ----------
     DB_TOP, DB_BOTTOM = 30.0, -42.0

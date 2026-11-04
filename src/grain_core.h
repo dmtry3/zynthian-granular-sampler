@@ -56,6 +56,8 @@ enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SPRAY, GC_DST_SIZE, GC_DST_DENSI
 #define GC_MOD_PAN      0.5f
 #define GC_MOD_CUTOFF   5.0f   /* octaves */
                                /* Level: gain 1 + m, 0..2 */
+enum { GC_SYNC_FREE = 0, GC_SYNC_KEY, GC_SYNC_TEMPO };   /* LFO: own phase per voice / reset per note / beats */
+#define GC_NDIVS 11   /* tempo LFO cycle lengths, see gc_div_beats */
 enum { GC_LFO_SINE = 0, GC_LFO_TRI, GC_LFO_SAW_UP, GC_LFO_SAW_DOWN, GC_LFO_SQUARE, GC_LFO_SH, GC_LFO_SMOOTH,
        GC_NLFO_SHAPES };
 
@@ -137,6 +139,7 @@ typedef struct {
   /* modulation sources of this voice: every voice has its own LFOs and envelopes */
   float lfo_ph[2];        /* 0..1 */
   float lfo_a[2], lfo_b[2];  /* random LFO shapes: from, to (one step per cycle) */
+  int64_t lfo_cycle[2];   /* tempo sync: number of the current cycle (a new one = new random step) */
   float env_t[2];         /* s since the note started */
   float rnd;              /* the newest grain's Random (-1..1), held for the continuous destinations */
   float src[GC_NSRC];     /* source values in this block */
@@ -173,7 +176,10 @@ typedef struct {
   int mod_list[GC_NSRC * GC_NDST], nmod;   /* non-zero cells: empty ones cost nothing */
   float mod_depth;        /* 0..1: the whole grid */
   float modwheel;         /* CC 1, 0..1 */
-  int lfo_shape[2], lfo_keysync[2];        /* keysync: phase 0 on each note, else free (voices differ) */
+  int lfo_shape[2], lfo_sync[2];           /* GC_SYNC_*: free (voices differ), key (phase 0 per note), tempo */
+  int lfo_div[2];                          /* tempo: cycle length, index into gc_div_beats */
+  double beat;                             /* tempo clock in beats (song position when the transport rolls) */
+  float bpm;
   float env_shape[2];     /* 0 = all decay .. 1 = all attack (then holds) */
   float win_gain[GC_SHAPES];               /* loudness compensation of each window (bell = 1) */
   float win[GC_SHAPES][GC_WIN + 1];
@@ -204,7 +210,12 @@ float gc_snap(const GrainCore* g, float semis);
 void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount);   /* -1..1 */
 void gc_set_mod_depth(GrainCore* g, float depth);                     /* 0..1 */
 void gc_set_modwheel(GrainCore* g, float value);                      /* 0..1 */
-void gc_set_lfo(GrainCore* g, int i, int shape, int keysync);
+void gc_set_lfo(GrainCore* g, int i, int shape, int sync);       /* sync: GC_SYNC_* */
+void gc_set_lfo_div(GrainCore* g, int i, int div);               /* 0..GC_NDIVS-1 */
+/* Tempo for synced LFOs; beat >= 0 sets the position (transport rolling), < 0 keeps the clock running. */
+void gc_set_tempo(GrainCore* g, float bpm, double beat);
+extern const float gc_div_beats[GC_NDIVS];
+extern const char* const gc_div_names[GC_NDIVS];
 void gc_set_env(GrainCore* g, int i, float shape);
 float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */
 float gc_env_value(float shape, float t, float time);                 /* 0..1 */

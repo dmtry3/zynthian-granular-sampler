@@ -122,3 +122,9 @@
     rdfs:label "Drums Env Size and Pitch" ;
     rdfs:seeAlso <presets.ttl> .
 
+<urn:granularsampler:sampler#preset_pad_tempo>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Tempo Gate" ;
+    rdfs:seeAlso <presets.ttl> .
+

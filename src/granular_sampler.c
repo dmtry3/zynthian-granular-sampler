@@ -8,6 +8,7 @@
 #include <lv2/atom/util.h>
 #include <lv2/midi/midi.h>
 #include <lv2/patch/patch.h>
+#include <lv2/time/time.h>
 #include <lv2/state/state.h>
 #include <lv2/urid/urid.h>
 #include <lv2/worker/worker.h>
@@ -42,14 +43,15 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
-  { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 }, { 0, 0, 1 }, { 0, 0, 1 },
-  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 } };
+  { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
+  { GC_SYNC_FREE, 0, GC_SYNC_TEMPO }, { GC_SYNC_FREE, 0, GC_SYNC_TEMPO },
+  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 } };
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
   "pan", "level", "cutoff" };
@@ -84,6 +86,8 @@ typedef struct {
   LV2_Worker_Schedule* sched;
   LV2_Atom_Forge forge;
   LV2_URID midi_Event, atom_Object, atom_Path, atom_String, atom_URID;
+  LV2_URID time_Position, time_bpm, time_speed, time_bar, time_barBeat, time_bpb;
+  int bpb;                     /* beats per bar from the host */
   LV2_URID patch_Set, patch_Get, patch_property, patch_value, p_sample;
   LV2_URID atom_Int, atom_Float, atom_Double, atom_Long;
 
@@ -166,6 +170,13 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
   if (!S->map || !S->sched) { free(S); return NULL; }
   LV2_URID_Map* m = S->map;
   S->midi_Event     = m->map(m->handle, LV2_MIDI__MidiEvent);
+  S->time_Position  = m->map(m->handle, LV2_TIME__Position);
+  S->time_bpm       = m->map(m->handle, LV2_TIME__beatsPerMinute);
+  S->time_speed     = m->map(m->handle, LV2_TIME__speed);
+  S->time_bar       = m->map(m->handle, LV2_TIME__bar);
+  S->time_barBeat   = m->map(m->handle, LV2_TIME__barBeat);
+  S->time_bpb       = m->map(m->handle, LV2_TIME__beatsPerBar);
+  S->bpb = 4;
   S->atom_Object    = m->map(m->handle, LV2_ATOM__Object);
   S->atom_Path      = m->map(m->handle, LV2_ATOM__Path);
   S->atom_String    = m->map(m->handle, LV2_ATOM__String);
@@ -296,6 +307,8 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_ENV2_SHAPE: gc_set_env(&S->core, 1, ip[IP_ENV2_SHAPE] * 0.01f); break;
     case IP_MOD_DEPTH: gc_set_mod_depth(&S->core, ip[IP_MOD_DEPTH] * 0.01f); break;
     case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
+    case IP_LFO1_DIV: gc_set_lfo_div(&S->core, 0, ip[IP_LFO1_DIV]); break;
+    case IP_LFO2_DIV: gc_set_lfo_div(&S->core, 1, ip[IP_LFO2_DIV]); break;
     default: {
       const int c = i - IP_CELL0;
       gc_set_mod_cell(&S->core, c / GC_NDST, c % GC_NDST, ip[i] * 0.01f);
@@ -375,6 +388,28 @@ static void read_params(Sampler* S) {
   p->env_time[1] = ctl(S, P_ENV2_TIME, 2.0f);
 }
 
+static double atom_num(const Sampler* S, const LV2_Atom* a, double def) {
+  if (!a) return def;
+  if (a->type == S->atom_Float) return ((const LV2_Atom_Float*)a)->body;
+  if (a->type == S->atom_Double) return ((const LV2_Atom_Double*)a)->body;
+  if (a->type == S->atom_Long) return (double)((const LV2_Atom_Long*)a)->body;
+  if (a->type == S->atom_Int) return ((const LV2_Atom_Int*)a)->body;
+  return def;
+}
+
+/* Host transport (as in Generative Arp): tempo always; the song position in beats while it rolls.
+ * Stopped, the engine's beat clock keeps running at the tempo. */
+static void handle_position(Sampler* S, const LV2_Atom_Object* obj) {
+  const LV2_Atom *bpm = NULL, *speed = NULL, *bar = NULL, *bb = NULL, *bpb = NULL;
+  lv2_atom_object_get(obj, S->time_bpm, &bpm, S->time_speed, &speed, S->time_bar, &bar,
+                      S->time_barBeat, &bb, S->time_bpb, &bpb, 0);
+  if (bpb) { const int v = (int)lrint(atom_num(S, bpb, 4)); if (v >= 1 && v <= 16) S->bpb = v; }
+  const float tempo = (float)atom_num(S, bpm, 0.0);
+  const int rolling = speed && atom_num(S, speed, 0.0) != 0.0;
+  const double beat = rolling && bar && bb ? atom_num(S, bar, 0) * S->bpb + atom_num(S, bb, 0) : -1.0;
+  gc_set_tempo(&S->core, tempo, beat);
+}
+
 static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
   const uint8_t* b = (const uint8_t*)LV2_ATOM_BODY_CONST(&ev->body);
   if (ev->body.size < 3) return;
@@ -430,7 +465,8 @@ static void run(LV2_Handle h, uint32_t n) {
     if (ev->body.type == S->midi_Event) handle_midi(S, ev);
     else if (ev->body.type == S->atom_Object) {
       const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
-      if (o->body.otype == S->patch_Set) handle_patch_set(S, o);
+      if (o->body.otype == S->time_Position) handle_position(S, o);
+      else if (o->body.otype == S->patch_Set) handle_patch_set(S, o);
       else if (o->body.otype == S->patch_Get) S->report_next = 0;
     }
   }

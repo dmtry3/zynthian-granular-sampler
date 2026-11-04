@@ -994,6 +994,51 @@ static void test_mod_voices(void) {
   free_src(&s);
 }
 
+/* tempo-synced LFOs: phase from the beat clock, the same in every voice */
+static void test_lfo_tempo(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PAN, 0.5f);
+  gc_set_lfo(&G, 0, GC_LFO_SAW_UP, GC_SYNC_TEMPO);
+  gc_set_lfo_div(&G, 0, 4);                         /* 1/4: one cycle per beat */
+  CHECK(!strcmp(gc_div_names[4], "1/4") && gc_div_beats[2] == 4.0f);
+  gc_set_tempo(&G, 120.0f, 10.25);                  /* transport: beat 10.25 */
+  gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 67, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].lfo_ph[0] - 0.25f) < 1e-4f);              /* from the song position */
+  CHECK(G.voices[0].src[GC_SRC_LFO1] == G.voices[1].src[GC_SRC_LFO1]);  /* chords move together */
+  CHECK(fabs(G.beat - (10.25 + 120.0 / 60.0 * GC_BLOCK / SR)) < 1e-9);
+  run(&p, 1.0, NULL);                               /* 1 s at 120 BPM: 2 beats */
+  CHECK(fabs(G.beat - (10.25 + 2.0 + 120.0 / 60.0 * GC_BLOCK / SR)) < 1e-2);   /* run() rounds to periods */
+  /* the clock goes on in silence (the phase must not jump at the next note) */
+  gc_all_off(&G);
+  const double b0 = G.beat;
+  run(&p, 0.5, NULL);
+  CHECK(fabs(G.beat - b0 - 1.0) < 1e-2);
+  /* S&H on 1/8: one new value per eighth = 4 per second at 120 BPM */
+  gc_set_lfo(&G, 0, GC_LFO_SH, GC_SYNC_TEMPO);
+  gc_set_lfo_div(&G, 0, 6);
+  gc_set_tempo(&G, 120.0f, 0.01);
+  gc_note_on(&G, &p, 60, 100);
+  float prev = 9.0f;
+  int changes = 0;
+  for (int k = 0; k < SR / GC_BLOCK; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    if (G.voices[0].src[GC_SRC_LFO1] != prev) { changes++; prev = G.voices[0].src[GC_SRC_LFO1]; }
+  }
+  CHECK(changes >= 4 && changes <= 5);
+  /* tempo change: 60 BPM halves the speed; out-of-range tempo is ignored */
+  gc_set_tempo(&G, 60.0f, -1.0);
+  const double b1 = G.beat;
+  run(&p, 1.0, NULL);
+  CHECK(fabs(G.beat - b1 - 1.0) < 1e-2);
+  gc_set_tempo(&G, 5000.0f, -1.0);
+  CHECK(G.bpm == 60.0f);
+  free_src(&s);
+}
+
 int main(void) {
   test_windows();
   test_silence();
@@ -1022,6 +1067,7 @@ int main(void) {
   test_mod_grid();
   test_mod_dest();
   test_mod_voices();
+  test_lfo_tempo();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

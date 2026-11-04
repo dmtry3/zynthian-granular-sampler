@@ -97,6 +97,8 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   g->sr = sr;
   g->rng = seed ? seed : 0x9E3779B9u;
   g->mod_depth = 1.0f;
+  g->bpm = 120.0f;
+  g->lfo_div[0] = g->lfo_div[1] = 4;       /* 1/4 */
   g->env_shape[0] = g->env_shape[1] = 0.1f;
   for (int i = 0; i < GC_VOICES; i++) {
     GcVoice* v = &g->voices[i];
@@ -148,10 +150,23 @@ void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount) {
 }
 void gc_set_mod_depth(GrainCore* g, float depth) { g->mod_depth = clampf(depth, 0.0f, 1.0f); }
 void gc_set_modwheel(GrainCore* g, float value) { g->modwheel = clampf(value, 0.0f, 1.0f); }
-void gc_set_lfo(GrainCore* g, int i, int shape, int keysync) {
+void gc_set_lfo(GrainCore* g, int i, int shape, int sync) {
   if (i < 0 || i > 1) return;
   g->lfo_shape[i] = shape < 0 || shape >= GC_NLFO_SHAPES ? GC_LFO_SINE : shape;
-  g->lfo_keysync[i] = keysync ? 1 : 0;
+  g->lfo_sync[i] = sync < GC_SYNC_FREE || sync > GC_SYNC_TEMPO ? GC_SYNC_FREE : sync;
+}
+
+/* Tempo LFO cycle lengths in beats (quarter notes): 4 bars .. 1/32, with triplets */
+const float gc_div_beats[GC_NDIVS] = { 16.0f, 8.0f, 4.0f, 2.0f, 1.0f, 2.0f / 3.0f, 0.5f, 1.0f / 3.0f, 0.25f,
+                                       1.0f / 6.0f, 0.125f };
+const char* const gc_div_names[GC_NDIVS] = { "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T",
+                                             "1/16", "1/16T", "1/32" };
+void gc_set_lfo_div(GrainCore* g, int i, int div) {
+  if (i >= 0 && i <= 1) g->lfo_div[i] = div < 0 || div >= GC_NDIVS ? 4 : div;
+}
+void gc_set_tempo(GrainCore* g, float bpm, double beat) {
+  if (bpm >= 20.0f && bpm <= 400.0f) g->bpm = bpm;
+  if (beat >= 0.0) g->beat = beat;
 }
 void gc_set_env(GrainCore* g, int i, float shape) {
   if (i >= 0 && i <= 1) g->env_shape[i] = clampf(shape, 0.0f, 1.0f);
@@ -199,9 +214,18 @@ static void voice_mod(GrainCore* g, const GcParams* p, GcVoice* v, int m) {
   }
   const float dt = (float)m / g->sr;
   for (int k = 0; k < 2; k++) {
-    v->lfo_ph[k] += clampf(p->lfo_rate[k], GC_LFO_MIN, GC_LFO_MAX) * dt;
-    if (v->lfo_ph[k] >= 1.0f) {                 /* a new cycle: next random step */
-      v->lfo_ph[k] -= floorf(v->lfo_ph[k]);
+    int new_cycle = 0;
+    if (g->lfo_sync[k] == GC_SYNC_TEMPO) {      /* phase from the beat clock: every voice the same */
+      const double c = g->beat / (double)gc_div_beats[g->lfo_div[k]];
+      const int64_t n = (int64_t)floor(c);
+      v->lfo_ph[k] = (float)(c - (double)n);
+      new_cycle = n != v->lfo_cycle[k];
+      v->lfo_cycle[k] = n;
+    } else {
+      v->lfo_ph[k] += clampf(p->lfo_rate[k], GC_LFO_MIN, GC_LFO_MAX) * dt;
+      if (v->lfo_ph[k] >= 1.0f) { v->lfo_ph[k] -= floorf(v->lfo_ph[k]); new_cycle = 1; }
+    }
+    if (new_cycle) {                            /* a new cycle: next random step */
       v->lfo_a[k] = v->lfo_b[k];
       v->lfo_b[k] = rnd(g) * 2.0f - 1.0f;
       if (g->lfo_shape[k] == GC_LFO_SH) v->lfo_a[k] = v->lfo_b[k];
@@ -289,7 +313,7 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
   }
   for (int k = 0; k < 2; k++) {
     v->env_t[k] = 0.0f;                    /* Env 1/2 start with the note */
-    if (g->lfo_keysync[k]) v->lfo_ph[k] = 0.0f;
+    if (g->lfo_sync[k] == GC_SYNC_KEY) v->lfo_ph[k] = 0.0f;
   }
   voice_set_note(g, v, note);             /* before the stage changes: a fresh voice does not glide */
   v->stage = GC_V_ATTACK;
@@ -659,7 +683,8 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
   memset(out_l, 0, n * sizeof(float));
   memset(out_r, 0, n * sizeof(float));
   const int have = g->src.frames[0] > 0;
-  if (!have && !g->nactive && !gc_active_voices(g)) return;
+  const double beats_per_sample = (double)g->bpm / (60.0 * (double)g->sr);
+  if (!have && !g->nactive && !gc_active_voices(g)) { g->beat += beats_per_sample * n; return; }
   const double wstart = have ? window_start(g, p) : 0.0, wlen = have ? window_len(g, p) : 1.0;
   float scan = clampf(p->scan, -GC_SCAN_MAX, GC_SCAN_MAX);
   if (fabsf(scan) < GC_SCAN_DEAD) scan = 0.0f;
@@ -704,6 +729,7 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
       e1[vi] = voice_env_end(g, p, v, m, &done[vi]);
       v->env = e1[vi];
     }
+    g->beat += beats_per_sample * m;             /* tempo clock: once per block, after the voices read it */
     if (!any && !g->nactive) continue;
     memset(g->vbuf, 0, sizeof g->vbuf);
 

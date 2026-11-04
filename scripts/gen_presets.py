@@ -21,7 +21,7 @@ SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
 DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"]
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100),
-                ("glide", 0)] + \
+                ("glide", 0), ("lfo1_div", 4), ("lfo2_div", 4)] + \
                [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS]
 PARAM_DEFAULTS = dict([("sample", "test_pad.wav")] + INT_DEFAULTS)   # voices 1 mono, 0 legato
 SINE, TRI, SAW_UP, SAW_DOWN, SQUARE_LFO, SH, SMOOTH = range(7)
@@ -90,6 +90,11 @@ PRESETS = [
      {"window": 50, "size": 60, "density": 20, "shape": SQUARE, "release": 600, "env1_time": 1.5, "env2_time": 0.8},
      {"sample": "test_drums.wav", "env1_shape": 0, "env2_shape": 0, "m_env1_size": 60, "m_env2_pitch": -25,
       "m_wheel_density": 50}),
+    ("pad_tempo", "Pad Tempo Gate",
+     {"scan": 20, "size": 200, "density": 40, "chaos": 30, "spread": 50, "attack": 50, "release": 1500,
+      "cutoff": 1200, "resonance": 30},
+     {"lfo1_shape": SQUARE_LFO, "lfo1_sync": 2, "lfo1_div": 6, "m_lfo1_level": -80,
+      "lfo2_shape": SAW_UP, "lfo2_sync": 2, "lfo2_div": 2, "m_lfo2_cutoff": 40}),
 ]
 
 

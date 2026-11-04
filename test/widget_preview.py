@@ -122,6 +122,7 @@ class Processor:
                                  "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
+                       ("lfo1_div", 4), ("lfo2_div", 4),
                        ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
@@ -568,6 +569,32 @@ def main():
     check("shape wraps around after Smooth", proc.v("lfo1_shape") == 0)
     tap_box("lfo2_sync")
     check("tap on LFO 2 sync: Key", proc.v("lfo2_sync") == 1)
+    tap_box("lfo2_sync")
+    check("next tap: Tempo", proc.v("lfo2_sync") == 2)
+
+    def sync_label(sym):
+        b = boxes[sym]
+        for t in c.find_withtag("modside"):
+            if c.type(t) == "text":
+                x, y = c.coords(t)
+                if b[2] <= x <= b[4] and b[3] <= y <= b[5]:
+                    return c.itemcget(t, "text")
+    check("Tempo shows the division (1/4)", sync_label("lfo2_sync").endswith("1/4"))
+    b = boxes["lfo2_sync"]
+    bx, by = (b[2] + b[4]) / 2, (b[3] + b[5]) / 2
+    wdg._on_press(Tap(bx, by)); wdg._on_motion(Tap(bx, by - 24)); wdg._on_release(Tap(bx, by - 24))
+    pump(lambda: False, 0.05)
+    check("finger up 24 px in Tempo: two divisions faster (1/8), still Tempo",
+          proc.v("lfo2_div") == 6 and proc.v("lfo2_sync") == 2 and sync_label("lfo2_sync").endswith("1/8"))
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    tap_box("lfo2_sync")
+    check("tap in Tempo: back to Free", proc.v("lfo2_sync") == 0)
+    writes = proc.controllers_dict["lfo2_div"].writes
+    wdg._on_press(Tap(bx, by)); wdg._on_motion(Tap(bx, by - 40)); wdg._on_release(Tap(bx, by - 40))
+    check("a drag in Free changes nothing", proc.controllers_dict["lfo2_div"].writes == writes and
+          proc.v("lfo2_sync") == 0)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    tap_box("lfo2_sync")
     b = boxes["env1_shape"]
     drag((b[2] + b[4]) / 2, (b[3] + b[5]) / 2, 45)
     check("Env 1 shape: finger up 45 px = +30", proc.v("env1_shape") == 40)

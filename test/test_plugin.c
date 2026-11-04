@@ -93,6 +93,20 @@ static void in_midi(uint32_t frame, uint8_t st, uint8_t d1, uint8_t d2) {
   lv2_atom_forge_atom(&forge, 3, U("http://lv2plug.in/ns/ext/midi#MidiEvent"));
   lv2_atom_forge_write(&forge, msg, 3);
 }
+static void in_position(float bpm, float speed, long bar, float bar_beat) {
+  LV2_Atom_Forge_Frame f;
+  lv2_atom_forge_frame_time(&forge, 0);
+  lv2_atom_forge_object(&forge, &f, 0, U("http://lv2plug.in/ns/ext/time#Position"));
+  lv2_atom_forge_key(&forge, U("http://lv2plug.in/ns/ext/time#beatsPerMinute"));
+  lv2_atom_forge_float(&forge, bpm);
+  lv2_atom_forge_key(&forge, U("http://lv2plug.in/ns/ext/time#speed"));
+  lv2_atom_forge_float(&forge, speed);
+  lv2_atom_forge_key(&forge, U("http://lv2plug.in/ns/ext/time#bar"));
+  lv2_atom_forge_long(&forge, bar);
+  lv2_atom_forge_key(&forge, U("http://lv2plug.in/ns/ext/time#barBeat"));
+  lv2_atom_forge_float(&forge, bar_beat);
+  lv2_atom_forge_pop(&forge, &f);
+}
 static void in_get(void) {
   LV2_Atom_Forge_Frame f;
   lv2_atom_forge_frame_time(&forge, 0);
@@ -251,7 +265,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 75);                                      /* the path and the 74 integer parameters */
+  CHECK(last_reports == 77);                                      /* the path and the 76 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -278,6 +292,8 @@ int main(int argc, char** argv) {
   in_set_float("urn:granularsampler:sampler#lfo2_shape", 5.0f);
   in_set_float("urn:granularsampler:sampler#mod_depth", 60.0f);
   in_set_float("urn:granularsampler:sampler#glide", 5000.0f);
+  in_set_float("urn:granularsampler:sampler#lfo1_sync", 2.0f);
+  in_set_float("urn:granularsampler:sampler#lfo2_div", 99.0f);
   in_get(); collect();
   CHECK(reported_int("urn:granularsampler:sampler#m_lfo1_pitch", -1) == 100);
   CHECK(reported_int("urn:granularsampler:sampler#m_env2_cutoff", 0) == -40);
@@ -286,6 +302,8 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#mod_depth", -1) == 60);
   CHECK(reported_int("urn:granularsampler:sampler#env2_shape", -1) == 50);    /* default */
   CHECK(reported_int("urn:granularsampler:sampler#glide", -1) == 2000);       /* clamped */
+  CHECK(reported_int("urn:granularsampler:sampler#lfo1_sync", -1) == 2);      /* Tempo */
+  CHECK(reported_int("urn:granularsampler:sampler#lfo2_div", -1) == 10);      /* 1/32 at most */
   in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -298,7 +316,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 75);                                               /* sample + 74 integer parameters */
+  CHECK(nst == 77);                                               /* sample + 76 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
@@ -325,6 +343,11 @@ int main(int argc, char** argv) {
   CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
   work_all(); run_once();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
+
+  /* transport positions (tempo-synced LFOs): rolling and stopped, parsed without trouble */
+  in_position(90.0f, 1.0f, 2, 1.5f); run_once();
+  in_position(140.0f, 0.0f, 0, 0.0f); run_once();
+  in_position(120.0f, 1.0f, 0, 0.0f); run_once();
 
   /* ---------- sound (stage 2) ---------- */
   CHECK(status == 2);                                             /* st.wav is loaded */
