@@ -30,13 +30,13 @@
     pprops:notOnGUI true ;
     lv2:portProperty pprops:notOnGUI .
 
-# Number of voices (1 = mono, legato): set in the widget (Grain tab), saved in the snapshot and in LV2 State.
+# Number of voices (1 = mono, 0 = mono with legato, shown as L): set in the widget (Grain tab), saved in the snapshot and in LV2 State.
 <urn:granularsampler:sampler#voices>
     a lv2:Parameter ;
     lv2:symbol "voices" ;
     rdfs:label "Voices" ;
     rdfs:range atom:Int ;
-    lv2:default 8 ; lv2:minimum 1 ; lv2:maximum 8 ;
+    lv2:default 8 ; lv2:minimum 0 ; lv2:maximum 8 ;
     pprops:notOnGUI true ;
     lv2:portProperty pprops:notOnGUI .
 

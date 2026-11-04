@@ -173,7 +173,7 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
-        <urn:granularsampler:sampler#voices> 1 ;
+        <urn:granularsampler:sampler#voices> 0 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
     ] .

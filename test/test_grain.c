@@ -403,7 +403,7 @@ static void test_steal(void) {
   Src s = make_src(SR, SR, 1, f_half);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  gc_set_voices(&G, 2);
+  gc_set_voices(&G, 2, 0);
   gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
   gc_note_on(&G, &p, 62, 100); run(&p, 0.05, NULL);
   gc_note_on(&G, &p, 64, 100);                      /* no free voice: the oldest (60) fades in 5 ms */
@@ -466,7 +466,7 @@ static void test_mono(void) {
   Src s = make_src(SR, SR, 1, f_half);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  gc_set_voices(&G, 1);                             /* one voice = mono */
+  gc_set_voices(&G, 1, 1);                          /* one voice, legato */
   gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
   const uint32_t age = G.voices[0].age;
   gc_note_on(&G, &p, 64, 100);                      /* legato: same voice, envelope goes on */
@@ -483,9 +483,38 @@ static void test_mono(void) {
   CHECK(G.voices[0].stage == GC_V_RELEASE);
   run(&p, 0.05, NULL);
   CHECK(gc_active_voices(&G) == 0);
-  gc_set_voices(&G, 8);                             /* back to poly */
+  gc_set_voices(&G, 8, 0);                             /* back to poly */
   gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100);
   CHECK(gc_active_voices(&G) == 2);
+  free_src(&s);
+}
+
+/* one voice without legato: every key starts the voice again, also on the way back to a held key */
+static void test_mono_retrigger(void) {
+  GcParams p = poly_params();
+  p.position = 0.25f; p.scan = 1.0f; p.attack_ms = 50;
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_voices(&G, 1, 0);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.1, NULL);
+  CHECK(G.voices[0].stage == GC_V_SUSTAIN && G.voices[0].playhead > 0.25 * SR + 0.09 * SR);
+  const uint32_t age = G.voices[0].age;
+  gc_note_on(&G, &p, 64, 100);
+  CHECK(gc_active_voices(&G) == 1 && G.voices[0].note == 64 && G.voices[0].age != age &&
+        G.voices[0].stage == GC_V_ATTACK && G.voices[0].env > 0.9f);   /* again, from the current level */
+  CHECK(fabs(G.voices[0].playhead - 0.25 * (SR - 1)) < 1.0);         /* reading from Position again */
+  run(&p, 0.1, NULL);
+  gc_note_off(&G, 64);                              /* back to 60, started again */
+  CHECK(G.voices[0].note == 60 && G.voices[0].restart == 1);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  /* started again: reading from Position; the attack rises from ~1, so it is over within this block */
+  CHECK(G.voices[0].restart == 0 && fabs(G.voices[0].playhead - (0.25 * (SR - 1) + GC_BLOCK)) < 1.0);
+  /* switching legato on and off keeps the sound (still one voice) */
+  gc_set_voices(&G, 1, 1);
+  CHECK(gc_active_voices(&G) == 1 && G.voices[0].gate);
+  gc_note_on(&G, &p, 67, 100);
+  CHECK(G.voices[0].note == 67 && G.voices[0].stage != GC_V_ATTACK);  /* legato now */
   free_src(&s);
 }
 
@@ -653,6 +682,7 @@ int main(void) {
   test_steal();
   test_envelope();
   test_mono();
+  test_mono_retrigger();
   test_spread();
   test_pitch();
   test_quantize();

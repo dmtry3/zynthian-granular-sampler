@@ -234,9 +234,12 @@ int main(int argc, char** argv) {
   in_set_float(P_VOICES, 99.0f); run_once();
   in_get(); run_once();
   CHECK(reported_int(P_VOICES, -1) == 8);
-  in_set_float(P_VOICES, 0.0f); run_once();
+  in_set_float(P_VOICES, 0.0f); run_once();                       /* 0 = one voice with legato (L) */
   in_get(); run_once();
-  CHECK(reported_int(P_VOICES, -1) == 1);
+  CHECK(reported_int(P_VOICES, -1) == 0);
+  in_set_float(P_VOICES, -3.0f); run_once();
+  in_get(); run_once();
+  CHECK(reported_int(P_VOICES, -1) == 0);
   in_set_float(P_SCALE, 2.0f); in_set_float(P_KEY, 14.0f); run_once();     /* minor; key clamped to B */
   in_get(); run_once();
   CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 11);
@@ -262,13 +265,13 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored values */
   CHECK(reported_int(P_VOICES, -1) == 3);
   CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 9);
-  /* a state of an older version with mode = Mono comes back as 1 voice */
+  /* a state of an older version with mode = Mono comes back as one voice with legato */
   {
     const int32_t mono = 1;
     store(NULL, U(P_MODE), &mono, sizeof mono, U(LV2_ATOM__Int), 0);
     CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
     run_once();
-    CHECK(reported_int(P_VOICES, -1) == 1);
+    CHECK(reported_int(P_VOICES, -1) == 0);                       /* old Mono was legato */
     nst--;                                                        /* drop it again */
   }
   in_set_float(P_VOICES, 8.0f); run_once();

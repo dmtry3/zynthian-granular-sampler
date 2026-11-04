@@ -78,9 +78,9 @@ typedef struct {
   atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
   int status;
   int report;                  /* tell the host the path and the integer parameters in the next run() */
-  /* integer LV2 parameters set in the widget: voices 1..8 (1 = mono, legato), scale, key */
+  /* integer LV2 parameters set in the widget: voices 0..8 (1 = mono, 0 = mono with legato), scale, key */
   LV2_URID ip_urid[N_IPARAMS];
-  LV2_URID p_mode_legacy;      /* "mode" of older versions: Mono (1) is restored as 1 voice */
+  LV2_URID p_mode_legacy;      /* "mode" of older versions: Mono (1) is restored as legato (0) */
   int ip[N_IPARAMS];
   double sr;
   float level;                 /* last applied level, ramped to the port value over a block */
@@ -262,10 +262,10 @@ static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v;
 
 /* Integer parameters into range, then into the engine. */
 static void apply_iparams(Sampler* S) {
-  S->ip[IP_VOICES] = clampi(S->ip[IP_VOICES], 1, GC_VOICES);
+  S->ip[IP_VOICES] = clampi(S->ip[IP_VOICES], 0, GC_VOICES);
   S->ip[IP_SCALE] = clampi(S->ip[IP_SCALE], 0, GC_NSCALES - 1);
   S->ip[IP_KEY] = clampi(S->ip[IP_KEY], 0, 11);
-  gc_set_voices(&S->core, S->ip[IP_VOICES]);
+  gc_set_voices(&S->core, S->ip[IP_VOICES] ? S->ip[IP_VOICES] : 1, S->ip[IP_VOICES] == 0);
   gc_set_scale(&S->core, S->ip[IP_KEY], S->ip[IP_SCALE]);
 }
 
@@ -477,7 +477,7 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
     if (iv && type == S->atom_Int && size >= sizeof(int32_t)) S->ip[i] = *(const int32_t*)iv;
   }
   const void* mv = retrieve(sh, S->p_mode_legacy, &size, &type, &vflags);
-  if (mv && type == S->atom_Int && size >= sizeof(int32_t) && *(const int32_t*)mv == 1) S->ip[IP_VOICES] = 1;
+  if (mv && type == S->atom_Int && size >= sizeof(int32_t) && *(const int32_t*)mv == 1) S->ip[IP_VOICES] = 0;
   apply_iparams(S);
   S->report = 1;                                     /* tell the host the restored values */
   return LV2_STATE_SUCCESS;

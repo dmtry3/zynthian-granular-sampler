@@ -12,7 +12,8 @@
 #   when they changed.
 # Grain:
 # - The window shape of the Shape knob (same formula as grain_core.c, after Mutable Instruments Beads),
-#   Size, Density and the mean overlap; the number of voices (LV2 parameter voices, 1 = mono with legato).
+#   Size, Density and the mean overlap; the number of voices (LV2 parameter voices 0..8): 1 = mono,
+#   a second tap on 1 makes it L = mono with legato (voices 0).
 # Pitch:
 # - One octave: notes of the Quantize scale lit, the tonic filled, sounding notes (outputs note1..8) dotted;
 #   a tap on a key sets the tonic (LV2 parameter key); scale buttons set the scale (LV2 parameter scale).
@@ -491,17 +492,21 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         overlap = dens * size / 1000.0
         c.create_text(right, py1 + 3, anchor="nw", tags="grain", fill=tx_off, font=(fam, fs),
                       text="%d ms  %.1f /s  overlap %.1f" % (round(size), dens, overlap))
-        # voices: 1 = mono with legato
+        # voices 1..8; the first button toggles 1 (mono) <-> L (mono with legato, voices = 0)
         self.buttons = []
         bh = self._button_h()
         y = py0
-        c.create_text(right, y, anchor="nw", text="Voices   (1 = mono, legato)", fill=tx_off,
+        c.create_text(right, y, anchor="nw", text="Voices   (tap 1 again: L = legato)", fill=tx_off,
                       font=(fam, fs), tags="grain")
         y += fs * 2
         bw = (w - pad - right) / float(MAX_VOICES)
         for i in range(MAX_VOICES):
             x0 = right + i * bw
-            self._button(x0, y, x0 + bw - 3, y + bh, str(i + 1), (i + 1) <= voices, True, "voices", i + 1)
+            if i == 0:
+                text, value = ("L", 1) if voices == 0 else ("1", 0 if voices == 1 else 1)
+            else:
+                text, value = str(i + 1), i + 1
+            self._button(x0, y, x0 + bw - 3, y + bh, text, (i + 1) <= max(voices, 1), True, "voices", value)
 
     def _button_h(self):
         """Button height from the font: text plus a small margin."""

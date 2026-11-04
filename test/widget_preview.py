@@ -377,10 +377,27 @@ def main():
           b0[3] - b0[1] <= wdg._header_h() * 1.5)
     press_button("voices", 4)
     check("tap on voices 4 sets voices = 4", proc.v("voices") == 4)
-    press_button("voices", 1)
-    check("tap on 1 sets one voice (mono)", proc.v("voices") == 1)
+    def tap_first_voice():
+        bx0, by0, bx1, by1 = [b for b in wdg.buttons if b[4] == "voices"][0][:4]
+        wdg._on_press(Tap((bx0 + bx1) / 2, (by0 + by1) / 2))
+
+    def first_label():
+        texts = [i for i in c.find_withtag("grain") if c.type(i) == "text"]
+        bx0, by0, bx1, by1 = [b for b in wdg.buttons if b[4] == "voices"][0][:4]
+        for t in texts:
+            x, y = c.coords(t)
+            if bx0 <= x <= bx1 and by0 <= y <= by1:
+                return c.itemcget(t, "text")
+        return None
+    tap_first_voice()
+    check("tap on 1 (from 4) sets one voice", proc.v("voices") == 1 and first_label() == "1")
+    tap_first_voice()
+    check("tap on 1 again: L = legato (voices 0)", proc.v("voices") == 0 and first_label() == "L")
+    tap_first_voice()
+    check("tap on L: back to 1", proc.v("voices") == 1 and first_label() == "1")
+    tap_first_voice()
     press_button("voices", 8)
-    check("back to 8 voices", proc.v("voices") == 8)
+    check("from L to 8 voices", proc.v("voices") == 8 and first_label() == "1")
     items = c.find_withtag("grain")
     pump(lambda: False, 0.1)
     check("Grain tab not redrawn when nothing changed", c.find_withtag("grain") == items)

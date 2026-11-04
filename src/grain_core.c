@@ -206,11 +206,11 @@ void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
     if (g->nheld == GC_HELD) { memmove(g->held, g->held + 1, sizeof(int) * (GC_HELD - 1)); g->nheld--; }
     g->held[g->nheld++] = note;
     GcVoice* v = &g->voices[0];
-    if (v->gate && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
+    if (g->legato && v->gate && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
       v->note = note;                     /* legato: new pitch for new grains, envelope and playhead go on */
       return;
     }
-    voice_start(g, p, 0, note, vel);
+    voice_start(g, p, 0, note, vel);      /* else: start again, the envelope rises from where it is */
     return;
   }
   for (int i = 0; i < g->nvoices; i++)    /* the same key again: its own voice */
@@ -237,8 +237,10 @@ void gc_note_off(GrainCore* g, int note) {
     held_remove(g, note);
     GcVoice* v = &g->voices[0];
     if (v->note != note || !v->gate) return;
-    if (g->nheld > 0) v->note = g->held[g->nheld - 1];   /* back to the key still held */
-    else voice_release(v);
+    if (g->nheld > 0) {
+      v->note = g->held[g->nheld - 1];    /* back to the key still held */
+      if (!g->legato) v->restart = 1;     /* without legato it starts again (gc_process knows Position) */
+    } else voice_release(v);
     return;
   }
   for (int i = 0; i < GC_VOICES; i++) {
@@ -266,9 +268,10 @@ void gc_all_off(GrainCore* g) {
   g->nactive = 0;
 }
 
-void gc_set_voices(GrainCore* g, int n) {
+void gc_set_voices(GrainCore* g, int n, int legato) {
   n = n < 1 ? 1 : n > GC_VOICES ? GC_VOICES : n;
-  const int mono = n == 1;                     /* one voice = mono: legato, back to a held key */
+  const int mono = n == 1;                     /* one voice = mono: back to a held key */
+  g->legato = mono && legato;
   if (n == g->nvoices && mono == g->mono) return;
   if (mono != g->mono) gc_all_notes_off(g);   /* to or from mono: everything releases */
   g->mono = mono;
@@ -496,6 +499,12 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
       done[vi] = 0;
       if (v->stage == GC_V_IDLE) continue;
       any = 1;
+      if (v->restart) {                         /* mono without legato, back to a held key */
+        v->restart = 0;
+        v->stage = GC_V_ATTACK;
+        v->playhead = have ? wstart : 0.0;
+        v->next = 0.0f;
+      }
       if (v->stage != GC_V_STEAL) {              /* grains are born while the voice sounds, also in release */
         while (have && v->next < (float)m) {
           spawn(g, p, vi, v->next > 0.0f ? (int)v->next : 0);
