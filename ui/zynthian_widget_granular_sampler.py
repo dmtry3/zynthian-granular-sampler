@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# Granular Sampler widget. Tabs (top left): Wave, Grain; Pitch, Filter and Mod come with their stages.
+# Granular Sampler widget. Tabs (top left): Wave, Grain, Pitch; Filter and Mod come with their stages.
 # Wave:
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
 # - The waveform is read from the file here, in a background thread, and drawn once into an image:
@@ -13,6 +13,9 @@
 # Grain:
 # - The window shape of the Shape knob (same formula as grain_core.c, after Mutable Instruments Beads),
 #   Size, Density and the mean overlap; Poly/Mono and the number of voices (LV2 parameters mode, voices).
+# Pitch:
+# - One octave: notes of the Quantize scale lit, the tonic filled, sounding notes (outputs note1..8) dotted;
+#   a tap on a key sets the tonic (LV2 parameter key); scale buttons set the scale (LV2 parameter scale).
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
@@ -33,7 +36,16 @@ ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
 NGRAIN_MARKS = 16
-TABS = ["Wave", "Grain"]
+TABS = ["Wave", "Grain", "Pitch"]
+NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+# the same scales as gc_scale_names / scale_steps in grain_core.c
+SCALES = [("Chromatic", list(range(12))), ("Major", [0, 2, 4, 5, 7, 9, 11]), ("Minor", [0, 2, 3, 5, 7, 8, 10]),
+          ("Dorian", [0, 2, 3, 5, 7, 9, 10]), ("Phrygian", [0, 1, 3, 5, 7, 8, 10]),
+          ("Lydian", [0, 2, 4, 6, 7, 9, 11]), ("Mixolydian", [0, 2, 4, 5, 7, 9, 10]),
+          ("Harm. minor", [0, 2, 3, 5, 7, 8, 11]), ("Mel. minor", [0, 2, 3, 5, 7, 9, 11]),
+          ("Major pent.", [0, 2, 4, 7, 9]), ("Minor pent.", [0, 3, 5, 7, 10]), ("Blues", [0, 3, 5, 6, 7, 10])]
+BLACK_KEYS = (1, 3, 6, 8, 10)
+NOTE_COLOR = "#ffd43b"
 TAB_COLOR = "#4dabf7"
 BUTTON_ON = "#4dabf7"
 BUTTON_OFF = "#2a2a2a"
@@ -146,7 +158,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.tab_boxes = []          # (x0, x1) of each tab
         self.wave_shown = False      # the waveform image is on the canvas
         self.grain_view = None       # values the Grain tab was drawn for
-        self.buttons = []            # Grain tab: (x0, y0, x1, y1, symbol, value)
+        self.buttons = []            # Grain and Pitch tabs: (x0, y0, x1, y1, symbol, value)
+        self.pitch_view = None       # values the Pitch tab was drawn for
+        self.pitch_notes = None      # sounding pitch classes drawn
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
             bg=zynthian_gui_config.color_bg)
@@ -180,6 +194,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.tabs_drawn = None
         self.wave_shown = False
         self.grain_view = None
+        self.pitch_view = None
+        self.pitch_notes = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -254,8 +270,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     self._clear()
                     self.refresh_gui()
             return
-        if self.tab == 1:
-            self._grain_press(event)
+        if self.tab in (1, 2):
+            self._button_press(event)
             return
         z = self._sample_ctrl()
         if z is None:
@@ -304,6 +320,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self._draw_title()
         if self.tab == 1:
             self._draw_grain()
+            return
+        if self.tab == 2:
+            self._draw_pitch()
             return
         size = (self.width, self.height)
         if self.wave_size != size:
@@ -497,23 +516,95 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         """Button height from the font: text plus a small margin."""
         return int(self._header_h() * 1.3)
 
-    def _button(self, x0, y0, x1, y1, text, on, enabled, sym, value):
+    def _button(self, x0, y0, x1, y1, text, on, enabled, sym, value, tag="grain"):
         c = self.widget_canvas
         fill = BUTTON_ON if on else BUTTON_OFF
-        c.create_rectangle(x0, y0, x1, y1, fill=fill, outline=("#505050" if enabled else "#303030"), tags="grain")
-        c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=text, tags="grain",
+        c.create_rectangle(x0, y0, x1, y1, fill=fill, outline=("#505050" if enabled else "#303030"), tags=tag)
+        c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=text, tags=tag,
                       fill=("#000000" if on else (zynthian_gui_config.color_tx if enabled else "#505050")),
                       font=(zynthian_gui_config.font_family, self._font_size()))
         if enabled:
             self.buttons.append((x0, y0, x1, y1, sym, value))
 
-    def _grain_press(self, event):
+    def _button_press(self, event):
         for x0, y0, x1, y1, sym, value in self.buttons:
             if x0 <= event.x <= x1 and y0 <= event.y <= y1:
                 self._zset(sym, value)
                 self.grain_view = None
+                self.pitch_view = None
                 self.refresh_gui()
                 return
+
+    # ---------- Pitch tab ----------
+    def _pitch_layout(self):
+        w, h = max(self.width, 80), max(self.height, 60)
+        pad = 8
+        top = self._header_h() + 6
+        kb = (pad, top, w - pad, top + int((h - top) * 0.38))
+        return w, h, pad, kb
+
+    def _draw_pitch(self):
+        scale = min(max(int(round(self._zval("scale", 0))), 0), len(SCALES) - 1)
+        key = min(max(int(round(self._zval("key", 0))), 0), 11)
+        quant = self._zval("quantize", 0.0)
+        pitch = self._zval("pitch", 0.0)
+        spray = self._zval("pitch_spray", 0.0)
+        view = (scale, key, round(quant), round(pitch, 1), round(spray, 1), self.width, self.height)
+        c = self.widget_canvas
+        w, h, pad, (kx0, ky0, kx1, ky1) = self._pitch_layout()
+        kw = (kx1 - kx0) / 12.0
+        if view != self.pitch_view:
+            self.pitch_view = view
+            self.pitch_notes = None
+            c.delete("pitch")
+            self.buttons = []
+            fam, fs = zynthian_gui_config.font_family, self._font_size()
+            steps = SCALES[scale][1]
+            for pc in range(12):                       # keys: in the scale lit, tonic filled; tap = tonic
+                deg = (pc - key) % 12
+                in_scale = deg in steps
+                x0 = kx0 + pc * kw
+                black = pc in BLACK_KEYS
+                if deg == 0:
+                    fill = BUTTON_ON
+                elif in_scale:
+                    fill = "#1f4a6b" if black else "#2d6c99"
+                else:
+                    fill = "#151515" if black else "#303030"
+                c.create_rectangle(x0 + 1, ky0, x0 + kw - 2, ky1, fill=fill, outline="#505050", tags="pitch")
+                c.create_text(x0 + kw / 2, ky1 - 3, anchor="s", text=NOTE_NAMES[pc], tags="pitch",
+                              fill=("#000000" if deg == 0 else (zynthian_gui_config.color_tx if in_scale else "#606060")),
+                              font=(fam, fs))
+                self.buttons.append((x0 + 1, ky0, x0 + kw - 2, ky1, "key", pc))
+            # scale buttons: 3 rows of 4
+            bh = self._button_h()
+            y = ky1 + fs
+            cols = 4
+            bw = (w - 2 * pad) / float(cols)
+            for i, (name, _) in enumerate(SCALES):
+                bx = pad + (i % cols) * bw
+                by = y + (i // cols) * (bh + 4)
+                self._button(bx, by, bx + bw - 4, by + bh, name, i == scale, True, "scale", i, tag="pitch")
+            info = "%s %s   Quantize %d %%   Pitch %+.1f   Spray %.1f" % (
+                NOTE_NAMES[key], SCALES[scale][0], round(quant), pitch, spray)
+            c.create_text(pad, h - 3, anchor="sw", text=info, fill=zynthian_gui_config.color_tx_off,
+                          font=(fam, fs), tags="pitch")
+        # sounding notes: dots on their keys, redrawn only when they change
+        notes = set()
+        for i in range(MAX_VOICES):
+            v = self._mon("note%d" % (i + 1), -1.0)
+            if v >= 0:
+                notes.add(int(round(v)) % 12)
+        notes = frozenset(notes)
+        if notes == self.pitch_notes:
+            return
+        self.pitch_notes = notes
+        c.delete("pnotes")
+        r = max(3, int(min(kw, ky1 - ky0) * 0.12))
+        for pc in notes:
+            cx = kx0 + (pc + 0.5) * kw
+            cy = ky0 + (ky1 - ky0) * 0.3
+            c.create_oval(cx - r, cy - r, cx + r, cy + r, fill=NOTE_COLOR, outline="", tags="pnotes")
 
     def _draw_title(self):
         title = self._page_title()

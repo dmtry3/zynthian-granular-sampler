@@ -96,11 +96,14 @@ class Engine:
         self.seconds = 0.0
         self.playhead = -1.0
         self.grains = []
+        self.notes = []
 
     def get_monitors_dict(self):
         m = {"status": float(self.status), "seconds": float(self.seconds), "playhead": float(self.playhead)}
         for i in range(16):
             m["grain%d" % (i + 1)] = float(self.grains[i]) if i < len(self.grains) else -1.0
+        for i in range(8):
+            m["note%d" % (i + 1)] = float(self.notes[i]) if i < len(self.notes) else -1.0
         return m
 
 
@@ -112,7 +115,10 @@ class Processor:
                                  "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0),
                                  "shape": NumCtrl("shape", 67.0), "size": NumCtrl("size", 100.0),
                                  "density": NumCtrl("density", 20.0),
-                                 "mode": NumCtrl("mode", 0), "voices": NumCtrl("voices", 8)}
+                                 "mode": NumCtrl("mode", 0), "voices": NumCtrl("voices", 8),
+                                 "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
+                                 "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
+                                 "pitch_spray": NumCtrl("pitch_spray", 0.0)}
 
     def v(self, sym):
         return self.controllers_dict[sym].value
@@ -332,7 +338,7 @@ def main():
     proc.engine.status = 2
     pump(lambda: wdg.peaks_path == PAD)
     img_before = wdg.wave_img
-    check("two tabs: Wave and Grain", len(wdg.tab_boxes) == 2 and wdg.tab == 0)
+    check("three tabs: Wave, Grain, Pitch", len(wdg.tab_boxes) == 3 and wdg.tab == 0)
     nudges = sample.nudges
     hh = wdg._header_h()
     x0, x1 = wdg.tab_boxes[1]
@@ -381,6 +387,39 @@ def main():
     items = c.find_withtag("grain")
     pump(lambda: False, 0.1)
     check("Grain tab not redrawn when nothing changed", c.find_withtag("grain") == items)
+
+    # Pitch tab
+    x0, x1 = wdg.tab_boxes[2]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("Pitch tab: 12 keys and 12 scale buttons", wdg.tab == 2 and
+          len([b for b in wdg.buttons if b[4] == "key"]) == 12 and
+          len([b for b in wdg.buttons if b[4] == "scale"]) == 12)
+
+    def lit_keys():
+        """keys drawn as in the scale (any fill but the dark 'off' ones)"""
+        rects = [i for i in c.find_withtag("pitch") if c.type(i) == "rectangle"][:12]
+        return [k for k, r in enumerate(rects) if c.itemcget(r, "fill") not in ("#151515", "#303030")]
+    check("chromatic: all 12 keys lit", len(lit_keys()) == 12)
+    press_button("scale", 2)
+    check("tap on Minor sets scale = 2", proc.v("scale") == 2)
+    press_button("key", 2)
+    check("tap on the D key sets the tonic = 2", proc.v("key") == 2)
+    check("D minor lit: D E F G A A# C", lit_keys() == [0, 2, 4, 5, 7, 9, 10])
+    rects = [i for i in c.find_withtag("pitch") if c.type(i) == "rectangle"][:12]
+    check("the tonic key is filled", c.itemcget(rects[2], "fill") == mod.BUTTON_ON)
+    proc.engine.notes = [62, 69, 74]                 # D, A, D an octave up: two pitch classes
+    pump(lambda: False, 0.05)
+    dots = c.find_withtag("pnotes")
+    check("sounding notes: dots on D and A", len(dots) == 2)
+    pump(lambda: False, 0.1)
+    check("dots not redrawn when the notes stay", c.find_withtag("pnotes") == dots)
+    statics = c.find_withtag("pitch")
+    proc.engine.notes = [64]
+    pump(lambda: False, 0.05)
+    check("a note change redraws only the dots", c.find_withtag("pitch") == statics and
+          len(c.find_withtag("pnotes")) == 1)
+    proc.engine.notes = []
 
     x0, x1 = wdg.tab_boxes[0]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
