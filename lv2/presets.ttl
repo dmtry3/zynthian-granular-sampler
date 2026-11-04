@@ -29,12 +29,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_freeze>
@@ -62,12 +136,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_drift>
@@ -95,12 +243,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_dense>
@@ -128,12 +350,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pluck_cloud>
@@ -161,12 +457,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pluck_mono>
@@ -194,12 +564,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 0 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_stutter>
@@ -227,12 +671,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_reverse>
@@ -260,12 +778,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_freeze>
@@ -293,12 +885,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 4 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_shimmer>
@@ -326,12 +992,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 9 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pluck_scale>
@@ -359,12 +1099,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 3 ;
-        <urn:granularsampler:sampler#key> 2
+        <urn:granularsampler:sampler#key> 2 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_backwards>
@@ -392,12 +1206,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_pitch_down>
@@ -425,12 +1313,86 @@
         [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_dark>
@@ -458,12 +1420,86 @@
         [ lv2:symbol "cutoff" ; pset:value 600.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 60.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 50.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 50.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_band>
@@ -491,11 +1527,406 @@
         [ lv2:symbol "cutoff" ; pset:value 1500.0 ] ,
         [ lv2:symbol "resonance" ; pset:value 40.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 2.0 ] ,
-        [ lv2:symbol "keytrack" ; pset:value 100.0 ] ;
+        [ lv2:symbol "keytrack" ; pset:value 100.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
-        <urn:granularsampler:sampler#key> 0
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_pad_sweep>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad LFO Filter Sweep" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 15.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 300.0 ] ,
+        [ lv2:symbol "density" ; pset:value 30.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 67.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 40.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 300.0 ] ,
+        [ lv2:symbol "release" ; pset:value 2500.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 60.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 900.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 50.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 0.2 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.13 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 6 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 50 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 80 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_pluck_random>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pluck Random Cloud" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 100.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 70.0 ] ,
+        [ lv2:symbol "density" ; pset:value 50.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 33.3 ] ,
+        [ lv2:symbol "chaos" ; pset:value 80.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 100.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 10.0 ] ,
+        [ lv2:symbol "release" ; pset:value 900.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 0.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 10 ;
+        <urn:granularsampler:sampler#key> 9 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 10 ;
+        <urn:granularsampler:sampler#env2_shape> 50 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 0 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 50 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 10 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 25 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 100 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_drums_env>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Env Size and Pitch" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 100.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 50.0 ] ,
+        [ lv2:symbol "size" ; pset:value 60.0 ] ,
+        [ lv2:symbol "density" ; pset:value 20.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 0.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 10.0 ] ,
+        [ lv2:symbol "release" ; pset:value 600.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 0.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "env1_time" ; pset:value 1.5 ] ,
+        [ lv2:symbol "env2_time" ; pset:value 0.8 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0 ;
+        <urn:granularsampler:sampler#lfo1_shape> 0 ;
+        <urn:granularsampler:sampler#lfo2_shape> 1 ;
+        <urn:granularsampler:sampler#lfo1_sync> 0 ;
+        <urn:granularsampler:sampler#lfo2_sync> 0 ;
+        <urn:granularsampler:sampler#env1_shape> 0 ;
+        <urn:granularsampler:sampler#env2_shape> 0 ;
+        <urn:granularsampler:sampler#mod_depth> 100 ;
+        <urn:granularsampler:sampler#m_lfo1_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_position> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_size> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_density> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_pan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_level> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env1_position> 0 ;
+        <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
+        <urn:granularsampler:sampler#m_env1_size> 60 ;
+        <urn:granularsampler:sampler#m_env1_density> 0 ;
+        <urn:granularsampler:sampler#m_env1_pitch> 0 ;
+        <urn:granularsampler:sampler#m_env1_pan> 0 ;
+        <urn:granularsampler:sampler#m_env1_level> 0 ;
+        <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_env2_position> 0 ;
+        <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
+        <urn:granularsampler:sampler#m_env2_size> 0 ;
+        <urn:granularsampler:sampler#m_env2_density> 0 ;
+        <urn:granularsampler:sampler#m_env2_pitch> -25 ;
+        <urn:granularsampler:sampler#m_env2_pan> 0 ;
+        <urn:granularsampler:sampler#m_env2_level> 0 ;
+        <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_vel_position> 0 ;
+        <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
+        <urn:granularsampler:sampler#m_vel_size> 0 ;
+        <urn:granularsampler:sampler#m_vel_density> 0 ;
+        <urn:granularsampler:sampler#m_vel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_vel_pan> 0 ;
+        <urn:granularsampler:sampler#m_vel_level> 0 ;
+        <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_wheel_position> 0 ;
+        <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
+        <urn:granularsampler:sampler#m_wheel_size> 0 ;
+        <urn:granularsampler:sampler#m_wheel_density> 50 ;
+        <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
+        <urn:granularsampler:sampler#m_wheel_pan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_level> 0 ;
+        <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
+        <urn:granularsampler:sampler#m_rnd_position> 0 ;
+        <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
+        <urn:granularsampler:sampler#m_rnd_size> 0 ;
+        <urn:granularsampler:sampler#m_rnd_density> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
+        <urn:granularsampler:sampler#m_rnd_pan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_level> 0 ;
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0
     ] .
 

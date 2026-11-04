@@ -31,6 +31,7 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
        P_PITCH, P_PSPRAY, P_REVERSE, P_QUANTIZE,      /* page Pitch */
        P_ATTACK, P_RELEASE, P_SPREAD, P_LEVEL,        /* page Voice */
        P_CUTOFF, P_RESONANCE, P_FTYPE, P_KEYTRACK,    /* page Filter */
+       P_LFO1_RATE, P_LFO2_RATE, P_ENV1_TIME, P_ENV2_TIME,   /* page Mod */
        P_END,
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
        P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0,     /* outputs for the widget */
@@ -38,9 +39,24 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 #define N_GRAIN_PORTS 16
 #define N_RETIRED 8
 
-enum { IP_VOICES = 0, IP_SCALE, IP_KEY, N_IPARAMS };
-static const char* const ip_names[N_IPARAMS] = { "voices", "scale", "key" };
-static const int ip_defaults[N_IPARAMS] = { GC_VOICES, 0, 0 };                              /* grain1..16: read positions of some active grains */
+/* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
+ * m_<source>_<destination> (-100..100). */
+enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+#define N_FIXED IP_CELL0
+static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth" };
+/* default, minimum, maximum of the fixed ones */
+static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
+  { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 }, { 0, 0, 1 }, { 0, 0, 1 },
+  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 } };
+static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
+static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
+  "pan", "level", "cutoff" };
+static int ip_default(int i) { return i < N_FIXED ? ip_range[i][0] : 0; }
+static int ip_min(int i) { return i < N_FIXED ? ip_range[i][1] : -100; }
+static int ip_max(int i) { return i < N_FIXED ? ip_range[i][2] : 100; }
+#define REPORT_PER_RUN 16   /* patch:Set replies per run() after patch:Get, not to overflow the notify port */                              /* grain1..16: read positions of some active grains */
 #define N_CTL P_END
 
 /* Value of the status output port. */
@@ -78,7 +94,7 @@ typedef struct {
   char path[GS_PATH_MAX];      /* last requested path ("" = none), saved in State */
   atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
   int status;
-  int report;                  /* tell the host the path and the integer parameters in the next run() */
+  int report_next;             /* next value to tell the host (0 = path, 1.. = parameters), -1 = none */
   /* integer LV2 parameters set in the widget: voices 0..8 (1 = mono, 0 = mono with legato), scale, key */
   LV2_URID ip_urid[N_IPARAMS];
   LV2_URID p_mode_legacy;      /* "mode" of older versions: Mono (1) is restored as legato (0) */
@@ -136,6 +152,8 @@ static void free_retired(Sampler* S) {
 
 static int is_empty_path(const char* p) { return !p[0] || !strcmp(p, "_"); }   /* Zynthian sends "_" to clear */
 
+static void apply_iparams(Sampler* S);
+
 static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* bundle,
                               const LV2_Feature* const* f) {
   (void)d; (void)bundle;
@@ -159,10 +177,13 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
   S->p_sample       = m->map(m->handle, GS_URI "#sample");
   for (int i = 0; i < N_IPARAMS; i++) {
     char uri[96];
-    snprintf(uri, sizeof uri, GS_URI "#%s", ip_names[i]);
+    if (i < N_FIXED) snprintf(uri, sizeof uri, GS_URI "#%s", ip_names[i]);
+    else snprintf(uri, sizeof uri, GS_URI "#m_%s_%s", src_names[(i - IP_CELL0) / GC_NDST],
+                  dst_names[(i - IP_CELL0) % GC_NDST]);
     S->ip_urid[i] = m->map(m->handle, uri);
-    S->ip[i] = ip_defaults[i];
+    S->ip[i] = ip_default(i);
   }
+  S->report_next = -1;
   S->p_mode_legacy = m->map(m->handle, GS_URI "#mode");
   S->atom_Int       = m->map(m->handle, LV2_ATOM__Int);
   S->atom_Float     = m->map(m->handle, LV2_ATOM__Float);
@@ -174,6 +195,7 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
   S->level = -1.0f;
   gc_init(&S->core, (float)rate, (uint32_t)(uintptr_t)S ^ 0x5EEDu);
   gc_default_params(&S->params);
+  apply_iparams(S);                                  /* parameter defaults into the engine */
   return S;
 }
 
@@ -261,14 +283,25 @@ static int atom_int(const Sampler* S, const LV2_Atom* a, int def) {
 
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-/* Integer parameters into range, then into the engine. */
-static void apply_iparams(Sampler* S) {
-  S->ip[IP_VOICES] = clampi(S->ip[IP_VOICES], 0, GC_VOICES);
-  S->ip[IP_SCALE] = clampi(S->ip[IP_SCALE], 0, GC_NSCALES - 1);
-  S->ip[IP_KEY] = clampi(S->ip[IP_KEY], 0, 11);
-  gc_set_voices(&S->core, S->ip[IP_VOICES] ? S->ip[IP_VOICES] : 1, S->ip[IP_VOICES] == 0);
-  gc_set_scale(&S->core, S->ip[IP_KEY], S->ip[IP_SCALE]);
+/* Integer parameter i into range, then into the engine. */
+static void apply_iparam(Sampler* S, int i) {
+  S->ip[i] = clampi(S->ip[i], ip_min(i), ip_max(i));
+  const int* ip = S->ip;
+  switch (i) {
+    case IP_VOICES: gc_set_voices(&S->core, ip[IP_VOICES] ? ip[IP_VOICES] : 1, ip[IP_VOICES] == 0); break;
+    case IP_SCALE: case IP_KEY: gc_set_scale(&S->core, ip[IP_KEY], ip[IP_SCALE]); break;
+    case IP_LFO1_SHAPE: case IP_LFO1_SYNC: gc_set_lfo(&S->core, 0, ip[IP_LFO1_SHAPE], ip[IP_LFO1_SYNC]); break;
+    case IP_LFO2_SHAPE: case IP_LFO2_SYNC: gc_set_lfo(&S->core, 1, ip[IP_LFO2_SHAPE], ip[IP_LFO2_SYNC]); break;
+    case IP_ENV1_SHAPE: gc_set_env(&S->core, 0, ip[IP_ENV1_SHAPE] * 0.01f); break;
+    case IP_ENV2_SHAPE: gc_set_env(&S->core, 1, ip[IP_ENV2_SHAPE] * 0.01f); break;
+    case IP_MOD_DEPTH: gc_set_mod_depth(&S->core, ip[IP_MOD_DEPTH] * 0.01f); break;
+    default: {
+      const int c = i - IP_CELL0;
+      gc_set_mod_cell(&S->core, c / GC_NDST, c % GC_NDST, ip[i] * 0.01f);
+    }
+  }
 }
+static void apply_iparams(Sampler* S) { for (int i = 0; i < N_IPARAMS; i++) apply_iparam(S, i); }
 
 static void handle_patch_set(Sampler* S, const LV2_Atom_Object* obj) {
   const LV2_Atom *prop = NULL, *val = NULL;
@@ -276,7 +309,7 @@ static void handle_patch_set(Sampler* S, const LV2_Atom_Object* obj) {
   if (!prop || prop->type != S->atom_URID || !val) return;
   const LV2_URID key = ((const LV2_Atom_URID*)prop)->body;
   for (int i = 0; i < N_IPARAMS; i++)
-    if (key == S->ip_urid[i]) { S->ip[i] = atom_int(S, val, S->ip[i]); apply_iparams(S); return; }
+    if (key == S->ip_urid[i]) { S->ip[i] = atom_int(S, val, S->ip[i]); apply_iparam(S, i); return; }
   if (key != S->p_sample) return;
   if (val->type != S->atom_Path && val->type != S->atom_String) return;
   request_load(S, (const char*)LV2_ATOM_BODY_CONST(val), val->size);
@@ -299,12 +332,14 @@ static int report_param(Sampler* S, LV2_URID key, int ival) {
   return 1;
 }
 
-static void report_path(Sampler* S) {
-  /* all or nothing: when the buffer is full, everything is sent again in the next run */
-  if (!report_param(S, S->p_sample, 0)) return;
-  for (int i = 0; i < N_IPARAMS; i++)
-    if (!report_param(S, S->ip_urid[i], S->ip[i])) return;
-  S->report = 0;
+/* After patch:Get or a restore: the sample path, then every integer parameter, REPORT_PER_RUN per run. */
+static void report_params(Sampler* S) {
+  for (int k = 0; k < REPORT_PER_RUN && S->report_next >= 0; k++) {
+    const int i = S->report_next;                    /* 0 = the sample, then 1 + parameter */
+    const int ok = i == 0 ? report_param(S, S->p_sample, 0) : report_param(S, S->ip_urid[i - 1], S->ip[i - 1]);
+    if (!ok) return;                                 /* buffer full: go on in the next run */
+    if (++S->report_next > N_IPARAMS) S->report_next = -1;
+  }
 }
 
 static float ctl(const Sampler* S, int port, float def) {
@@ -333,6 +368,10 @@ static void read_params(Sampler* S) {
   p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
   p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_BP);
   p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;
+  p->lfo_rate[0] = ctl(S, P_LFO1_RATE, 1.0f);
+  p->lfo_rate[1] = ctl(S, P_LFO2_RATE, 0.25f);
+  p->env_time[0] = ctl(S, P_ENV1_TIME, 1.0f);
+  p->env_time[1] = ctl(S, P_ENV2_TIME, 2.0f);
 }
 
 static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
@@ -342,6 +381,7 @@ static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
   if (type == 0x90 && b[2] > 0) gc_note_on(&S->core, &S->params, b[1] & 0x7F, b[2]);
   else if (type == 0x80 || type == 0x90) gc_note_off(&S->core, b[1] & 0x7F);
   else if (type == 0xB0 && b[1] == 120) gc_all_off(&S->core);                       /* All Sound Off */
+  else if (type == 0xB0 && b[1] == 1) gc_set_modwheel(&S->core, b[2] / 127.0f);      /* Mod Wheel */
   else if (type == 0xB0 && b[1] == 123) gc_all_notes_off(&S->core);               /* All Notes Off */
 }
 
@@ -390,11 +430,11 @@ static void run(LV2_Handle h, uint32_t n) {
     else if (ev->body.type == S->atom_Object) {
       const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
       if (o->body.otype == S->patch_Set) handle_patch_set(S, o);
-      else if (o->body.otype == S->patch_Get) S->report = 1;
+      else if (o->body.otype == S->patch_Get) S->report_next = 0;
     }
   }
   render(S, done, n);
-  if (S->report) report_path(S);
+  if (S->report_next >= 0) report_params(S);
   lv2_atom_forge_pop(&S->forge, &seq);
 
   /* Level, ramped over the block so turning the knob does not click */
@@ -477,14 +517,14 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
   use_sample(S);
   /* integer parameters; missing in old presets: defaults */
   for (int i = 0; i < N_IPARAMS; i++) {
-    S->ip[i] = ip_defaults[i];
+    S->ip[i] = ip_default(i);
     const void* iv = retrieve(sh, S->ip_urid[i], &size, &type, &vflags);
     if (iv && type == S->atom_Int && size >= sizeof(int32_t)) S->ip[i] = *(const int32_t*)iv;
   }
   const void* mv = retrieve(sh, S->p_mode_legacy, &size, &type, &vflags);
   if (mv && type == S->atom_Int && size >= sizeof(int32_t) && *(const int32_t*)mv == 1) S->ip[IP_VOICES] = 0;
   apply_iparams(S);
-  S->report = 1;                                     /* tell the host the restored values */
+  S->report_next = 0;                                /* tell the host the restored values */
   return LV2_STATE_SUCCESS;
 }
 

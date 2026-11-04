@@ -104,3 +104,21 @@
     rdfs:label "Drums Band-pass" ;
     rdfs:seeAlso <presets.ttl> .
 
+<urn:granularsampler:sampler#preset_pad_sweep>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad LFO Filter Sweep" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_pluck_random>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pluck Random Cloud" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_drums_env>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Env Size and Pitch" ;
+    rdfs:seeAlso <presets.ttl> .
+

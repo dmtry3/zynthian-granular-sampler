@@ -19,7 +19,7 @@ static int fails = 0;
 #define CHECK(c) do { if (!(c)) { printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); fails++; } } while (0)
 
 /* ---------- URID map ---------- */
-static char* uris[256];
+static char* uris[512];
 static int nuris = 0;
 static LV2_URID map_uri(LV2_URID_Map_Handle h, const char* uri) {
   (void)h;
@@ -62,10 +62,11 @@ static void work_all(void) {
 /* ---------- ports ---------- */
 #define NFR 64
 /* control inputs: position scan spray window | size density shape chaos | pitch pitch_spray reverse quantize |
- * attack release spread level | cutoff resonance ftype keytrack */
-#define NCTL 20
+ * attack release spread level | cutoff resonance ftype keytrack | lfo1 lfo2 rates, env1 env2 times */
+#define NCTL 24
 enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15, C_CUTOFF = 16, C_FTYPE = 18 };
-static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 20000, 0, 0, 0 };
+static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 20000, 0, 0, 0,
+                            1, 0.25f, 1, 2 };
 static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8];
 enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
@@ -100,32 +101,58 @@ static void in_get(void) {
 }
 
 static const LV2_Descriptor* d;
+static void gather_reports(void);
 static void run_once(void) {
   lv2_atom_forge_pop(&forge, &in_frame);
   notify_buf.seq.atom.size = sizeof notify_buf - sizeof(LV2_Atom);
   out_l[0] = out_r[0] = 1.0f;
   d->run(inst, NFR);
+  gather_reports();
   in_begin();
 }
 
-/* Value of `prop` reported on the notify port in the last run(), or NULL. */
-static const LV2_Atom* reported(const char* prop) {
+/* patch:Set replies on the notify port, gathered over runs (the plugin sends a few per run) */
+typedef struct { uint32_t key, type; int ival; char path[256]; } Rep;
+static Rep reps[160];
+static int nreps = 0, last_reports = 0;
+static void gather_reports(void) {
+  last_reports = 0;
   LV2_ATOM_SEQUENCE_FOREACH(&notify_buf.seq, ev) {
     const LV2_Atom_Object* o = (const LV2_Atom_Object*)&ev->body;
     if (ev->body.type != U(LV2_ATOM__Object) || o->body.otype != U(LV2_PATCH__Set)) continue;
     const LV2_Atom *k = NULL, *v = NULL;
     lv2_atom_object_get(o, U(LV2_PATCH__property), &k, U(LV2_PATCH__value), &v, 0);
-    if (k && v && ((const LV2_Atom_URID*)k)->body == U(prop)) return v;
+    if (!k || !v) continue;
+    last_reports++;
+    const uint32_t key = ((const LV2_Atom_URID*)k)->body;
+    Rep* r = NULL;
+    for (int i = 0; i < nreps; i++) if (reps[i].key == key) r = &reps[i];
+    if (!r && nreps < 160) r = &reps[nreps++];
+    if (!r) continue;
+    r->key = key; r->type = v->type;
+    if (v->type == U(LV2_ATOM__Int)) r->ival = ((const LV2_Atom_Int*)v)->body;
+    if (v->type == U(LV2_ATOM__Path)) snprintf(r->path, sizeof r->path, "%s", (const char*)LV2_ATOM_BODY_CONST(v));
   }
+}
+static const Rep* reported(const char* prop) {
+  for (int i = 0; i < nreps; i++) if (reps[i].key == U(prop)) return &reps[i];
   return NULL;
 }
 static const char* reported_path(void) {
-  const LV2_Atom* v = reported("urn:granularsampler:sampler#sample");
-  return v && v->type == U(LV2_ATOM__Path) ? (const char*)LV2_ATOM_BODY_CONST(v) : NULL;
+  const Rep* r = reported("urn:granularsampler:sampler#sample");
+  return r && r->type == U(LV2_ATOM__Path) ? r->path : NULL;
 }
 static int reported_int(const char* prop, int def) {
-  const LV2_Atom* v = reported(prop);
-  return v && v->type == U(LV2_ATOM__Int) ? ((const LV2_Atom_Int*)v)->body : def;
+  const Rep* r = reported(prop);
+  return r && r->type == U(LV2_ATOM__Int) ? r->ival : def;
+}
+static void run_once(void);
+/* a fresh collection of the replies over enough runs for all of them */
+static void collect(void) {
+  nreps = 0;
+  int total = 0;
+  for (int k = 0; k < 10; k++) { run_once(); total += last_reports; }
+  last_reports = total;
 }
 #define P_MODE "urn:granularsampler:sampler#mode"
 #define P_VOICES "urn:granularsampler:sampler#voices"
@@ -145,7 +172,7 @@ static void in_set_float(const char* prop, float val) {
 
 /* ---------- state: a few keys ---------- */
 typedef struct { uint32_t key, type; size_t size; char val[2048]; } StVal;
-static StVal st[8];
+static StVal st[128];
 static int nst = 0;
 static StVal* st_find(uint32_t key) {
   for (int i = 0; i < nst; i++) if (st[i].key == key) return &st[i];
@@ -220,30 +247,43 @@ int main(int argc, char** argv) {
 
   /* patch:Get: the plugin answers with the current path */
   in_set_path("st.wav"); run_once(); work_all(); run_once();
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
+  CHECK(last_reports == 74);                                      /* the path and the 73 integer parameters */
   run_once();
-  CHECK(reported_path() == NULL);                                 /* answered once */
+  CHECK(last_reports == 0);                                       /* answered once */
 
   /* voices arrive as floats from Zynthian; out-of-range values are clamped */
   in_set_float(P_VOICES, 4.0f); run_once();
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_int(P_VOICES, -1) == 4);
   in_set_float(P_VOICES, 99.0f); run_once();
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_int(P_VOICES, -1) == 8);
   in_set_float(P_VOICES, 0.0f); run_once();                       /* 0 = one voice with legato (L) */
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_int(P_VOICES, -1) == 0);
   in_set_float(P_VOICES, -3.0f); run_once();
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_int(P_VOICES, -1) == 0);
   in_set_float(P_SCALE, 2.0f); in_set_float(P_KEY, 14.0f); run_once();     /* minor; key clamped to B */
-  in_get(); run_once();
+  in_get(); collect();
   CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 11);
   in_set_float(P_KEY, 9.0f);
+  /* modulation parameters: a grid cell, an LFO shape, Mod Depth; clamped, reported, saved */
+  in_set_float("urn:granularsampler:sampler#m_lfo1_pitch", 250.0f);
+  in_set_float("urn:granularsampler:sampler#m_env2_cutoff", -40.0f);
+  in_set_float("urn:granularsampler:sampler#lfo2_shape", 5.0f);
+  in_set_float("urn:granularsampler:sampler#mod_depth", 60.0f);
+  in_get(); collect();
+  CHECK(reported_int("urn:granularsampler:sampler#m_lfo1_pitch", -1) == 100);
+  CHECK(reported_int("urn:granularsampler:sampler#m_env2_cutoff", 0) == -40);
+  CHECK(reported_int("urn:granularsampler:sampler#m_rnd_cutoff", -1) == 0);   /* the last cell */
+  CHECK(reported_int("urn:granularsampler:sampler#lfo2_shape", -1) == 5);
+  CHECK(reported_int("urn:granularsampler:sampler#mod_depth", -1) == 60);
+  CHECK(reported_int("urn:granularsampler:sampler#env2_shape", -1) == 50);    /* default */
   in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -255,12 +295,14 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_VOICES)) && *(const int32_t*)st_find(U(P_VOICES))->val == 3);
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
+  CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
+  CHECK(nst == 74);                                               /* sample + 73 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
   CHECK(status == 0);
   CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
-  run_once();
+  collect();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored values */
   CHECK(reported_int(P_VOICES, -1) == 3);
@@ -270,7 +312,7 @@ int main(int argc, char** argv) {
     const int32_t mono = 1;
     store(NULL, U(P_MODE), &mono, sizeof mono, U(LV2_ATOM__Int), 0);
     CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
-    run_once();
+    collect();
     CHECK(reported_int(P_VOICES, -1) == 0);                       /* old Mono was legato */
     nst--;                                                        /* drop it again */
   }
