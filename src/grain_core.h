@@ -34,6 +34,9 @@
 #define GC_PITCH_MAX   24.0f   /* semitones, both ways */
 #define GC_PSPRAY_MAX  24.0f   /* semitones */
 #define GC_NSCALES     12      /* see gc_scale_names in grain_core.c */
+#define GC_CUTOFF_MIN  20.0f   /* Hz */
+#define GC_CUTOFF_MAX  20000.0f
+#define GC_FILTER_SMOOTH 0.01f /* s: cutoff glides to the knob (no zipper steps) */
 
 enum { GC_INTERP_LINEAR = 0, GC_INTERP_HERMITE };
 
@@ -54,7 +57,13 @@ typedef struct {
   float pitch_spray;/* 0..24: random +-semitones per grain */
   float reverse;    /* 0..1: probability that a grain plays backwards */
   float quantize;   /* 0..1: pull of the grain pitch to the nearest note of the scale */
+  float cutoff_hz;  /* voice filter after the grains, before the envelope */
+  float resonance;  /* 0..1: Q 0.707 .. 20 */
+  int ftype;        /* GC_LP, GC_HP, GC_BP */
+  float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
 } GcParams;
+
+enum { GC_LP = 0, GC_HP, GC_BP };
 
 /* The sample as the engine reads it: interleaved stereo, GC_LEVELS rates, each level followed by
  * at least 2 guard frames that repeat its start (see sample.h). */
@@ -96,6 +105,10 @@ typedef struct {
   int pending_note, pending_vel, pending_off;   /* note to start when the steal fade is over */
   uint32_t age;           /* note-on order: the oldest voice is stolen first */
   int restart;            /* mono without legato: start again (playhead, attack) in the next block */
+  float fc_log;           /* filter cutoff, log2 Hz, smoothed toward the knob */
+  float fc_hz;            /* the cutoff used in the last block (tests, widget) */
+  int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
+  float ic1[2], ic2[2];   /* SVF state, left and right */
 } GcVoice;
 
 typedef struct {

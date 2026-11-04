@@ -665,6 +665,103 @@ static void test_reverse(void) {
   free_src(&s); free_src(&t);
 }
 
+/* ---------- filter ---------- */
+static double sine_hz = 1000.0;
+static float f_sine_hz(int64_t i, int64_t n) { (void)n; return 0.5f * (float)sin(2 * M_PI * sine_hz * i / SR); }
+
+/* Gain of the voice filter at `hz`: one long square grain of a sine, RMS in its middle, filter / no filter. */
+static double filter_gain(double hz, int type, float cutoff, float res) {
+  sine_hz = hz;
+  Src s = make_src(SR * 2, SR, 1, f_sine_hz);
+  double rms[2];
+  for (int pass = 0; pass < 2; pass++) {
+    GcParams p; gc_default_params(&p);
+    p.size_ms = 1000; p.density = 0.5f; p.shape = 0.0f; p.scan = 0.0f; p.attack_ms = 1;
+    p.ftype = type; p.cutoff_hz = pass ? cutoff : GC_CUTOFF_MAX; p.resonance = pass ? res : 0.0f;
+    if (!pass) p.ftype = GC_LP;                      /* open low-pass = no filter */
+    gc_init(&G, SR, 1);
+    gc_set_source(&G, &s.src);
+    gc_note_on(&G, &p, 60, 127);
+    run(&p, 0.3, NULL);                             /* past the edge and the filter's settling */
+    rms[pass] = run_rms(&p, 0.3);
+  }
+  free_src(&s);
+  return rms[1] / rms[0];
+}
+static double db(double g) { return 20.0 * log10(g); }
+
+static void test_filter(void) {
+  /* low-pass at 1 kHz, Butterworth: flat below, -3 dB at the cutoff, 12 dB/octave above */
+  CHECK(fabs(db(filter_gain(200, GC_LP, 1000, 0))) < 0.5);
+  CHECK(fabs(db(filter_gain(1000, GC_LP, 1000, 0)) + 3.0) < 0.6);
+  CHECK(db(filter_gain(8000, GC_LP, 1000, 0)) < -33.0);
+  /* high-pass: the other way round */
+  CHECK(db(filter_gain(200, GC_HP, 1000, 0)) < -25.0);
+  CHECK(fabs(db(filter_gain(8000, GC_HP, 1000, 0))) < 0.5);
+  /* band-pass: the centre stands out from both sides */
+  const double bc = filter_gain(1000, GC_BP, 1000, 0.5f);
+  CHECK(bc > 4.0 * filter_gain(150, GC_BP, 1000, 0.5f) && bc > 4.0 * filter_gain(7000, GC_BP, 1000, 0.5f));
+  /* resonance: a peak at the cutoff (Q 20 at 100 %) */
+  CHECK(filter_gain(1000, GC_LP, 1000, 1.0f) > 10.0);
+  CHECK(filter_gain(1000, GC_LP, 1000, 0.5f) > 1.2);
+
+  /* fully open low-pass: bypassed, the output is exactly the unfiltered one */
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_sine);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  run(&p, 0.05, NULL);
+  CHECK(G.voices[0].filter_on == 0);
+  p.cutoff_hz = 5000;
+  run(&p, 0.05, NULL);
+  CHECK(G.voices[0].filter_on == 1);
+  p.ftype = GC_HP; p.cutoff_hz = GC_CUTOFF_MIN;     /* fully open high-pass: bypassed too */
+  run(&p, 0.1, NULL);
+  CHECK(G.voices[0].filter_on == 0);
+
+  /* the cutoff glides to the knob (~10 ms), no jump */
+  p.ftype = GC_LP; p.cutoff_hz = GC_CUTOFF_MAX;
+  run(&p, 0.1, NULL);
+  p.cutoff_hz = 500;
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].fc_hz > 5000);
+  run(&p, 0.1, NULL);
+  CHECK(fabsf(G.voices[0].fc_hz - 500) < 5);
+
+  /* key track: an octave up doubles the cutoff at 100 %, half of that at 50 % */
+  p.keytrack = 1.0f;
+  gc_all_off(&G); gc_note_on(&G, &p, 72, 127); run(&p, 0.05, NULL);
+  CHECK(fabsf(G.voices[0].fc_hz - 1000) < 10);
+  p.keytrack = 0.5f;
+  gc_all_off(&G); gc_note_on(&G, &p, 72, 127); run(&p, 0.05, NULL);
+  CHECK(fabsf(G.voices[0].fc_hz - 707) < 10);
+  free_src(&s);
+
+  /* stable: full resonance, cutoff jumping around every block, noise in */
+  Src nz = make_src(SR, SR, 1, f_hi_sine);
+  gc_init(&G, SR, 5);
+  gc_set_source(&G, &nz.src);
+  p = poly_params();
+  p.resonance = 1.0f; p.spray = 1.0f; p.chaos = 1.0f; p.density = 100;
+  gc_note_on(&G, &p, 60, 127);
+  int bad = 0;
+  float peak = 0;
+  uint32_t x = 1;
+  for (int k = 0; k < 2000; k++) {
+    x = x * 1664525u + 1013904223u;
+    p.cutoff_hz = GC_CUTOFF_MIN * powf(1000.0f, (float)(x >> 8) / 16777216.0f);
+    p.ftype = (int)(x % 3);
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    for (int i = 0; i < GC_BLOCK; i++) {
+      if (!isfinite(L[i])) bad++;
+      peak = fmaxf(peak, fabsf(L[i]));
+    }
+  }
+  CHECK(bad == 0 && peak < 50.0f);
+  free_src(&nz);
+}
+
 int main(void) {
   test_windows();
   test_silence();
@@ -687,6 +784,7 @@ int main(void) {
   test_pitch();
   test_quantize();
   test_reverse();
+  test_filter();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

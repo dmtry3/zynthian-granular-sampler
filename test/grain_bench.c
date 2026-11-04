@@ -58,11 +58,12 @@ static void measure(int grains, int interp) {
 }
 
 /* 8 voices, a chord, each wanting pool/8 grains: the stage 3 case (8 voices, all grains busy). */
-static void measure_poly(int interp) {
+static void measure_poly(int interp, int filter) {
   static float l[PERIOD], r[PERIOD];
   GcParams p;
   setup(&p, GC_POOL / GC_VOICES);
   p.attack_ms = 5; p.release_ms = 500; p.spread = 0.5f;
+  if (filter) { p.cutoff_hz = 2000.0f; p.resonance = 0.3f; p.keytrack = 0.5f; }   /* filter on in every voice */
   G.interp = interp;
   gc_set_voices(&G, GC_VOICES, 0);
   const int chord[GC_VOICES] = { 48, 55, 60, 63, 67, 70, 74, 79 };
@@ -77,8 +78,8 @@ static void measure_poly(int interp) {
     sink += l[k & (PERIOD - 1)];
   }
   const double cpu = cpu_now() - t0;
-  printf("%-8s %d voices, pool %d: %5.1f active, %6.2f %% of one core, %6.2f us per period%s\n",
-         interp ? "hermite" : "linear", gc_active_voices(&G), GC_POOL, active / periods, 100.0 * cpu / SECONDS,
+  printf("%-8s %d voices%s, pool %d: %5.1f active, %6.2f %% of one core, %6.2f us per period%s\n",
+         interp ? "hermite" : "linear", gc_active_voices(&G), filter ? " + filter" : "", GC_POOL, active / periods, 100.0 * cpu / SECONDS,
          1e6 * cpu / periods, sink == 12345.0 ? "!" : "");
   gc_all_off(&G);
 }
@@ -149,8 +150,9 @@ int main(int argc, char** argv) {
     measure(32, interp);
     measure(64, interp);
   }
-  measure_poly(GC_INTERP_LINEAR);
-  measure_poly(GC_INTERP_HERMITE);
+  measure_poly(GC_INTERP_LINEAR, 0);
+  measure_poly(GC_INTERP_LINEAR, 1);
+  measure_poly(GC_INTERP_HERMITE, 1);
   if (wav) {
     render(wav, "linear", GC_INTERP_LINEAR, 1);
     render(wav, "hermite", GC_INTERP_HERMITE, 1);

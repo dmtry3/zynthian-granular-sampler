@@ -122,6 +122,7 @@ void gc_default_params(GcParams* p) {
   p->root = 60.0f;
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
   p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
+  p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f;
 }
 
 uint32_t gc_set_source(GrainCore* g, const GcSource* s) {
@@ -167,8 +168,18 @@ static void kill_voice_grains(GrainCore* g, int v) {
 }
 
 /* Starts a note on a voice; the envelope rises from where it is (a retrigger does not click). */
+static float filter_target_log(const GcParams* p, int note) {
+  const float c = clampf(p->cutoff_hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX);
+  return log2f(c) + clampf(p->keytrack, 0.0f, 1.0f) * ((float)note - 60.0f) / 12.0f;
+}
+
 static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int vel) {
   GcVoice* v = &g->voices[vi];
+  if (v->stage == GC_V_IDLE) {             /* a fresh voice: filter state empty, cutoff right at the knob */
+    v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
+    v->fc_log = filter_target_log(p, note);
+    v->filter_on = 0;
+  }
   v->stage = GC_V_ATTACK;
   v->note = note; v->gate = 1;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
@@ -452,6 +463,45 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   if (gr->remain <= 0) { gr->active = 0; g->nactive--; }
 }
 
+/* Voice filter on the sum of its grains: TPT state variable filter (Zavalishin; Simper's form),
+ * stable when the cutoff moves. Coefficients once per block, cutoff smoothed in log2 Hz.
+ * A low-pass fully open or a high-pass fully closed is bypassed (no cost). */
+static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
+  const float target = filter_target_log(p, v->note);
+  const float a = 1.0f - expf(-(float)m / (GC_FILTER_SMOOTH * g->sr));
+  v->fc_log += (target - v->fc_log) * a;
+  float fc = exp2f(v->fc_log);
+  const float top = 0.45f * g->sr;
+  fc = clampf(fc, GC_CUTOFF_MIN, top);
+  v->fc_hz = fc;
+  const int type = p->ftype;
+  const float res = clampf(p->resonance, 0.0f, 1.0f);
+  const int open = (type == GC_LP && fc >= fminf(GC_CUTOFF_MAX * 0.97f, top) && res < 0.01f) ||
+                   (type == GC_HP && fc <= GC_CUTOFF_MIN * 1.05f && res < 0.01f);
+  if (open) { v->filter_on = 0; return; }
+  if (!v->filter_on) {                      /* switching on: start from an empty state */
+    v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
+    v->filter_on = 1;
+  }
+  const float gg = tanf((float)M_PI * fc / g->sr);
+  const float k = 1.4142136f * (1.0f - res) + 0.05f * res;   /* 1/Q: Butterworth .. Q 20 */
+  const float a1 = 1.0f / (1.0f + gg * (gg + k)), a2 = gg * a1, a3 = gg * a2;
+  for (int ch = 0; ch < 2; ch++) {
+    float* x = ch ? br : bl;
+    float s1 = v->ic1[ch], s2 = v->ic2[ch];
+    for (int i = 0; i < m; i++) {
+      const float v0 = x[i];
+      const float v3 = v0 - s2;
+      const float v1 = a1 * s1 + a2 * v3;
+      const float v2 = s2 + a2 * s1 + a3 * v3;
+      s1 = 2.0f * v1 - s1;
+      s2 = 2.0f * v2 - s2;
+      x[i] = type == GC_LP ? v2 : type == GC_HP ? v0 - k * v1 - v2 : v1;
+    }
+    v->ic1[ch] = s1; v->ic2[ch] = s2;
+  }
+}
+
 /* Envelope level at the end of a block of m samples; sets *done when the voice has finished. */
 static float voice_env_end(GrainCore* g, const GcParams* p, GcVoice* v, int m, int* done) {
   float e = v->env;
@@ -527,10 +577,11 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
       if (gr->active) render_grain(g, gr, g->vbuf[gr->voice][0], g->vbuf[gr->voice][1], m);
     }
 
-    /* the voice envelope on the sum of its grains, ramped across the block */
+    /* the voice filter, then the voice envelope on the sum of its grains, ramped across the block */
     for (int vi = 0; vi < GC_VOICES; vi++) {
       GcVoice* v = &g->voices[vi];
       if (v->stage == GC_V_IDLE && !done[vi]) continue;
+      voice_filter(g, p, v, g->vbuf[vi][0], g->vbuf[vi][1], m);
       const float* bl = g->vbuf[vi][0];
       const float* br = g->vbuf[vi][1];
       const float a = e0[vi], step = (e1[vi] - e0[vi]) / (float)m;
