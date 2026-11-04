@@ -37,6 +37,27 @@
 #define GC_CUTOFF_MIN  20.0f   /* Hz */
 #define GC_CUTOFF_MAX  20000.0f
 #define GC_FILTER_SMOOTH 0.01f /* s: cutoff glides to the knob (no zipper steps) */
+#define GC_LFO_MIN     0.01f   /* Hz */
+#define GC_LFO_MAX     20.0f
+#define GC_ENV_MIN     0.005f  /* s: Env 1/2 Time */
+#define GC_ENV_MAX     10.0f
+
+/* Modulation grid: sources x destinations, each cell -1..1 (the widget shows -100..100). */
+enum { GC_SRC_LFO1 = 0, GC_SRC_LFO2, GC_SRC_ENV1, GC_SRC_ENV2, GC_SRC_VEL, GC_SRC_WHEEL, GC_SRC_RANDOM, GC_NSRC };
+enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SPRAY, GC_DST_SIZE, GC_DST_DENSITY, GC_DST_PITCH,
+       GC_DST_PAN, GC_DST_LEVEL, GC_DST_CUTOFF, GC_NDST };
+/* Position, Spray, Size, Pitch and Pan are taken at a grain's birth; Scan, Density, Level and Cutoff
+ * change in the voice every GC_BLOCK samples. A full cell (+-1, Mod Depth 100 %) moves its destination by: */
+#define GC_MOD_POSITION 0.5f   /* of the sample */
+#define GC_MOD_SCAN     2.0f   /* x realtime */
+#define GC_MOD_SPRAY    1.0f
+#define GC_MOD_OCTAVES  3.0f   /* Size and Density: x 2^(+-3) */
+#define GC_MOD_PITCH    24.0f  /* semitones */
+#define GC_MOD_PAN      0.5f
+#define GC_MOD_CUTOFF   5.0f   /* octaves */
+                               /* Level: gain 1 + m, 0..2 */
+enum { GC_LFO_SINE = 0, GC_LFO_TRI, GC_LFO_SAW_UP, GC_LFO_SAW_DOWN, GC_LFO_SQUARE, GC_LFO_SH, GC_LFO_SMOOTH,
+       GC_NLFO_SHAPES };
 
 enum { GC_INTERP_LINEAR = 0, GC_INTERP_HERMITE };
 
@@ -61,6 +82,8 @@ typedef struct {
   float resonance;  /* 0..1: Q 0.707 .. 20 */
   int ftype;        /* GC_LP, GC_HP, GC_BP */
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
+  float lfo_rate[2];/* Hz */
+  float env_time[2];/* s: attack + decay of Env 1 / Env 2 */
 } GcParams;
 
 enum { GC_LP = 0, GC_HP, GC_BP };
@@ -109,6 +132,14 @@ typedef struct {
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
   float ic1[2], ic2[2];   /* SVF state, left and right */
+  /* modulation sources of this voice: every voice has its own LFOs and envelopes */
+  float lfo_ph[2];        /* 0..1 */
+  float lfo_a[2], lfo_b[2];  /* random LFO shapes: from, to (one step per cycle) */
+  float env_t[2];         /* s since the note started */
+  float rnd;              /* the newest grain's Random (-1..1), held for the continuous destinations */
+  float src[GC_NSRC];     /* source values in this block */
+  float mod[GC_NDST];     /* continuous destinations: summed modulation in this block */
+  float level, level_prev;   /* Level destination: gain now and in the previous block */
 } GcVoice;
 
 typedef struct {
@@ -134,6 +165,13 @@ typedef struct {
   int last_level;         /* level of the newest grain */
   float last_pitch;       /* MIDI pitch of the newest grain (after spray and quantize) */
   int scale, key;         /* Quantize: scale (GC_NSCALES) and tonic 0..11 */
+  /* modulation settings (from the widget) */
+  float mod_cell[GC_NSRC][GC_NDST];
+  int mod_list[GC_NSRC * GC_NDST], nmod;   /* non-zero cells: empty ones cost nothing */
+  float mod_depth;        /* 0..1: the whole grid */
+  float modwheel;         /* CC 1, 0..1 */
+  int lfo_shape[2], lfo_keysync[2];        /* keysync: phase 0 on each note, else free (voices differ) */
+  float env_shape[2];     /* 0 = all decay .. 1 = all attack (then holds) */
   float win_gain[GC_SHAPES];               /* loudness compensation of each window (bell = 1) */
   float win[GC_SHAPES][GC_WIN + 1];
 } GrainCore;
@@ -157,6 +195,14 @@ void gc_set_scale(GrainCore* g, int key, int scale);
 extern const char* const gc_scale_names[GC_NSCALES];
 /* Nearest pitch of the scale to `semis` (MIDI, fractional allowed). */
 float gc_snap(const GrainCore* g, float semis);
+/* Modulation settings */
+void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount);   /* -1..1 */
+void gc_set_mod_depth(GrainCore* g, float depth);                     /* 0..1 */
+void gc_set_modwheel(GrainCore* g, float value);                      /* 0..1 */
+void gc_set_lfo(GrainCore* g, int i, int shape, int keysync);
+void gc_set_env(GrainCore* g, int i, float shape);
+float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */
+float gc_env_value(float shape, float t, float time);                 /* 0..1 */
 /* Writes n samples (not adds). */
 void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uint32_t n);
 /* Flush denormals to zero in this thread (call at the start of run()). */

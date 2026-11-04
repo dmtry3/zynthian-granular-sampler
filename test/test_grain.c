@@ -762,6 +762,170 @@ static void test_filter(void) {
   free_src(&nz);
 }
 
+/* ---------- modulation ---------- */
+static void test_mod_shapes(void) {
+  CHECK(fabsf(gc_lfo_value(GC_LFO_SINE, 0.25f, 0, 0) - 1.0f) < 1e-5f);
+  CHECK(gc_lfo_value(GC_LFO_TRI, 0.0f, 0, 0) == -1.0f && gc_lfo_value(GC_LFO_TRI, 0.5f, 0, 0) == 1.0f);
+  CHECK(gc_lfo_value(GC_LFO_SAW_UP, 0.75f, 0, 0) == 0.5f && gc_lfo_value(GC_LFO_SAW_DOWN, 0.75f, 0, 0) == -0.5f);
+  CHECK(gc_lfo_value(GC_LFO_SQUARE, 0.2f, 0, 0) == 1.0f && gc_lfo_value(GC_LFO_SQUARE, 0.7f, 0, 0) == -1.0f);
+  CHECK(gc_lfo_value(GC_LFO_SH, 0.7f, 0.3f, -0.9f) == 0.3f);
+  CHECK(gc_lfo_value(GC_LFO_SMOOTH, 0.0f, 0.3f, -0.9f) == 0.3f && fabsf(gc_lfo_value(GC_LFO_SMOOTH, 1.0f, 0.3f, -0.9f) + 0.9f) < 1e-6f);
+  /* envelopes: decay, rise and hold, rise-fall */
+  CHECK(gc_env_value(0.0f, 0.0f, 1.0f) == 1.0f && gc_env_value(0.0f, 0.5f, 1.0f) == 0.25f && gc_env_value(0.0f, 1.5f, 1.0f) == 0.0f);
+  CHECK(gc_env_value(1.0f, 0.5f, 1.0f) == 0.5f && gc_env_value(1.0f, 5.0f, 1.0f) == 1.0f);
+  CHECK(gc_env_value(0.5f, 0.5f, 1.0f) == 1.0f && gc_env_value(0.5f, 0.25f, 1.0f) == 0.5f && gc_env_value(0.5f, 2.0f, 1.0f) == 0.0f);
+}
+
+static void test_mod_grid(void) {
+  gc_init(&G, SR, 1);
+  CHECK(G.nmod == 0);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PITCH, 0.5f);
+  gc_set_mod_cell(&G, GC_SRC_ENV2, GC_DST_CUTOFF, -2.0f);     /* clamped */
+  CHECK(G.nmod == 2 && G.mod_cell[GC_SRC_ENV2][GC_DST_CUTOFF] == -1.0f);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PITCH, 0.0f);
+  CHECK(G.nmod == 1);
+  gc_set_mod_cell(&G, GC_SRC_ENV2, GC_DST_CUTOFF, 0.0f);
+  gc_set_mod_cell(&G, 99, 0, 1.0f);                           /* ignored */
+  CHECK(G.nmod == 0);
+
+  /* an empty grid changes nothing, to the bit */
+  GcParams p = poly_params();
+  p.spray = 0.3f; p.chaos = 0.5f; p.spread = 0.5f;
+  Src s = make_src(SR, SR, 1, f_sine);
+  static float a[SR / 4], b[SR / 4];
+  for (int pass = 0; pass < 2; pass++) {
+    gc_init(&G, SR, 4);
+    gc_set_source(&G, &s.src);
+    if (pass) { gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_SIZE, 0.7f); gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_SIZE, 0.0f); }
+    gc_note_on(&G, &p, 60, 100);
+    for (int k = 0; k < SR / 4 / BUF; k++) { gc_process(&G, &p, L, R, BUF); memcpy((pass ? b : a) + k * BUF, L, sizeof L); }
+  }
+  CHECK(!memcmp(a, b, sizeof a));
+  free_src(&s);
+}
+
+static void test_mod_dest(void) {
+  GcParams p = poly_params();
+  p.density = 200; p.size_ms = 5;
+  Src s = make_src(SR * 2, SR, 1, f_half);
+
+  /* LFO 1 -> Pitch 50 %: grain pitches swing +-12 around the note */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_lfo(&G, 0, GC_LFO_SINE, 1);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PITCH, 0.5f);
+  p.lfo_rate[0] = 4.0f;
+  gc_note_on(&G, &p, 60, 100);
+  float lo = 1e9f, hi = -1e9f;
+  for (int k = 0; k < SR / GC_BLOCK / 2; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    lo = fminf(lo, G.last_pitch); hi = fmaxf(hi, G.last_pitch);
+  }
+  CHECK(lo < 48.5f && lo >= 47.99f && hi > 71.5f && hi <= 72.01f);
+  gc_set_mod_depth(&G, 0.0f);                                 /* Mod Depth 0: nothing */
+  gc_process(&G, &p, L, R, GC_BLOCK * 4);
+  CHECK(G.last_pitch == 60.0f);
+  gc_set_mod_depth(&G, 1.0f);
+
+  /* Env 1 -> Cutoff +100 %: decay from 5 octaves above the knob down to it */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_env(&G, 0, 0.0f);
+  gc_set_mod_cell(&G, GC_SRC_ENV1, GC_DST_CUTOFF, 1.0f);
+  p.cutoff_hz = 300; p.env_time[0] = 0.5f;
+  gc_note_on(&G, &p, 60, 100);
+  run(&p, 0.02, NULL);
+  const float early = G.voices[0].fc_hz;
+  run(&p, 0.6, NULL);
+  CHECK(early > 4000 && fabsf(G.voices[0].fc_hz - 300) < 5);
+  p.cutoff_hz = GC_CUTOFF_MAX;
+
+  /* Velocity -> Level 100 %: gain 1 + vel */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_VEL, GC_DST_LEVEL, 1.0f);
+  gc_note_on(&G, &p, 60, 127);
+  gc_note_on(&G, &p, 64, 0 + 64);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].level - 2.0f) < 1e-5f && fabsf(G.voices[1].level - (1.0f + 64 / 127.0f)) < 1e-5f);
+
+  /* Mod Wheel -> Size +33 %: grains twice as long; -> Position +100 %: half a sample further */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_WHEEL, GC_DST_SIZE, 1.0f / 3.0f);
+  gc_set_mod_cell(&G, GC_SRC_WHEEL, GC_DST_POSITION, 1.0f);
+  gc_set_modwheel(&G, 1.0f);
+  p.size_ms = 50; p.scan = 0; p.position = 0.1f;
+  gc_note_on(&G, &p, 60, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(abs(G.grains[0].remain + GC_BLOCK - (int)(0.1f * SR)) <= 2);
+  CHECK(fabs(G.last_start - (0.1 * (2 * SR - 1) + 0.5 * 2 * SR)) < 2.0);
+
+  /* Velocity -> Density +33 %: twice as many grains; Mod Wheel -> Scan 50 %: moves at realtime */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  p = poly_params(); p.density = 20; p.size_ms = 10; p.scan = 0.0f;
+  gc_note_on(&G, &p, 60, 127);
+  run(&p, 1.0, NULL);
+  const uint64_t base = G.born;
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_VEL, GC_DST_DENSITY, 1.0f / 3.0f);
+  gc_set_mod_cell(&G, GC_SRC_WHEEL, GC_DST_SCAN, 0.5f);
+  gc_set_modwheel(&G, 1.0f);
+  gc_note_on(&G, &p, 60, 127);
+  const double ph0 = G.voices[0].playhead;
+  run(&p, 1.0, NULL);
+  CHECK(G.born > base * 19 / 10 && G.born < base * 21 / 10);
+  CHECK(fabs(G.voices[0].playhead - ph0 - SR) < 2 * BUF);
+
+  /* Random -> Pan: grains land left and right without Stereo Spread */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_RANDOM, GC_DST_PAN, 1.0f);
+  p = poly_params(); p.density = 200; p.size_ms = 5;
+  gc_note_on(&G, &p, 60, 127);
+  int left = 0, right = 0;
+  for (int k = 0; k < 500; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    for (int i = 0; i < GC_POOL; i++)
+      if (G.grains[i].active) { if (G.grains[i].gl > G.grains[i].gr * 1.5f) left++; if (G.grains[i].gr > G.grains[i].gl * 1.5f) right++; }
+  }
+  CHECK(left > 20 && right > 20);
+  free_src(&s);
+}
+
+/* free LFOs: each voice its own phase (a chord moves apart); key sync: phase 0 on every note */
+static void test_mod_voices(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PAN, 0.5f);
+  gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100); gc_note_on(&G, &p, 67, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].src[GC_SRC_LFO1] != G.voices[1].src[GC_SRC_LFO1] &&
+        G.voices[1].src[GC_SRC_LFO1] != G.voices[2].src[GC_SRC_LFO1]);
+  gc_all_off(&G);
+  gc_set_lfo(&G, 0, GC_LFO_SAW_UP, 1);
+  gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].src[GC_SRC_LFO1] == G.voices[1].src[GC_SRC_LFO1]);
+  CHECK(fabsf(G.voices[0].src[GC_SRC_LFO1] - (2.0f * GC_BLOCK / SR * p.lfo_rate[0] - 1.0f)) < 1e-4f);
+  /* S&H: one value per cycle */
+  gc_set_lfo(&G, 0, GC_LFO_SH, 1);
+  p.lfo_rate[0] = 10.0f;
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100);
+  float prev = 2.0f;
+  int changes = 0;
+  for (int k = 0; k < SR / GC_BLOCK; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    if (G.voices[0].src[GC_SRC_LFO1] != prev) { changes++; prev = G.voices[0].src[GC_SRC_LFO1]; }
+  }
+  CHECK(changes >= 9 && changes <= 11);
+  free_src(&s);
+}
+
 int main(void) {
   test_windows();
   test_silence();
@@ -785,6 +949,10 @@ int main(void) {
   test_quantize();
   test_reverse();
   test_filter();
+  test_mod_shapes();
+  test_mod_grid();
+  test_mod_dest();
+  test_mod_voices();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

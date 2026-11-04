@@ -96,7 +96,18 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   memset(g, 0, sizeof *g);
   g->sr = sr;
   g->rng = seed ? seed : 0x9E3779B9u;
-  for (int i = 0; i < GC_VOICES; i++) g->voices[i].note = -1;
+  g->mod_depth = 1.0f;
+  g->env_shape[0] = g->env_shape[1] = 0.1f;
+  for (int i = 0; i < GC_VOICES; i++) {
+    GcVoice* v = &g->voices[i];
+    v->note = -1;
+    v->level = v->level_prev = 1.0f;
+    for (int k = 0; k < 2; k++) {          /* free LFOs: each voice from its own phase, chords move apart */
+      v->lfo_ph[k] = rnd(g);
+      v->lfo_a[k] = rnd(g) * 2.0f - 1.0f;
+      v->lfo_b[k] = rnd(g) * 2.0f - 1.0f;
+    }
+  }
   g->nvoices = GC_VOICES;
   g->interp = GC_INTERP_LINEAR;
   g->use_levels = 1;
@@ -123,6 +134,88 @@ void gc_default_params(GcParams* p) {
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
   p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
   p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f;
+  p->lfo_rate[0] = 1.0f; p->lfo_rate[1] = 0.25f; p->env_time[0] = 1.0f; p->env_time[1] = 2.0f;
+}
+
+/* ---------- modulation ---------- */
+void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount) {
+  if (src < 0 || src >= GC_NSRC || dst < 0 || dst >= GC_NDST) return;
+  g->mod_cell[src][dst] = clampf(amount, -1.0f, 1.0f);
+  g->nmod = 0;
+  for (int s = 0; s < GC_NSRC; s++)
+    for (int d = 0; d < GC_NDST; d++)
+      if (g->mod_cell[s][d] != 0.0f) g->mod_list[g->nmod++] = s * GC_NDST + d;
+}
+void gc_set_mod_depth(GrainCore* g, float depth) { g->mod_depth = clampf(depth, 0.0f, 1.0f); }
+void gc_set_modwheel(GrainCore* g, float value) { g->modwheel = clampf(value, 0.0f, 1.0f); }
+void gc_set_lfo(GrainCore* g, int i, int shape, int keysync) {
+  if (i < 0 || i > 1) return;
+  g->lfo_shape[i] = shape < 0 || shape >= GC_NLFO_SHAPES ? GC_LFO_SINE : shape;
+  g->lfo_keysync[i] = keysync ? 1 : 0;
+}
+void gc_set_env(GrainCore* g, int i, float shape) {
+  if (i >= 0 && i <= 1) g->env_shape[i] = clampf(shape, 0.0f, 1.0f);
+}
+
+float gc_lfo_value(int shape, float ph, float a, float b) {
+  switch (shape) {
+    case GC_LFO_TRI:       return ph < 0.5f ? 4.0f * ph - 1.0f : 3.0f - 4.0f * ph;
+    case GC_LFO_SAW_UP:    return 2.0f * ph - 1.0f;
+    case GC_LFO_SAW_DOWN:  return 1.0f - 2.0f * ph;
+    case GC_LFO_SQUARE:    return ph < 0.5f ? 1.0f : -1.0f;
+    case GC_LFO_SH:        return a;
+    case GC_LFO_SMOOTH:    return a + (b - a) * ph * ph * (3.0f - 2.0f * ph);
+    default:               return sinf(6.2831853f * ph);
+  }
+}
+
+/* One-shot from the note: rise over shape*time, fall over the rest (curved); all attack holds at 1. */
+float gc_env_value(float shape, float t, float time) {
+  const float att = shape * time, dec = (1.0f - shape) * time;
+  if (t < att) return t / att;
+  if (dec < 0.001f) return 1.0f;
+  const float u = (t - att) / dec;
+  if (u >= 1.0f) return 0.0f;
+  return (1.0f - u) * (1.0f - u);
+}
+
+/* Sums the non-empty cells for the sources in src[] into out[] (times Mod Depth). */
+static void mod_eval(const GrainCore* g, const float* src, float* out) {
+  for (int d = 0; d < GC_NDST; d++) out[d] = 0.0f;
+  for (int i = 0; i < g->nmod; i++) {
+    const int s = g->mod_list[i] / GC_NDST, d = g->mod_list[i] % GC_NDST;
+    out[d] += g->mod_cell[s][d] * src[s];
+  }
+  for (int d = 0; d < GC_NDST; d++) out[d] *= g->mod_depth;
+}
+
+/* Advance the voice's LFOs and envelopes by m samples; source values and continuous destinations. */
+static void voice_mod(GrainCore* g, const GcParams* p, GcVoice* v, int m) {
+  v->level_prev = v->level;
+  if (!g->nmod) {
+    for (int d = 0; d < GC_NDST; d++) v->mod[d] = 0.0f;
+    v->level = 1.0f;
+    return;
+  }
+  const float dt = (float)m / g->sr;
+  for (int k = 0; k < 2; k++) {
+    v->lfo_ph[k] += clampf(p->lfo_rate[k], GC_LFO_MIN, GC_LFO_MAX) * dt;
+    if (v->lfo_ph[k] >= 1.0f) {                 /* a new cycle: next random step */
+      v->lfo_ph[k] -= floorf(v->lfo_ph[k]);
+      v->lfo_a[k] = v->lfo_b[k];
+      v->lfo_b[k] = rnd(g) * 2.0f - 1.0f;
+      if (g->lfo_shape[k] == GC_LFO_SH) v->lfo_a[k] = v->lfo_b[k];
+    }
+    v->src[GC_SRC_LFO1 + k] = gc_lfo_value(g->lfo_shape[k], v->lfo_ph[k], v->lfo_a[k], v->lfo_b[k]);
+    v->env_t[k] += dt;
+    v->src[GC_SRC_ENV1 + k] = gc_env_value(g->env_shape[k], v->env_t[k],
+                                           clampf(p->env_time[k], GC_ENV_MIN, GC_ENV_MAX));
+  }
+  v->src[GC_SRC_VEL] = v->vel;
+  v->src[GC_SRC_WHEEL] = g->modwheel;
+  v->src[GC_SRC_RANDOM] = v->rnd;
+  mod_eval(g, v->src, v->mod);
+  v->level = clampf(1.0f + v->mod[GC_DST_LEVEL], 0.0f, 2.0f);
 }
 
 uint32_t gc_set_source(GrainCore* g, const GcSource* s) {
@@ -168,17 +261,22 @@ static void kill_voice_grains(GrainCore* g, int v) {
 }
 
 /* Starts a note on a voice; the envelope rises from where it is (a retrigger does not click). */
-static float filter_target_log(const GcParams* p, int note) {
+static float filter_target_log(const GcParams* p, int note, float mod) {
   const float c = clampf(p->cutoff_hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX);
-  return log2f(c) + clampf(p->keytrack, 0.0f, 1.0f) * ((float)note - 60.0f) / 12.0f;
+  return log2f(c) + clampf(p->keytrack, 0.0f, 1.0f) * ((float)note - 60.0f) / 12.0f + mod * GC_MOD_CUTOFF;
 }
 
 static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int vel) {
   GcVoice* v = &g->voices[vi];
   if (v->stage == GC_V_IDLE) {             /* a fresh voice: filter state empty, cutoff right at the knob */
     v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
-    v->fc_log = filter_target_log(p, note);
+    v->fc_log = filter_target_log(p, note, 0.0f);
     v->filter_on = 0;
+    v->level = v->level_prev = 1.0f;
+  }
+  for (int k = 0; k < 2; k++) {
+    v->env_t[k] = 0.0f;                    /* Env 1/2 start with the note */
+    if (g->lfo_keysync[k]) v->lfo_ph[k] = 0.0f;
   }
   v->stage = GC_V_ATTACK;
   v->note = note; v->gate = 1;
@@ -302,16 +400,27 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   for (int i = 0; i < GC_POOL; i++) if (!g->grains[i].active) { gr = &g->grains[i]; break; }
   if (!gr) { g->skipped++; return; }
 
-  const float size_s = clampf(p->size_ms, GC_SIZE_MIN, GC_SIZE_MAX) * 0.001f;
-  const float dens = clampf(p->density, GC_DENS_MIN, GC_DENS_MAX);
+  /* modulation at birth: the voice's sources, with a new Random for this grain */
+  float bm[GC_NDST] = { 0 };
+  if (g->nmod) {
+    v->rnd = rnd(g) * 2.0f - 1.0f;
+    float src[GC_NSRC];
+    memcpy(src, v->src, sizeof src);
+    src[GC_SRC_RANDOM] = v->rnd;
+    mod_eval(g, src, bm);
+  }
+  const float size_s = clampf(p->size_ms * exp2f(bm[GC_DST_SIZE] * GC_MOD_OCTAVES), GC_SIZE_MIN, GC_SIZE_MAX) * 0.001f;
+  const float dens = clampf(p->density * exp2f(v->mod[GC_DST_DENSITY] * GC_MOD_OCTAVES), GC_DENS_MIN, GC_DENS_MAX);
   const double wlen = window_len(g, p);
-  double start = v->playhead + (double)((rnd(g) * 2.0f - 1.0f) * clampf(p->spray, 0.0f, 1.0f) * 0.5f) * wlen;
+  const float spray = clampf(p->spray + bm[GC_DST_SPRAY] * GC_MOD_SPRAY, 0.0f, 1.0f);
+  double start = v->playhead + (double)((rnd(g) * 2.0f - 1.0f) * spray * 0.5f) * wlen;
+  start += (double)(bm[GC_DST_POSITION] * GC_MOD_POSITION) * (double)g->src.frames[0];
   start = wrap(start, (double)g->src.frames[0]);
   g->last_start = start;
   const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
 
   /* Pitch: note + Pitch + random Pitch Spray, pulled to the scale by Quantize; fixed for the grain. */
-  float semis = (float)v->note + clampf(p->pitch, -GC_PITCH_MAX, GC_PITCH_MAX);
+  float semis = (float)v->note + clampf(p->pitch, -GC_PITCH_MAX, GC_PITCH_MAX) + bm[GC_DST_PITCH] * GC_MOD_PITCH;
   const float ps = clampf(p->pitch_spray, 0.0f, GC_PSPRAY_MAX);
   if (ps > 0.0f) semis += ps * (rnd(g) * 2.0f - 1.0f);
   const float q = clampf(p->quantize, 0.0f, 1.0f);
@@ -340,7 +449,8 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   const int shape = (int)lrintf(clampf(p->shape, 0.0f, 1.0f) * (GC_SHAPES - 1));
   const float gain = v->vel * g->win_gain[shape] / sqrtf(overlap > 1.0f ? overlap : 1.0f);
   /* Stereo Spread: random pan, balance law (as Clouds for stereo sources): the centre keeps unity gain */
-  const float pan = 0.5f + clampf(p->spread, 0.0f, 1.0f) * (rnd(g) - 0.5f);
+  const float pan = clampf(0.5f + clampf(p->spread, 0.0f, 1.0f) * (rnd(g) - 0.5f) + bm[GC_DST_PAN] * GC_MOD_PAN,
+                           0.0f, 1.0f);
 
   gr->active = 1;
   gr->delay = delay;
@@ -365,8 +475,9 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
 }
 
 /* Next grain distance in samples: even at chaos 0, exponential (Poisson) at chaos 1. */
-static float next_interval(GrainCore* g, const GcParams* p) {
-  const float base = g->sr / clampf(p->density, GC_DENS_MIN, GC_DENS_MAX);
+static float next_interval(GrainCore* g, const GcParams* p, const GcVoice* v) {
+  const float base = g->sr / clampf(p->density * exp2f(v->mod[GC_DST_DENSITY] * GC_MOD_OCTAVES),
+                                    GC_DENS_MIN, GC_DENS_MAX);
   const float c = clampf(p->chaos, 0.0f, 1.0f);
   float j = 1.0f;
   if (c > 0.0f) {
@@ -467,7 +578,7 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
  * stable when the cutoff moves. Coefficients once per block, cutoff smoothed in log2 Hz.
  * A low-pass fully open or a high-pass fully closed is bypassed (no cost). */
 static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
-  const float target = filter_target_log(p, v->note);
+  const float target = filter_target_log(p, v->note, v->mod[GC_DST_CUTOFF]);
   const float a = 1.0f - expf(-(float)m / (GC_FILTER_SMOOTH * g->sr));
   v->fc_log += (target - v->fc_log) * a;
   float fc = exp2f(v->fc_log);
@@ -555,15 +666,21 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
         v->playhead = have ? wstart : 0.0;
         v->next = 0.0f;
       }
+      voice_mod(g, p, v, m);
       if (v->stage != GC_V_STEAL) {              /* grains are born while the voice sounds, also in release */
         while (have && v->next < (float)m) {
           spawn(g, p, vi, v->next > 0.0f ? (int)v->next : 0);
-          v->next += next_interval(g, p);
+          v->next += next_interval(g, p, v);
         }
         v->next -= (float)m;
         if (v->next < 0.0f) v->next = 0.0f;
-        /* the playhead loops inside the window */
-        if (have) v->playhead = wstart + wrap(v->playhead + (double)(scan * ratio * (float)m) - wstart, wlen);
+        /* the playhead loops inside the window; Scan modulated per voice */
+        float vs = scan;
+        if (v->mod[GC_DST_SCAN] != 0.0f) {
+          vs = clampf(scan + v->mod[GC_DST_SCAN] * GC_MOD_SCAN, -GC_SCAN_MAX, GC_SCAN_MAX);
+          if (fabsf(vs) < GC_SCAN_DEAD) vs = 0.0f;
+        }
+        if (have) v->playhead = wstart + wrap(v->playhead + (double)(vs * ratio * (float)m) - wstart, wlen);
       }
       e0[vi] = v->env;
       e1[vi] = voice_env_end(g, p, v, m, &done[vi]);
@@ -584,7 +701,8 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
       voice_filter(g, p, v, g->vbuf[vi][0], g->vbuf[vi][1], m);
       const float* bl = g->vbuf[vi][0];
       const float* br = g->vbuf[vi][1];
-      const float a = e0[vi], step = (e1[vi] - e0[vi]) / (float)m;
+      /* envelope times the Level destination, both ramped across the block */
+      const float a = e0[vi] * v->level_prev, step = (e1[vi] * v->level - a) / (float)m;
       float* ol = out_l + off;
       float* orr = out_r + off;
       for (int i = 0; i < m; i++) {
