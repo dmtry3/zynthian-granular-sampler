@@ -22,9 +22,11 @@
 #   grain_core.c is the bilinear transform of the analog prototype, so |H| is the analog formula at
 #   w = tan(pi f / sr) / tan(pi fc / sr).
 # Mod:
-# - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
+# - The 7 x 8 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
 #   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
 # - LFO 1/2: a tap changes the shape, Free/Key sync; Env 1/2 shape and Mod Depth: finger up/down.
+# Tabs and knob pages go together: a tap on a tab selects its knob page (Wave -> Position, Grain, Pitch,
+# Filter, Mod) through Zynthian's control screen; turning to such a page shows its tab.
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
@@ -48,9 +50,11 @@ NGRAIN_MARKS = 16
 TABS = ["Wave", "Grain", "Pitch", "Filter", "Mod"]
 MOD_SRCS = [("lfo1", "LFO1"), ("lfo2", "LFO2"), ("env1", "Env1"), ("env2", "Env2"), ("vel", "Vel"),
             ("wheel", "Wheel"), ("rnd", "Rnd")]
-MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", "Size"), ("density", "Dens"),
+MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("size", "Size"), ("density", "Dens"),
             ("pitch", "Pitch"), ("pan", "Pan"), ("level", "Lvl"), ("cutoff", "Cut")]
 LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
+TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod"]   # knob page (port group) of each tab
+MOD_DSTS_SHORT = ["Pos", "Scn", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
 MOD_POS = (77, 171, 247)        # positive cells: blue
 MOD_NEG = (255, 146, 43)        # negative cells: orange
 DOUBLE_TAP = 0.35               # s
@@ -237,6 +241,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.mod_side = None         # values the side controls were drawn for
         self.drag = None             # (symbol, start value, start y, lo, hi) while a finger is down
         self.last_tap = (None, 0.0)  # (symbol, time) for a double tap
+        self.last_group = None       # knob page (port group symbol) seen on the previous refresh
         self.pitch_notes = None      # sounding pitch classes drawn
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
@@ -314,6 +319,48 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     def _font_size(self):
         return max(8, min(max(self.height, 20) // 14, 13))
 
+    # ---------- tab <-> knob page ----------
+    def _page_rows(self):
+        """Zynthian's list of control pages: (index, group symbol) of this processor's pages."""
+        try:
+            rows = self.zyngui_control.list_data
+        except Exception:
+            return []
+        out = []
+        for i, row in enumerate(rows):
+            if len(row) >= 5 and row[0] and row[3] is self.processor:
+                out.append((i, row[0]))
+        return out
+
+    def _select_page(self, tab):
+        """A tab shows its knob page: Wave -> Position, Grain, Pitch, Filter, Mod."""
+        for i, group in self._page_rows():
+            if group == TAB_GROUPS[tab]:
+                try:
+                    self.zyngui_control.select(i)
+                except Exception as e:
+                    logging.debug("Granular Sampler widget: can't select page %s => %s", group, e)
+                return
+
+    def _current_group(self):
+        try:
+            info = self.zyngui_control.screen_info
+            if info and len(info) >= 5 and info[3] is self.processor:
+                return info[0]
+        except Exception:
+            pass
+        return None
+
+    def _follow_page(self):
+        """The knob page changed (a knob or the menu): show its tab. Pages without a tab keep the tab."""
+        group = self._current_group()
+        if group == self.last_group:
+            return
+        self.last_group = group
+        if group in TAB_GROUPS and TAB_GROUPS.index(group) != self.tab:
+            self.tab = TAB_GROUPS.index(group)
+            self._clear()
+
     def _zval(self, sym, default):
         try:
             return float(self.processor.controllers_dict[sym].value)
@@ -351,7 +398,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             for i, (x0, x1) in enumerate(self.tab_boxes):
                 if x0 <= event.x < x1 and i != self.tab:
                     self.tab = i
+                    self.last_group = TAB_GROUPS[i]
                     self._clear()
+                    self._select_page(i)
                     self.refresh_gui()
             return
         if self.tab in (1, 2):
@@ -405,6 +454,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self._start_reading(path)
             elif not path:
                 self.peaks_path = ""
+        self._follow_page()
         self._draw_tabs()
         self._draw_title()
         if self.tab == 1:
@@ -626,6 +676,19 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 return
 
     # ---------- Mod tab ----------
+    def _mod_label_font(self, cw):
+        """Largest small font (and names) whose column labels fit the cell width: no overlapping text."""
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+        for names in ([d[1] for d in MOD_DSTS], MOD_DSTS_SHORT):
+            for size in range(max(6, fs - 4), 5, -1):
+                try:
+                    f = tkinter.font.Font(family=fam, size=size)
+                    if max(f.measure(n) for n in names) <= cw - 3:
+                        return size, names
+                except Exception:
+                    return max(6, fs - 4), names
+        return 6, MOD_DSTS_SHORT
+
     def _mod_layout(self):
         w, h = max(self.width, 80), max(self.height, 60)
         pad = 6
@@ -667,13 +730,14 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         c = self.widget_canvas
         w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch = self._mod_layout()
         fam, fs = zynthian_gui_config.font_family, self._font_size()
-        fsmall = max(7, fs - 2)
         if self.mod_items is None:                        # static part: once per size / tab switch
             c.delete("mod")
             self.mod_items = {}
             self.mod_vals = {}
             self.mod_side = None
-            for di, (_, name) in enumerate(MOD_DSTS):
+            fsmall, names = self._mod_label_font(cw)
+            self.mod_fsmall = fsmall
+            for di, name in enumerate(names):
                 c.create_text(gx0 + (di + 0.5) * cw, gy0 - 3, anchor="s", text=name, fill=zynthian_gui_config.color_tx_off,
                               font=(fam, fsmall), tags="mod")
             self.mod_labels = []
@@ -683,7 +747,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 for di in range(len(MOD_DSTS)):
                     x0, y0 = gx0 + di * cw + 1, gy0 + si * ch + 1
                     r = c.create_rectangle(x0, y0, x0 + cw - 2, y0 + ch - 2, fill=mix(MOD_POS, 0), width=0, tags="mod")
-                    t = c.create_text(x0 + cw / 2 - 1, y0 + ch / 2 - 1, text="", font=(fam, fsmall), tags="mod",
+                    t = c.create_text(x0 + cw / 2 - 1, y0 + ch / 2 - 1, text="", font=(fam, self.mod_fsmall), tags="mod",
                                       fill="#000000")
                     self.mod_items[(si, di)] = (r, t)
         # cells: only the changed ones are touched
@@ -794,10 +858,12 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     DB_TOP, DB_BOTTOM = 30.0, -42.0
 
     def _filter_layout(self):
+        """Plot box; below it one line for the frequency labels and one for the info (real font metrics)."""
         w, h = max(self.width, 80), max(self.height, 60)
         pad = 8
         top = self._header_h() + 6
-        return (pad + 30, top, w - pad, h - self._font_size() * 2 - 6)
+        line = self._header_h()
+        return (pad + 30, top, w - pad, h - 2 * line - 2)
 
     def _fx(self, f, x0, x1):
         import math
@@ -847,7 +913,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         fct = ("%.1f kHz" % (fc / 1000.0)) if fc >= 1000 else ("%d Hz" % round(fc))
         info = "%s  %s  Res %d %%  Key %d %%%s" % (FILTER_TYPES[ftype], fct, round(res * 100), round(kt),
                                                  "  (off)" if (open_lp or open_hp) else "")
-        c.create_text(x0, max(self.height, 60) - 3, anchor="sw", text=info, fill=tx_off,
+        c.create_text(x0, max(self.height, 60) - 1, anchor="sw", text=info, fill=tx_off,
                       font=(fam, fs), tags="filter")
 
     # ---------- Pitch tab ----------

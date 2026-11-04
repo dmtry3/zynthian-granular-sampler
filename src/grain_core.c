@@ -412,7 +412,7 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   const float size_s = clampf(p->size_ms * exp2f(bm[GC_DST_SIZE] * GC_MOD_OCTAVES), GC_SIZE_MIN, GC_SIZE_MAX) * 0.001f;
   const float dens = clampf(p->density * exp2f(v->mod[GC_DST_DENSITY] * GC_MOD_OCTAVES), GC_DENS_MIN, GC_DENS_MAX);
   const double wlen = window_len(g, p);
-  const float spray = clampf(p->spray + bm[GC_DST_SPRAY] * GC_MOD_SPRAY, 0.0f, 1.0f);
+  const float spray = clampf(p->spray, 0.0f, 1.0f);
   double start = v->playhead + (double)((rnd(g) * 2.0f - 1.0f) * spray * 0.5f) * wlen;
   start += (double)(bm[GC_DST_POSITION] * GC_MOD_POSITION) * (double)g->src.frames[0];
   start = wrap(start, (double)g->src.frames[0]);

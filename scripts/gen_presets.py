@@ -18,7 +18,7 @@ PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("lfo1_rate", 1), ("lfo2_rate", 0.25), ("env1_time", 1), ("env2_time", 2)]
 # integer parameters in the plugin's order (granular_sampler.c), cells m_<src>_<dst> default 0
 SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
-DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"]
+DSTS = ["position", "scan", "size", "density", "pitch", "pan", "level", "cutoff"]
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)] + \
                [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS]

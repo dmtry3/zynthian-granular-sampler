@@ -39,7 +39,7 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 #define N_GRAIN_PORTS 16
 #define N_RETIRED 8
 
-/* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
+/* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 56 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
        IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
@@ -51,7 +51,7 @@ static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, G
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 }, { 0, 0, 1 }, { 0, 0, 1 },
   { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 } };
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
-static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
+static const char* const dst_names[GC_NDST] = { "position", "scan", "size", "density", "pitch",
   "pan", "level", "cutoff" };
 static int ip_default(int i) { return i < N_FIXED ? ip_range[i][0] : 0; }
 static int ip_min(int i) { return i < N_FIXED ? ip_range[i][1] : -100; }

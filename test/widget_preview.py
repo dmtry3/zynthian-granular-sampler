@@ -125,7 +125,7 @@ class Processor:
                        ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
-            for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
+            for b in ("position", "scan", "size", "density", "pitch", "pan", "level", "cutoff"):
                 self.controllers_dict["m_%s_%s" % (a, b)] = NumCtrl("m_%s_%s" % (a, b), 0)
 
     def v(self, sym):
@@ -133,12 +133,27 @@ class Processor:
 
 
 class Control:
+    """Zynthian's control screen: list_data rows (group symbol, index, title, processor, page)."""
     def __init__(self, root):
         self.main_frame = root
         self.layout = {"rows": 4}
         self.screen_title = "Voice"
+        self.list_data = []
+        self.screen_info = None
+        self.selected = []
         self.wide = True
         self.shown = True
+
+    def add_pages(self, proc):
+        self.list_data = [(None, None, "> Granular Sampler", proc)]
+        for j, (g, t) in enumerate((("g_position", "Position"), ("g_grain", "Grain"), ("g_pitch", "Pitch"),
+                                    ("g_voice", "Voice"), ("g_filter", "Filter"), ("g_mod", "Mod"))):
+            self.list_data.append((g, j + 1, t, proc, j))
+
+    def select(self, index=None, set_zctrl=True):
+        self.selected.append(index)
+        self.screen_info = self.list_data[index]
+        self.screen_title = self.screen_info[2]
 
 
 def load_widget():
@@ -490,7 +505,7 @@ def main():
     x0, x1 = wdg.tab_boxes[4]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
     pump(lambda: False, 0.05)
-    check("Mod tab: 63 cells", wdg.tab == 4 and len(wdg.mod_items) == 63)
+    check("Mod tab: 56 cells (7 x 8, no Spray)", wdg.tab == 4 and len(wdg.mod_items) == 56)
     W_, H_, pad_, top_, gx0, gy0, gx1, gy1, cw, ch = wdg._mod_layout()
 
     def cell_xy(si, di):
@@ -502,24 +517,24 @@ def main():
         wdg._on_release(Tap(x, y - dy))
         time.sleep(mod.DOUBLE_TAP + 0.02)
 
-    x, y = cell_xy(0, 5)                                  # LFO1 -> Pitch
+    x, y = cell_xy(0, 4)                                  # LFO1 -> Pitch
     drag(x, y, 30)
     check("finger up 30 px: +20 on LFO1>Pitch", proc.v("m_lfo1_pitch") == 20)
-    r, t = wdg.mod_items[(0, 5)]
+    r, t = wdg.mod_items[(0, 4)]
     check("positive cell is blue with its value", c.itemcget(t, "text") == "+20" and
           c.itemcget(r, "fill") == mod.mix(mod.MOD_POS, 0.25 + 0.75 * 0.2))
     check("a source in use is lit", c.itemcget(wdg.mod_labels[0], "fill") == cfg.color_tx and
           c.itemcget(wdg.mod_labels[1], "fill") == "#606060")
-    x, y = cell_xy(3, 8)                                  # Env2 -> Cutoff
+    x, y = cell_xy(3, 7)                                  # Env2 -> Cutoff
     drag(x, y, -60)
     check("finger down: negative, orange", proc.v("m_env2_cutoff") == -40 and
-          c.itemcget(wdg.mod_items[(3, 8)][0], "fill") == mod.mix(mod.MOD_NEG, 0.25 + 0.75 * 0.4))
+          c.itemcget(wdg.mod_items[(3, 7)][0], "fill") == mod.mix(mod.MOD_NEG, 0.25 + 0.75 * 0.4))
     drag(x, y, -1000)
     check("clamped at -100", proc.v("m_env2_cutoff") == -100)
     wdg._on_press(Tap(x, y)); wdg._on_release(Tap(x, y))
     wdg._on_press(Tap(x, y)); wdg._on_release(Tap(x, y))
     check("double tap resets the cell", proc.v("m_env2_cutoff") == 0 and
-          c.itemcget(wdg.mod_items[(3, 8)][1], "text") == "")
+          c.itemcget(wdg.mod_items[(3, 7)][1], "text") == "")
     time.sleep(mod.DOUBLE_TAP + 0.02)
     boxes = {b[0]: b for b in wdg._side_boxes()}
 
@@ -562,6 +577,62 @@ def main():
           c.itemcget(wdg.marks[0], "state") == "normal")
     wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
     check("tap on the waveform still opens the file selector", sample.nudges == nudges + 1)
+
+    # ---------- tabs <-> knob pages ----------
+    ctl = wdg.zyngui_control
+    ctl.add_pages(proc)
+    ctl.select(4)                                         # Voice page: no tab of its own
+    pump(lambda: False, 0.05)
+    check("a page without a tab keeps the tab", wdg.tab == 0)
+    x0, x1 = wdg.tab_boxes[2]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("tap on the Pitch tab selects the Pitch knob page", ctl.selected[-1] == 3 and ctl.screen_title == "Pitch"
+          and wdg.tab == 2)
+    x0, x1 = wdg.tab_boxes[0]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("tap on Wave selects the Position page", ctl.screen_title == "Position" and wdg.tab == 0)
+    ctl.select(6)                                         # a knob turns to the Mod page
+    pump(lambda: False, 0.05)
+    check("turning to the Mod page shows the Mod tab", wdg.tab == 4)
+    ctl.select(5)
+    pump(lambda: False, 0.05)
+    check("turning to the Filter page shows the Filter tab", wdg.tab == 3)
+    n = len(ctl.selected)
+    pump(lambda: False, 0.1)
+    check("no page selected by the widget on its own", len(ctl.selected) == n)
+    ctl.select(1)
+    pump(lambda: False, 0.05)
+
+    # ---------- no overlapping text at a Zynthian-like size ----------
+    def overlap(b1, b2):
+        return b1 and b2 and not (b1[2] <= b2[0] or b2[2] <= b1[0] or b1[3] <= b2[1] or b2[3] <= b1[1])
+    for geo in ("800x380", "480x272"):
+        root.geometry(geo)
+        pump(lambda: False, 0.3)
+        x0, x1 = wdg.tab_boxes[3]
+        wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+        pump(lambda: False, 0.05)
+        texts = [i for i in c.find_withtag("filter") if c.type(i) == "text"]
+        info = texts[-1]
+        axis = [t for t in texts if c.itemcget(t, "text") in ("100", "1k", "10k")]
+        check("%s Filter: frequency labels clear of the info line" % geo,
+              len(axis) == 3 and not any(overlap(c.bbox(t), c.bbox(info)) for t in axis))
+        x0, x1 = wdg.tab_boxes[4]
+        wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+        pump(lambda: False, 0.05)
+        heads = [i for i in c.find_withtag("mod") if c.type(i) == "text" and c.itemcget(i, "text") in
+                 [d[1] for d in mod.MOD_DSTS] + mod.MOD_DSTS_SHORT]
+        heads.sort(key=lambda i: c.coords(i)[0])
+        check("%s Mod: column labels do not overlap" % geo,
+              len(heads) == 8 and not any(overlap(c.bbox(a_), c.bbox(b_)) for a_, b_ in zip(heads, heads[1:])))
+        rows = wdg.mod_labels
+        first_cell = wdg.mod_items[(0, 0)][0]
+        check("%s Mod: row labels clear of the grid" % geo,
+              all(c.bbox(r)[2] <= c.bbox(first_cell)[0] + 1 for r in rows))
+    root.geometry("480x300")
+    pump(lambda: False, 0.2)
 
     # Zynthian calls update() every 32 ms: the widget asks for monitors only every UPDATE_PERIOD
     mod.UPDATE_PERIOD = throttle
