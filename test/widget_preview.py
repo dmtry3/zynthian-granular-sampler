@@ -115,7 +115,7 @@ class Processor:
                                  "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0),
                                  "shape": NumCtrl("shape", 67.0), "size": NumCtrl("size", 100.0),
                                  "density": NumCtrl("density", 20.0),
-                                 "voices": NumCtrl("voices", 8),
+                                 "voices": NumCtrl("voices", 8), "glide": NumCtrl("glide", 0),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
@@ -418,9 +418,27 @@ def main():
     check("tap on 1 again: L = legato (voices 0)", proc.v("voices") == 0 and first_label() == "L")
     tap_first_voice()
     check("tap on L: back to 1", proc.v("voices") == 1 and first_label() == "1")
+    # Glide: only in mono, finger up/down, double tap = off
+    check("with 1 voice (mono) Glide is active", wdg.glide_box is not None)
+    gb = wdg.glide_box
+    gx, gy = (gb[0] + gb[2]) / 2, (gb[1] + gb[3]) / 2
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gy - 12)); wdg._on_release(None)
+    check("Glide: finger up 12 px = 120 ms", proc.v("glide") == 120)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gy - 1000)); wdg._on_release(None)
+    check("Glide clamped at 2000 ms", proc.v("glide") == 2000)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    check("Glide: double tap = off", proc.v("glide") == 0)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
     tap_first_voice()
     press_button("voices", 8)
     check("from L to 8 voices", proc.v("voices") == 8 and first_label() == "1")
+    check("with 8 voices Glide is inactive", wdg.glide_box is None)
+    writes = proc.controllers_dict["glide"].writes
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gy - 30)); wdg._on_release(None)
+    check("a drag on the inactive Glide does nothing", proc.controllers_dict["glide"].writes == writes)
     items = c.find_withtag("grain")
     pump(lambda: False, 0.1)
     check("Grain tab not redrawn when nothing changed", c.find_withtag("grain") == items)

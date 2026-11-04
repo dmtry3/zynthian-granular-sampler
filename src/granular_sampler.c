@@ -42,14 +42,14 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 56 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 }, { 0, 0, 1 }, { 0, 0, 1 },
-  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 } };
+  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 } };
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const dst_names[GC_NDST] = { "position", "scan", "size", "density", "pitch",
   "pan", "level", "cutoff" };
@@ -295,6 +295,7 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_ENV1_SHAPE: gc_set_env(&S->core, 0, ip[IP_ENV1_SHAPE] * 0.01f); break;
     case IP_ENV2_SHAPE: gc_set_env(&S->core, 1, ip[IP_ENV2_SHAPE] * 0.01f); break;
     case IP_MOD_DEPTH: gc_set_mod_depth(&S->core, ip[IP_MOD_DEPTH] * 0.01f); break;
+    case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
     default: {
       const int c = i - IP_CELL0;
       gc_set_mod_cell(&S->core, c / GC_NDST, c % GC_NDST, ip[i] * 0.01f);

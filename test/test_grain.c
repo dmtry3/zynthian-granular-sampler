@@ -518,6 +518,55 @@ static void test_mono_retrigger(void) {
   free_src(&s);
 }
 
+/* mono portamento: a new key glides from the sounding pitch in Glide ms */
+static void test_glide(void) {
+  GcParams p = poly_params();
+  p.density = 200; p.size_ms = 5;
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_voices(&G, 1, 1);                          /* L */
+  gc_set_glide(&G, 100.0f);
+  gc_note_on(&G, &p, 60, 100);
+  CHECK(G.voices[0].pitch == 60.0f);                /* from silence: no glide */
+  run(&p, 0.05, NULL);
+  gc_note_on(&G, &p, 72, 100);                      /* legato: glide up an octave in 100 ms */
+  for (int k = 0; k < (int)(0.05f * SR) / GC_BLOCK; k++) gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].pitch - 66.0f) < 0.3f && G.last_pitch > 64.0f && G.last_pitch < 68.0f);
+  run(&p, 0.06, NULL);
+  CHECK(G.voices[0].pitch == 72.0f && G.last_pitch == 72.0f);
+  gc_note_off(&G, 72);                              /* back to 60, gliding too */
+  for (int k = 0; k < 10; k++) gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].pitch < 72.0f && G.voices[0].pitch > 60.0f && G.voices[0].note == 60);
+  run(&p, 0.11, NULL);
+  CHECK(G.voices[0].pitch == 60.0f);
+  /* key track follows the gliding pitch */
+  p.keytrack = 1.0f; p.cutoff_hz = 1000;
+  gc_note_on(&G, &p, 72, 100);
+  for (int k = 0; k < (int)(0.05f * SR) / GC_BLOCK; k++) gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.voices[0].fc_hz > 1100 && G.voices[0].fc_hz < 1900);   /* between 1 kHz (C4) and 2 kHz (C5) */
+  p.keytrack = 0.0f; p.cutoff_hz = GC_CUTOFF_MAX;
+  /* mono 1 (start again on each key): glides as well, but not from silence */
+  gc_all_off(&G);
+  gc_set_voices(&G, 1, 0);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  gc_note_on(&G, &p, 67, 100);
+  CHECK(G.voices[0].pitch == 60.0f && G.voices[0].glide_step > 0.0f);
+  /* Glide 0: a jump */
+  gc_set_glide(&G, 0.0f);
+  gc_note_on(&G, &p, 55, 100);
+  CHECK(G.voices[0].pitch == 55.0f);
+  /* poly: never glides */
+  gc_all_off(&G);
+  gc_set_voices(&G, 8, 0);
+  gc_set_glide(&G, 500.0f);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  gc_note_on(&G, &p, 60, 100);                      /* same key again */
+  gc_note_on(&G, &p, 72, 100);
+  CHECK(G.voices[0].pitch == 60.0f && G.voices[1].pitch == 72.0f);
+  free_src(&s);
+}
+
 static void test_spread(void) {
   GcParams p = poly_params();
   Src s = make_src(SR, SR, 1, f_half);
@@ -944,6 +993,7 @@ int main(void) {
   test_envelope();
   test_mono();
   test_mono_retrigger();
+  test_glide();
   test_spread();
   test_pitch();
   test_quantize();

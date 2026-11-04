@@ -13,7 +13,7 @@
 # Grain:
 # - The window shape of the Shape knob (same formula as grain_core.c, after Mutable Instruments Beads),
 #   Size, Density and the mean overlap; the number of voices (LV2 parameter voices 0..8): 1 = mono,
-#   a second tap on 1 makes it L = mono with legato (voices 0).
+#   a second tap on 1 makes it L = mono with legato (voices 0); Glide (mono portamento, ms): finger up/down.
 # Pitch:
 # - One octave: notes of the Quantize scale lit, the tonic filled, sounding notes (outputs note1..8) dotted;
 #   a tap on a key sets the tonic (LV2 parameter key); scale buttons set the scale (LV2 parameter scale).
@@ -59,6 +59,8 @@ MOD_POS = (77, 171, 247)        # positive cells: blue
 MOD_NEG = (255, 146, 43)        # negative cells: orange
 DOUBLE_TAP = 0.35               # s
 DRAG_PX = 1.5                   # px of finger movement per step (1 %)
+GLIDE_PER_PX = 10               # ms of Glide per px of finger movement
+GLIDE_MAX = 2000
 FILTER_TYPES = ["LP", "HP", "BP"]
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -285,6 +287,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.mod_vals = {}
         self.mod_side = None
         self.drag = None
+        self.glide_box = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -402,6 +405,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     self._clear()
                     self._select_page(i)
                     self.refresh_gui()
+            return
+        if self.tab == 1 and self._glide_press(event):
             return
         if self.tab in (1, 2):
             self._button_press(event)
@@ -610,7 +615,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         size = self._zval("size", 100.0)
         dens = self._zval("density", 20.0)
         voices = int(round(self._zval("voices", MAX_VOICES)))
-        key = (round(shape * 30), round(size, 1), round(dens, 2), voices, self.width, self.height)
+        glide = int(round(self._zval("glide", 0)))
+        key = (round(shape * 30), round(size, 1), round(dens, 2), voices, glide, self.width, self.height)
         if key == self.grain_view:
             return
         self.grain_view = key
@@ -651,6 +657,21 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             else:
                 text, value = str(i + 1), i + 1
             self._button(x0, y, x0 + bw - 3, y + bh, text, (i + 1) <= max(voices, 1), True, "voices", value)
+        # Glide: mono portamento, finger up/down; only with 1 voice (1 or L)
+        y += bh + fs
+        mono = voices <= 1
+        gx0, gx1 = right, w - pad
+        self.glide_box = (gx0, y, gx1, y + bh) if mono else None
+        c.create_rectangle(gx0, y, gx1, y + bh, fill=BUTTON_OFF, outline=("#505050" if mono else "#303030"),
+                           tags="grain")
+        glide = int(round(self._zval("glide", 0)))
+        frac = min(glide, GLIDE_MAX) / float(GLIDE_MAX)
+        if mono and frac > 0:
+            c.create_rectangle(gx0 + 1, y + 1, gx0 + 1 + frac * (gx1 - gx0 - 2), y + bh - 1, fill="#2d6c99", width=0,
+                               tags="grain")
+        c.create_text(gx0 + 6, y + bh / 2, anchor="w", tags="grain", font=(fam, fs),
+                      fill=(tx if mono else "#505050"),
+                      text=("Glide %d ms" % glide) if glide else "Glide off")
 
     def _button_h(self):
         """Button height from the font: text plus a small margin."""
@@ -665,6 +686,21 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                       font=(zynthian_gui_config.font_family, self._font_size()))
         if enabled:
             self.buttons.append((x0, y0, x1, y1, sym, value))
+
+    def _glide_press(self, event):
+        b = getattr(self, "glide_box", None)
+        if not b or not (b[0] <= event.x <= b[2] and b[1] <= event.y <= b[3]):
+            return False
+        now = time.monotonic()
+        if self.last_tap[0] == "glide" and now - self.last_tap[1] < DOUBLE_TAP:
+            self._zset("glide", 0)                        # double tap: off
+            self.last_tap = (None, 0.0)
+            self.drag = None
+            self.refresh_gui()
+            return True
+        self.last_tap = ("glide", now)
+        self.drag = ("glide", int(round(self._zval("glide", 0))), event.y, 0, GLIDE_MAX, GLIDE_PER_PX)
+        return True
 
     def _button_press(self, event):
         for x0, y0, x1, y1, sym, value in self.buttons:
@@ -839,13 +875,13 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.refresh_gui()
             return
         self.last_tap = (sym, now)
-        self.drag = (sym, int(round(self._zval(sym, 0))), event.y, lo, hi)
+        self.drag = (sym, int(round(self._zval(sym, 0))), event.y, lo, hi, 1.0 / DRAG_PX)
 
     def _on_motion(self, event):
-        if not self.drag or self.tab != 4:
+        if not self.drag:
             return
-        sym, start, y0, lo, hi = self.drag
-        v = int(min(max(start + (y0 - event.y) / DRAG_PX, lo), hi))
+        sym, start, y0, lo, hi, per_px = self.drag
+        v = int(min(max(start + (y0 - event.y) * per_px, lo), hi))
         if abs(event.y - y0) > 6:
             self.last_tap = (None, 0.0)                   # a drag is not a tap
         self._zset(sym, v)

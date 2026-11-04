@@ -128,6 +128,8 @@ typedef struct {
   int pending_note, pending_vel, pending_off;   /* note to start when the steal fade is over */
   uint32_t age;           /* note-on order: the oldest voice is stolen first */
   int restart;            /* mono without legato: start again (playhead, attack) in the next block */
+  float pitch;            /* sounding pitch (MIDI): glides to `note` in mono with Glide, else = note */
+  float glide_step;       /* semitones per sample while gliding */
   float fc_log;           /* filter cutoff, log2 Hz, smoothed toward the knob */
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
@@ -151,6 +153,7 @@ typedef struct {
   int nvoices;            /* 1..GC_VOICES voices */
   int mono;               /* nvoices == 1: back to a held key on release */
   int legato;             /* mono: a new key only changes the pitch (else it starts the voice again) */
+  float glide_ms;         /* mono: portamento time from the sounding pitch to a new key (0 = off) */
   int held[GC_HELD], nheld;
   uint32_t age;
   int last_voice;         /* voice of the newest note: its playhead is shown in the widget */
@@ -189,6 +192,8 @@ void gc_all_off(GrainCore* g);          /* silence now: grains and voices stoppe
 /* n voices (1..GC_VOICES); 1 voice = mono, with legato or starting again on each key.
  * Voices above n finish their sound. */
 void gc_set_voices(GrainCore* g, int n, int legato);
+/* Mono (1 voice) portamento: a new key while the voice sounds glides there in `ms` (0 = jump). */
+void gc_set_glide(GrainCore* g, float ms);
 int gc_active_voices(const GrainCore* g);
 /* Quantize scale: 0 chromatic, 1 major, 2 minor ... (gc_scale_names), tonic 0 = C .. 11 = B. */
 void gc_set_scale(GrainCore* g, int key, int scale);

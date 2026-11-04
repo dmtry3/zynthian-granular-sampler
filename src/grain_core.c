@@ -261,16 +261,29 @@ static void kill_voice_grains(GrainCore* g, int v) {
 }
 
 /* Starts a note on a voice; the envelope rises from where it is (a retrigger does not click). */
-static float filter_target_log(const GcParams* p, int note, float mod) {
+static float filter_target_log(const GcParams* p, float pitch, float mod) {
   const float c = clampf(p->cutoff_hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX);
-  return log2f(c) + clampf(p->keytrack, 0.0f, 1.0f) * ((float)note - 60.0f) / 12.0f + mod * GC_MOD_CUTOFF;
+  return log2f(c) + clampf(p->keytrack, 0.0f, 1.0f) * (pitch - 60.0f) / 12.0f + mod * GC_MOD_CUTOFF;
 }
+
+/* A new key for a voice: in mono with Glide, a sounding voice slides from its pitch, else it jumps. */
+static void voice_set_note(GrainCore* g, GcVoice* v, int note) {
+  if (g->mono && g->glide_ms > 0.0f && v->stage != GC_V_IDLE && v->pitch != (float)note) {
+    v->glide_step = fabsf((float)note - v->pitch) / (g->glide_ms * 0.001f * g->sr);
+  } else {
+    v->pitch = (float)note;
+    v->glide_step = 0.0f;
+  }
+  v->note = note;
+}
+
+void gc_set_glide(GrainCore* g, float ms) { g->glide_ms = clampf(ms, 0.0f, 10000.0f); }
 
 static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int vel) {
   GcVoice* v = &g->voices[vi];
   if (v->stage == GC_V_IDLE) {             /* a fresh voice: filter state empty, cutoff right at the knob */
     v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
-    v->fc_log = filter_target_log(p, note, 0.0f);
+    v->fc_log = filter_target_log(p, (float)note, 0.0f);
     v->filter_on = 0;
     v->level = v->level_prev = 1.0f;
   }
@@ -278,8 +291,9 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
     v->env_t[k] = 0.0f;                    /* Env 1/2 start with the note */
     if (g->lfo_keysync[k]) v->lfo_ph[k] = 0.0f;
   }
+  voice_set_note(g, v, note);             /* before the stage changes: a fresh voice does not glide */
   v->stage = GC_V_ATTACK;
-  v->note = note; v->gate = 1;
+  v->gate = 1;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
   v->playhead = g->src.frames[0] ? window_start(g, p) : 0.0;   /* every note starts reading at Position */
   v->next = 0.0f;                                              /* first grain right away */
@@ -316,7 +330,7 @@ void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
     g->held[g->nheld++] = note;
     GcVoice* v = &g->voices[0];
     if (g->legato && v->gate && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
-      v->note = note;                     /* legato: new pitch for new grains, envelope and playhead go on */
+      voice_set_note(g, v, note);         /* legato: new pitch for new grains, envelope and playhead go on */
       return;
     }
     voice_start(g, p, 0, note, vel);      /* else: start again, the envelope rises from where it is */
@@ -347,7 +361,7 @@ void gc_note_off(GrainCore* g, int note) {
     GcVoice* v = &g->voices[0];
     if (v->note != note || !v->gate) return;
     if (g->nheld > 0) {
-      v->note = g->held[g->nheld - 1];    /* back to the key still held */
+      voice_set_note(g, v, g->held[g->nheld - 1]);   /* back to the key still held */
       if (!g->legato) v->restart = 1;     /* without legato it starts again (gc_process knows Position) */
     } else voice_release(v);
     return;
@@ -420,7 +434,7 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
 
   /* Pitch: note + Pitch + random Pitch Spray, pulled to the scale by Quantize; fixed for the grain. */
-  float semis = (float)v->note + clampf(p->pitch, -GC_PITCH_MAX, GC_PITCH_MAX) + bm[GC_DST_PITCH] * GC_MOD_PITCH;
+  float semis = v->pitch + clampf(p->pitch, -GC_PITCH_MAX, GC_PITCH_MAX) + bm[GC_DST_PITCH] * GC_MOD_PITCH;
   const float ps = clampf(p->pitch_spray, 0.0f, GC_PSPRAY_MAX);
   if (ps > 0.0f) semis += ps * (rnd(g) * 2.0f - 1.0f);
   const float q = clampf(p->quantize, 0.0f, 1.0f);
@@ -578,7 +592,7 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
  * stable when the cutoff moves. Coefficients once per block, cutoff smoothed in log2 Hz.
  * A low-pass fully open or a high-pass fully closed is bypassed (no cost). */
 static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
-  const float target = filter_target_log(p, v->note, v->mod[GC_DST_CUTOFF]);
+  const float target = filter_target_log(p, v->pitch, v->mod[GC_DST_CUTOFF]);
   const float a = 1.0f - expf(-(float)m / (GC_FILTER_SMOOTH * g->sr));
   v->fc_log += (target - v->fc_log) * a;
   float fc = exp2f(v->fc_log);
@@ -665,6 +679,10 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
         v->stage = GC_V_ATTACK;
         v->playhead = have ? wstart : 0.0;
         v->next = 0.0f;
+      }
+      if (v->pitch != (float)v->note) {         /* glide toward the key */
+        const float d = (float)v->note - v->pitch, step = v->glide_step * (float)m;
+        v->pitch = fabsf(d) <= step || step <= 0.0f ? (float)v->note : v->pitch + (d > 0 ? step : -step);
       }
       voice_mod(g, p, v, m);
       if (v->stage != GC_V_STEAL) {              /* grains are born while the voice sounds, also in release */
