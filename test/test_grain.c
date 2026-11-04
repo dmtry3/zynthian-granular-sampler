@@ -928,6 +928,25 @@ static void test_mod_dest(void) {
   CHECK(G.born > base * 19 / 10 && G.born < base * 21 / 10);
   CHECK(fabs(G.voices[0].playhead - ph0 - SR) < 2 * BUF);
 
+  /* Mod Wheel -> Spray +100 %: grains spread over the window without the Spray knob */
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_WHEEL, GC_DST_SPRAY, 1.0f);
+  p = poly_params(); p.density = 200; p.size_ms = 5; p.spray = 0.0f; p.position = 0.5f; p.window = 0.2f;
+  gc_note_on(&G, &p, 60, 127);
+  double slo = 1e18, shi = 0;
+  for (int k = 0; k < 400; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    slo = fmin(slo, G.last_start); shi = fmax(shi, G.last_start);
+  }
+  CHECK(shi - slo < 2.0);                           /* wheel at 0: no spray */
+  gc_set_modwheel(&G, 1.0f);
+  for (int k = 0; k < 2000; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    slo = fmin(slo, G.last_start); shi = fmax(shi, G.last_start);
+  }
+  CHECK(shi - slo > 0.1 * 2 * SR);                  /* spread over most of the 0.2 window */
+
   /* Random -> Pan: grains land left and right without Stereo Spread */
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);

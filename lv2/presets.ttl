@@ -49,6 +49,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -57,6 +58,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -65,6 +67,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -73,6 +76,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -81,6 +85,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -89,6 +94,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -97,6 +103,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -150,6 +157,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -158,6 +166,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -166,6 +175,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -174,6 +184,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -182,6 +193,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -190,6 +202,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -198,6 +211,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -251,6 +265,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -259,6 +274,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -267,6 +283,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -275,6 +292,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -283,6 +301,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -291,6 +310,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -299,6 +319,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -352,6 +373,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -360,6 +382,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -368,6 +391,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -376,6 +400,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -384,6 +409,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -392,6 +418,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -400,6 +427,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -453,6 +481,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -461,6 +490,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -469,6 +499,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -477,6 +508,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -485,6 +517,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -493,6 +526,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -501,6 +535,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -554,6 +589,7 @@
         <urn:granularsampler:sampler#glide> 120 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -562,6 +598,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -570,6 +607,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -578,6 +616,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -586,6 +625,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -594,6 +634,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -602,6 +643,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -655,6 +697,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -663,6 +706,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -671,6 +715,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -679,6 +724,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -687,6 +733,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -695,6 +742,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -703,6 +751,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -756,6 +805,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -764,6 +814,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -772,6 +823,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -780,6 +832,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -788,6 +841,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -796,6 +850,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -804,6 +859,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -857,6 +913,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -865,6 +922,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -873,6 +931,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -881,6 +940,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -889,6 +949,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -897,6 +958,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -905,6 +967,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -958,6 +1021,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -966,6 +1030,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -974,6 +1039,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -982,6 +1048,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -990,6 +1057,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -998,6 +1066,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1006,6 +1075,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1059,6 +1129,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1067,6 +1138,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1075,6 +1147,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1083,6 +1156,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1091,6 +1165,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1099,6 +1174,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1107,6 +1183,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1160,6 +1237,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1168,6 +1246,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1176,6 +1255,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1184,6 +1264,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1192,6 +1273,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1200,6 +1282,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1208,6 +1291,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1261,6 +1345,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1269,6 +1354,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1277,6 +1363,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1285,6 +1372,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1293,6 +1381,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1301,6 +1390,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1309,6 +1399,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1362,6 +1453,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1370,6 +1462,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1378,6 +1471,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1386,6 +1480,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1394,6 +1489,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1402,6 +1498,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1410,6 +1507,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1463,6 +1561,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1471,6 +1570,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1479,6 +1579,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1487,6 +1588,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1495,6 +1597,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1503,6 +1606,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1511,6 +1615,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1564,6 +1669,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1572,6 +1678,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 50 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1580,6 +1687,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1588,6 +1696,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1596,6 +1705,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1604,6 +1714,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1612,6 +1723,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
@@ -1665,6 +1777,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1673,6 +1786,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1681,6 +1795,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 0 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1689,6 +1804,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> 0 ;
@@ -1697,6 +1813,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1705,6 +1822,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 0 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1713,6 +1831,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 10 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 25 ;
@@ -1766,6 +1885,7 @@
         <urn:granularsampler:sampler#glide> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo1_size> 0 ;
         <urn:granularsampler:sampler#m_lfo1_density> 0 ;
         <urn:granularsampler:sampler#m_lfo1_pitch> 0 ;
@@ -1774,6 +1894,7 @@
         <urn:granularsampler:sampler#m_lfo1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_lfo2_position> 0 ;
         <urn:granularsampler:sampler#m_lfo2_scan> 0 ;
+        <urn:granularsampler:sampler#m_lfo2_spray> 0 ;
         <urn:granularsampler:sampler#m_lfo2_size> 0 ;
         <urn:granularsampler:sampler#m_lfo2_density> 0 ;
         <urn:granularsampler:sampler#m_lfo2_pitch> 0 ;
@@ -1782,6 +1903,7 @@
         <urn:granularsampler:sampler#m_lfo2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env1_position> 0 ;
         <urn:granularsampler:sampler#m_env1_scan> 0 ;
+        <urn:granularsampler:sampler#m_env1_spray> 0 ;
         <urn:granularsampler:sampler#m_env1_size> 60 ;
         <urn:granularsampler:sampler#m_env1_density> 0 ;
         <urn:granularsampler:sampler#m_env1_pitch> 0 ;
@@ -1790,6 +1912,7 @@
         <urn:granularsampler:sampler#m_env1_cutoff> 0 ;
         <urn:granularsampler:sampler#m_env2_position> 0 ;
         <urn:granularsampler:sampler#m_env2_scan> 0 ;
+        <urn:granularsampler:sampler#m_env2_spray> 0 ;
         <urn:granularsampler:sampler#m_env2_size> 0 ;
         <urn:granularsampler:sampler#m_env2_density> 0 ;
         <urn:granularsampler:sampler#m_env2_pitch> -25 ;
@@ -1798,6 +1921,7 @@
         <urn:granularsampler:sampler#m_env2_cutoff> 0 ;
         <urn:granularsampler:sampler#m_vel_position> 0 ;
         <urn:granularsampler:sampler#m_vel_scan> 0 ;
+        <urn:granularsampler:sampler#m_vel_spray> 0 ;
         <urn:granularsampler:sampler#m_vel_size> 0 ;
         <urn:granularsampler:sampler#m_vel_density> 0 ;
         <urn:granularsampler:sampler#m_vel_pitch> 0 ;
@@ -1806,6 +1930,7 @@
         <urn:granularsampler:sampler#m_vel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_wheel_position> 0 ;
         <urn:granularsampler:sampler#m_wheel_scan> 0 ;
+        <urn:granularsampler:sampler#m_wheel_spray> 0 ;
         <urn:granularsampler:sampler#m_wheel_size> 0 ;
         <urn:granularsampler:sampler#m_wheel_density> 50 ;
         <urn:granularsampler:sampler#m_wheel_pitch> 0 ;
@@ -1814,6 +1939,7 @@
         <urn:granularsampler:sampler#m_wheel_cutoff> 0 ;
         <urn:granularsampler:sampler#m_rnd_position> 0 ;
         <urn:granularsampler:sampler#m_rnd_scan> 0 ;
+        <urn:granularsampler:sampler#m_rnd_spray> 0 ;
         <urn:granularsampler:sampler#m_rnd_size> 0 ;
         <urn:granularsampler:sampler#m_rnd_density> 0 ;
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;

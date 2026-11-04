@@ -22,7 +22,7 @@
 #   grain_core.c is the bilinear transform of the analog prototype, so |H| is the analog formula at
 #   w = tan(pi f / sr) / tan(pi fc / sr).
 # Mod:
-# - The 7 x 8 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
+# - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
 #   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
 # - LFO 1/2: a tap changes the shape, Free/Key sync; Env 1/2 shape and Mod Depth: finger up/down.
 # Tabs and knob pages go together: a tap on a tab selects its knob page (Wave -> Position, Grain, Pitch,
@@ -50,11 +50,11 @@ NGRAIN_MARKS = 16
 TABS = ["Wave", "Grain", "Pitch", "Filter", "Mod"]
 MOD_SRCS = [("lfo1", "LFO1"), ("lfo2", "LFO2"), ("env1", "Env1"), ("env2", "Env2"), ("vel", "Vel"),
             ("wheel", "Wheel"), ("rnd", "Rnd")]
-MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("size", "Size"), ("density", "Dens"),
+MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", "Size"), ("density", "Dens"),
             ("pitch", "Pitch"), ("pan", "Pan"), ("level", "Lvl"), ("cutoff", "Cut")]
 LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
 TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod"]   # knob page (port group) of each tab
-MOD_DSTS_SHORT = ["Pos", "Scn", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
+MOD_DSTS_SHORT = ["Pos", "Scn", "Spr", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
 MOD_POS = (77, 171, 247)        # positive cells: blue
 MOD_NEG = (255, 146, 43)        # negative cells: orange
 DOUBLE_TAP = 0.35               # s
@@ -725,13 +725,24 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     return max(6, fs - 4), names
         return 6, MOD_DSTS_SHORT
 
+    def _mod_row_label_w(self):
+        """Width of the source names at the grid's small font (measured once per font size)."""
+        fs = max(6, self._font_size() - 4)
+        if getattr(self, "row_label_w", (None,))[0] != fs:
+            try:
+                f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=fs)
+                self.row_label_w = (fs, max(f.measure(n) for _, n in MOD_SRCS) + 6)
+            except Exception:
+                self.row_label_w = (fs, fs * 4)
+        return self.row_label_w[1]
+
     def _mod_layout(self):
         w, h = max(self.width, 80), max(self.height, 60)
         pad = 6
         top = self._header_h() + 4
         fs = self._font_size()
         gx1 = int(w * 0.66)                              # grid on the left two thirds
-        label_w = fs * 4.5
+        label_w = self._mod_row_label_w()                # as wide as the source names, no more
         head_h = fs * 2
         gx0 = pad + label_w
         gy0 = top + head_h

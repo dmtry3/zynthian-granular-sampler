@@ -42,15 +42,15 @@
 #define GC_ENV_MIN     0.005f  /* s: Env 1/2 Time */
 #define GC_ENV_MAX     10.0f
 
-/* Modulation grid: 7 sources x 8 destinations, each cell -1..1 (the widget shows -100..100). */
+/* Modulation grid: 7 sources x 9 destinations, each cell -1..1 (the widget shows -100..100). */
 enum { GC_SRC_LFO1 = 0, GC_SRC_LFO2, GC_SRC_ENV1, GC_SRC_ENV2, GC_SRC_VEL, GC_SRC_WHEEL, GC_SRC_RANDOM, GC_NSRC };
-/* 8 destinations: Spray was dropped so the grid fits the screen (the open question of the spec) */
-enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SIZE, GC_DST_DENSITY, GC_DST_PITCH,
+enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SPRAY, GC_DST_SIZE, GC_DST_DENSITY, GC_DST_PITCH,
        GC_DST_PAN, GC_DST_LEVEL, GC_DST_CUTOFF, GC_NDST };
-/* Position, Size, Pitch and Pan are taken at a grain's birth; Scan, Density, Level and Cutoff
+/* Position, Spray, Size, Pitch and Pan are taken at a grain's birth; Scan, Density, Level and Cutoff
  * change in the voice every GC_BLOCK samples. A full cell (+-1, Mod Depth 100 %) moves its destination by: */
 #define GC_MOD_POSITION 0.5f   /* of the sample */
 #define GC_MOD_SCAN     2.0f   /* x realtime */
+#define GC_MOD_SPRAY    1.0f   /* of the window */
 #define GC_MOD_OCTAVES  3.0f   /* Size and Density: x 2^(+-3) */
 #define GC_MOD_PITCH    24.0f  /* semitones */
 #define GC_MOD_PAN      0.5f

@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 68);                                      /* the path and the 67 integer parameters */
+  CHECK(last_reports == 75);                                      /* the path and the 74 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -298,7 +298,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 68);                                               /* sample + 67 integer parameters */
+  CHECK(nst == 75);                                               /* sample + 74 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
