@@ -1,6 +1,7 @@
 /* grain_bench: CPU cost of grain_core. Only numbers measured on the Pi 5 count.
  *   grain_bench [sample file]               one voice at 16, 32 and 64 grains, linear and Hermite;
  *                                           then 8 voices (a chord) sharing the whole pool
+ *                                           (no filter, filter, + 8 grid cells, + all 63 cells)
  *   grain_bench sample.wav --wav out        also render 10 s for listening:
  *       out_linear.wav, out_hermite.wav     the two interpolations (notes from -12 to +19 semitones)
  *       out_nolevels.wav                    linear without band-limited levels: the aliasing they remove
@@ -58,7 +59,7 @@ static void measure(int grains, int interp) {
 }
 
 /* 8 voices, a chord, each wanting pool/8 grains: the stage 3 case (8 voices, all grains busy). */
-static void measure_poly(int interp, int filter, int mod) {
+static void measure_poly(int interp, int filter, int mod) {   /* mod: 0 none, 1 busy grid, 2 full grid */
   static float l[PERIOD], r[PERIOD];
   GcParams p;
   setup(&p, GC_POOL / GC_VOICES);
@@ -75,6 +76,14 @@ static void measure_poly(int interp, int filter, int mod) {
     gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_SCAN, 0.2f);
     gc_set_lfo(&G, 0, GC_LFO_SINE, 0); gc_set_lfo(&G, 1, GC_LFO_SMOOTH, 0);
   }
+  if (mod == 2) {                           /* worst case: all 63 cells, small amounts so it still sounds sane */
+    for (int s = 0; s < GC_NSRC; s++)
+      for (int d = 0; d < GC_NDST; d++) gc_set_mod_cell(&G, s, d, ((s + d) & 1 ? 0.05f : -0.05f));
+    gc_set_modwheel(&G, 0.5f);
+    gc_set_lfo(&G, 0, GC_LFO_TRI, GC_SYNC_TEMPO); gc_set_lfo(&G, 1, GC_LFO_SH, GC_SYNC_TEMPO);
+    gc_set_lfo_div(&G, 0, 3); gc_set_lfo_div(&G, 1, 5);
+    gc_set_tempo(&G, 120.0f, -1.0);
+  }
   G.interp = interp;
   gc_set_voices(&G, GC_VOICES, 0);
   const int chord[GC_VOICES] = { 48, 55, 60, 63, 67, 70, 74, 79 };
@@ -90,10 +99,12 @@ static void measure_poly(int interp, int filter, int mod) {
   }
   const double cpu = cpu_now() - t0;
   printf("%-8s %d voices%s%s, pool %d: %5.1f active, %6.2f %% of one core, %6.2f us per period%s\n",
-         interp ? "hermite" : "linear", gc_active_voices(&G), filter ? " + filter" : "", mod ? " + mod" : "", GC_POOL, active / periods, 100.0 * cpu / SECONDS,
+         interp ? "hermite" : "linear", gc_active_voices(&G), filter ? " + filter" : "", mod == 2 ? " + full grid" : mod ? " + mod" : "", GC_POOL, active / periods, 100.0 * cpu / SECONDS,
          1e6 * cpu / periods, sink == 12345.0 ? "!" : "");
   gc_all_off(&G);
   for (int s = 0; s < GC_NSRC; s++) for (int d = 0; d < GC_NDST; d++) gc_set_mod_cell(&G, s, d, 0.0f);
+  gc_set_modwheel(&G, 0.0f);
+  for (int i = 0; i < 2; i++) gc_set_lfo(&G, i, GC_LFO_SINE, GC_SYNC_FREE);
 }
 
 static void render(const char* prefix, const char* name, int interp, int levels) {
@@ -165,7 +176,9 @@ int main(int argc, char** argv) {
   measure_poly(GC_INTERP_LINEAR, 0, 0);
   measure_poly(GC_INTERP_LINEAR, 1, 0);
   measure_poly(GC_INTERP_LINEAR, 1, 1);
+  measure_poly(GC_INTERP_LINEAR, 1, 2);
   measure_poly(GC_INTERP_HERMITE, 1, 1);
+  measure_poly(GC_INTERP_HERMITE, 1, 2);
   if (wav) {
     render(wav, "linear", GC_INTERP_LINEAR, 1);
     render(wav, "hermite", GC_INTERP_HERMITE, 1);
