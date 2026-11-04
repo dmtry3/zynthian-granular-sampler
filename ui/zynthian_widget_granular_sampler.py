@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# Granular Sampler widget. Tabs (top left): Wave, Grain, Pitch, Filter; Mod comes with its stage.
+# Granular Sampler widget. Tabs (top left): Wave, Grain, Pitch, Filter, Mod.
 # Wave:
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
 # - The waveform is read from the file here, in a background thread, and drawn once into an image:
@@ -21,6 +21,10 @@
 # - The response of the voice filter for the knobs (Cutoff, Resonance, Type, Key Track at C4): the TPT SVF of
 #   grain_core.c is the bilinear transform of the analog prototype, so |H| is the analog formula at
 #   w = tan(pi f / sr) / tan(pi fc / sr).
+# Mod:
+# - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
+#   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
+# - LFO 1/2: a tap changes the shape, Free/Key sync; Env 1/2 shape and Mod Depth: finger up/down.
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
@@ -41,7 +45,16 @@ ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
 NGRAIN_MARKS = 16
-TABS = ["Wave", "Grain", "Pitch", "Filter"]
+TABS = ["Wave", "Grain", "Pitch", "Filter", "Mod"]
+MOD_SRCS = [("lfo1", "LFO1"), ("lfo2", "LFO2"), ("env1", "Env1"), ("env2", "Env2"), ("vel", "Vel"),
+            ("wheel", "Wheel"), ("rnd", "Rnd")]
+MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", "Size"), ("density", "Dens"),
+            ("pitch", "Pitch"), ("pan", "Pan"), ("level", "Lvl"), ("cutoff", "Cut")]
+LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
+MOD_POS = (77, 171, 247)        # positive cells: blue
+MOD_NEG = (255, 146, 43)        # negative cells: orange
+DOUBLE_TAP = 0.35               # s
+DRAG_PX = 1.5                   # px of finger movement per step (1 %)
 FILTER_TYPES = ["LP", "HP", "BP"]
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -94,6 +107,42 @@ def window_value(x, shape):
     q = (1.0 - x) / r
     base = q ** 4
     return base + (q * q * (3 - 2 * q) - base) * smooth
+
+
+def lfo_value(shape, ph, a=0.6, b=-0.4):
+    """LFO shapes of grain_core.c (gc_lfo_value); a, b: example random steps for S&H and smooth."""
+    import math
+    if shape == 1:
+        return 4 * ph - 1 if ph < 0.5 else 3 - 4 * ph
+    if shape == 2:
+        return 2 * ph - 1
+    if shape == 3:
+        return 1 - 2 * ph
+    if shape == 4:
+        return 1.0 if ph < 0.5 else -1.0
+    if shape == 5:
+        return a if ph < 0.5 else b
+    if shape == 6:
+        q = (ph * 2) % 1.0
+        x, y = (a, b) if ph < 0.5 else (b, -a)
+        return x + (y - x) * q * q * (3 - 2 * q)
+    return math.sin(2 * math.pi * ph)
+
+
+def env_value(shape, t, time=1.0):
+    """Env 1/2 of grain_core.c (gc_env_value)."""
+    att, dec = shape * time, (1.0 - shape) * time
+    if t < att:
+        return t / att
+    if dec < 0.001:
+        return 1.0
+    u = (t - att) / dec
+    return 0.0 if u >= 1.0 else (1.0 - u) ** 2
+
+
+def mix(rgb, f, bg=(42, 42, 42)):
+    """Colour between the cell background and rgb, f in 0..1."""
+    return "#%02x%02x%02x" % tuple(int(bg[k] + (rgb[k] - bg[k]) * f) for k in range(3))
 
 
 def filter_gain(f, fc, res, ftype, sr=SR):
@@ -183,12 +232,19 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.buttons = []            # Grain and Pitch tabs: (x0, y0, x1, y1, symbol, value)
         self.pitch_view = None       # values the Pitch tab was drawn for
         self.filter_view = None      # values the Filter tab was drawn for
+        self.mod_items = None        # Mod tab: {(s, d): (rect, text)} and side controls
+        self.mod_vals = {}           # values the cells were drawn with
+        self.mod_side = None         # values the side controls were drawn for
+        self.drag = None             # (symbol, start value, start y, lo, hi) while a finger is down
+        self.last_tap = (None, 0.0)  # (symbol, time) for a double tap
         self.pitch_notes = None      # sounding pitch classes drawn
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
             bg=zynthian_gui_config.color_bg)
         self.widget_canvas.grid(sticky='news')
         self.widget_canvas.bind("<ButtonPress-1>", self._on_press)
+        self.widget_canvas.bind("<B1-Motion>", self._on_motion)
+        self.widget_canvas.bind("<ButtonRelease-1>", self._on_release)
 
     def update(self):
         """Zynthian calls this every 32 ms: each call also asks jalv for all monitors. Slow it down."""
@@ -220,6 +276,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.pitch_view = None
         self.pitch_notes = None
         self.filter_view = None
+        self.mod_items = None
+        self.mod_vals = {}
+        self.mod_side = None
+        self.drag = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -297,6 +357,11 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         if self.tab in (1, 2):
             self._button_press(event)
             return
+        if self.tab == 4:
+            self._mod_press(event)
+            return
+        if self.tab != 0:
+            return
         z = self._sample_ctrl()
         if z is None:
             return
@@ -350,6 +415,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             return
         if self.tab == 3:
             self._draw_filter()
+            return
+        if self.tab == 4:
+            self._draw_mod()
             return
         size = (self.width, self.height)
         if self.wave_size != size:
@@ -556,6 +624,171 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self.pitch_view = None
                 self.refresh_gui()
                 return
+
+    # ---------- Mod tab ----------
+    def _mod_layout(self):
+        w, h = max(self.width, 80), max(self.height, 60)
+        pad = 6
+        top = self._header_h() + 4
+        fs = self._font_size()
+        gx1 = int(w * 0.66)                              # grid on the left two thirds
+        label_w = fs * 4.5
+        head_h = fs * 2
+        gx0 = pad + label_w
+        gy0 = top + head_h
+        gy1 = h - pad
+        cw = (gx1 - gx0) / float(len(MOD_DSTS))
+        ch = (gy1 - gy0) / float(len(MOD_SRCS))
+        return w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch
+
+    def _cell_sym(self, si, di):
+        return "m_%s_%s" % (MOD_SRCS[si][0], MOD_DSTS[di][0])
+
+    def _side_boxes(self):
+        """Right column: (symbol, kind, x0, y0, x1, y1, label); kind: shape, sync, drag"""
+        w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch = self._mod_layout()
+        x0, x1 = gx1 + pad * 2, w - pad
+        rows = [("lfo1_shape", "shape", "LFO 1"), ("lfo1_sync", "sync", ""),
+                ("lfo2_shape", "shape", "LFO 2"), ("lfo2_sync", "sync", ""),
+                ("env1_shape", "drag", "Env 1"), ("env2_shape", "drag", "Env 2"), ("mod_depth", "drag", "Depth")]
+        rh = (h - pad - top) / 5.0
+        out = []
+        xm = x0 + (x1 - x0) * 0.62
+        out.append((rows[0][0], "shape", x0, top, xm - 3, top + rh - 4, rows[0][2]))
+        out.append((rows[1][0], "sync", xm, top, x1, top + rh - 4, ""))
+        out.append((rows[2][0], "shape", x0, top + rh, xm - 3, top + 2 * rh - 4, rows[2][2]))
+        out.append((rows[3][0], "sync", xm, top + rh, x1, top + 2 * rh - 4, ""))
+        for k, r in enumerate(rows[4:]):
+            y = top + (2 + k) * rh
+            out.append((r[0], "drag", x0, y, x1, y + rh - 4, r[2]))
+        return out
+
+    def _draw_mod(self):
+        c = self.widget_canvas
+        w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch = self._mod_layout()
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+        fsmall = max(7, fs - 2)
+        if self.mod_items is None:                        # static part: once per size / tab switch
+            c.delete("mod")
+            self.mod_items = {}
+            self.mod_vals = {}
+            self.mod_side = None
+            for di, (_, name) in enumerate(MOD_DSTS):
+                c.create_text(gx0 + (di + 0.5) * cw, gy0 - 3, anchor="s", text=name, fill=zynthian_gui_config.color_tx_off,
+                              font=(fam, fsmall), tags="mod")
+            self.mod_labels = []
+            for si, (_, name) in enumerate(MOD_SRCS):
+                self.mod_labels.append(c.create_text(gx0 - 4, gy0 + (si + 0.5) * ch, anchor="e", text=name,
+                                                     font=(fam, fsmall), tags="mod", fill="#606060"))
+                for di in range(len(MOD_DSTS)):
+                    x0, y0 = gx0 + di * cw + 1, gy0 + si * ch + 1
+                    r = c.create_rectangle(x0, y0, x0 + cw - 2, y0 + ch - 2, fill=mix(MOD_POS, 0), width=0, tags="mod")
+                    t = c.create_text(x0 + cw / 2 - 1, y0 + ch / 2 - 1, text="", font=(fam, fsmall), tags="mod",
+                                      fill="#000000")
+                    self.mod_items[(si, di)] = (r, t)
+        # cells: only the changed ones are touched
+        used = [False] * len(MOD_SRCS)
+        for (si, di), (r, t) in self.mod_items.items():
+            v = int(round(self._zval(self._cell_sym(si, di), 0)))
+            if v:
+                used[si] = True
+            if self.mod_vals.get((si, di)) == v:
+                continue
+            self.mod_vals[(si, di)] = v
+            f = min(abs(v), 100) / 100.0
+            c.itemconfigure(r, fill=mix(MOD_POS if v >= 0 else MOD_NEG, 0.25 + 0.75 * f if v else 0))
+            c.itemconfigure(t, text=("%+d" % v) if v else "", fill=("#000000" if f > 0.5 else "#e0e0e0"))
+        for si, item in enumerate(self.mod_labels):
+            want = zynthian_gui_config.color_tx if used[si] else "#606060"
+            if c.itemcget(item, "fill") != want:
+                c.itemconfigure(item, fill=want)
+        self._draw_mod_side()
+
+    def _draw_mod_side(self):
+        vals = tuple(int(round(self._zval(b[0], 0))) for b in self._side_boxes())
+        key = (vals, self.width, self.height)
+        if key == self.mod_side:
+            return
+        self.mod_side = key
+        c = self.widget_canvas
+        c.delete("modside")
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+        fsmall = max(7, fs - 2)
+        tx, tx_off = zynthian_gui_config.color_tx, zynthian_gui_config.color_tx_off
+        for (sym, kind, x0, y0, x1, y1, label), v in zip(self._side_boxes(), vals):
+            c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=BUTTON_OFF, tags="modside")
+            if kind == "sync":
+                on = v == 1
+                c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=(BUTTON_ON if on else BUTTON_OFF),
+                                   tags="modside")
+                c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=("Key" if on else "Free"), tags="modside",
+                              fill=("#000000" if on else tx), font=(fam, fsmall))
+                continue
+            # label and value on top, a picture of the shape below
+            if kind == "shape":
+                text = "%s %s" % (label, LFO_SHAPES[min(max(v, 0), len(LFO_SHAPES) - 1)])
+            else:
+                text = "%s %d %%" % (label, v)
+            c.create_text(x0 + 3, y0 + 2, anchor="nw", text=text, fill=tx, font=(fam, fsmall), tags="modside")
+            py0, py1 = y0 + fsmall * 2 + 2, y1 - 3
+            if py1 - py0 < 4:
+                continue
+            n = 32
+            pts = []
+            for i in range(n + 1):
+                x = i / float(n)
+                if kind == "shape":
+                    yv = (lfo_value(v, x) + 1) / 2.0
+                elif sym == "mod_depth":
+                    yv = v / 100.0
+                else:
+                    yv = env_value(v / 100.0, x)
+                pts.extend((x0 + 4 + x * (x1 - x0 - 8), py1 - yv * (py1 - py0)))
+            c.create_line(pts, fill=WAVE_COLOR, width=2, tags="modside")
+
+    def _mod_press(self, event):
+        w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch = self._mod_layout()
+        now = time.monotonic()
+        sym, lo, hi = None, 0, 100
+        if gx0 <= event.x < gx1 and gy0 <= event.y < gy1:
+            di = min(int((event.x - gx0) / cw), len(MOD_DSTS) - 1)
+            si = min(int((event.y - gy0) / ch), len(MOD_SRCS) - 1)
+            sym, lo, hi = self._cell_sym(si, di), -100, 100
+        else:
+            for bsym, kind, x0, y0, x1, y1, _ in self._side_boxes():
+                if x0 <= event.x <= x1 and y0 <= event.y <= y1:
+                    if kind == "shape":
+                        self._zset(bsym, (int(round(self._zval(bsym, 0))) + 1) % len(LFO_SHAPES))
+                    elif kind == "sync":
+                        self._zset(bsym, 1 - int(round(self._zval(bsym, 0))))
+                    else:
+                        sym = bsym
+                    break
+            if sym is None:
+                self.refresh_gui()
+                return
+        if self.last_tap[0] == sym and now - self.last_tap[1] < DOUBLE_TAP:
+            default = 100 if sym == "mod_depth" else (10 if sym == "env1_shape" else (50 if sym == "env2_shape" else 0))
+            self._zset(sym, default)                      # double tap: back to the default
+            self.last_tap = (None, 0.0)
+            self.drag = None
+            self.refresh_gui()
+            return
+        self.last_tap = (sym, now)
+        self.drag = (sym, int(round(self._zval(sym, 0))), event.y, lo, hi)
+
+    def _on_motion(self, event):
+        if not self.drag or self.tab != 4:
+            return
+        sym, start, y0, lo, hi = self.drag
+        v = int(min(max(start + (y0 - event.y) / DRAG_PX, lo), hi))
+        if abs(event.y - y0) > 6:
+            self.last_tap = (None, 0.0)                   # a drag is not a tap
+        self._zset(sym, v)
+        self.refresh_gui()
+
+    def _on_release(self, event):
+        self.drag = None
 
     # ---------- Filter tab ----------
     DB_TOP, DB_BOTTOM = 30.0, -42.0

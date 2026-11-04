@@ -121,6 +121,12 @@ class Processor:
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
                                  "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
+        for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
+                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
+            self.controllers_dict[sym] = NumCtrl(sym, v)
+        for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
+            for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
+                self.controllers_dict["m_%s_%s" % (a, b)] = NumCtrl("m_%s_%s" % (a, b), 0)
 
     def v(self, sym):
         return self.controllers_dict[sym].value
@@ -340,7 +346,7 @@ def main():
     proc.engine.status = 2
     pump(lambda: wdg.peaks_path == PAD)
     img_before = wdg.wave_img
-    check("four tabs: Wave, Grain, Pitch, Filter", len(wdg.tab_boxes) == 4 and wdg.tab == 0)
+    check("five tabs: Wave, Grain, Pitch, Filter, Mod", len(wdg.tab_boxes) == 5 and wdg.tab == 0)
     nudges = sample.nudges
     hh = wdg._header_h()
     x0, x1 = wdg.tab_boxes[1]
@@ -474,8 +480,78 @@ def main():
     check("Filter tab not redrawn when the knobs stay", c.find_withtag("filter") == items)
     check("python curve = engine formula (LP 1k, BP 50 %: +2.7 dB at the centre)",
           abs(20 * math.log10(mod.filter_gain(1000, 1000, 0.5, 2)) - 2.7) < 0.1)
+    nudges0 = sample.nudges
+    wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
+    check("a tap on the Filter tab does not open the file selector", sample.nudges == nudges0)
     proc.controllers_dict["cutoff"].value = 20000.0
     proc.controllers_dict["resonance"].value = 0.0
+
+    # Mod tab
+    x0, x1 = wdg.tab_boxes[4]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("Mod tab: 63 cells", wdg.tab == 4 and len(wdg.mod_items) == 63)
+    W_, H_, pad_, top_, gx0, gy0, gx1, gy1, cw, ch = wdg._mod_layout()
+
+    def cell_xy(si, di):
+        return gx0 + (di + 0.5) * cw, gy0 + (si + 0.5) * ch
+
+    def drag(x, y, dy):
+        wdg._on_press(Tap(x, y))
+        wdg._on_motion(Tap(x, y - dy))
+        wdg._on_release(Tap(x, y - dy))
+        time.sleep(mod.DOUBLE_TAP + 0.02)
+
+    x, y = cell_xy(0, 5)                                  # LFO1 -> Pitch
+    drag(x, y, 30)
+    check("finger up 30 px: +20 on LFO1>Pitch", proc.v("m_lfo1_pitch") == 20)
+    r, t = wdg.mod_items[(0, 5)]
+    check("positive cell is blue with its value", c.itemcget(t, "text") == "+20" and
+          c.itemcget(r, "fill") == mod.mix(mod.MOD_POS, 0.25 + 0.75 * 0.2))
+    check("a source in use is lit", c.itemcget(wdg.mod_labels[0], "fill") == cfg.color_tx and
+          c.itemcget(wdg.mod_labels[1], "fill") == "#606060")
+    x, y = cell_xy(3, 8)                                  # Env2 -> Cutoff
+    drag(x, y, -60)
+    check("finger down: negative, orange", proc.v("m_env2_cutoff") == -40 and
+          c.itemcget(wdg.mod_items[(3, 8)][0], "fill") == mod.mix(mod.MOD_NEG, 0.25 + 0.75 * 0.4))
+    drag(x, y, -1000)
+    check("clamped at -100", proc.v("m_env2_cutoff") == -100)
+    wdg._on_press(Tap(x, y)); wdg._on_release(Tap(x, y))
+    wdg._on_press(Tap(x, y)); wdg._on_release(Tap(x, y))
+    check("double tap resets the cell", proc.v("m_env2_cutoff") == 0 and
+          c.itemcget(wdg.mod_items[(3, 8)][1], "text") == "")
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    boxes = {b[0]: b for b in wdg._side_boxes()}
+
+    def tap_box(sym):
+        b = boxes[sym]
+        wdg._on_press(Tap((b[2] + b[4]) / 2, (b[3] + b[5]) / 2))
+        wdg._on_release(None)
+        time.sleep(mod.DOUBLE_TAP + 0.02)
+    tap_box("lfo1_shape"); tap_box("lfo1_shape")
+    check("taps on LFO 1 change its shape (sine -> tri -> saw up)", proc.v("lfo1_shape") == 2)
+    for _ in range(5):
+        tap_box("lfo1_shape")
+    check("shape wraps around after Smooth", proc.v("lfo1_shape") == 0)
+    tap_box("lfo2_sync")
+    check("tap on LFO 2 sync: Key", proc.v("lfo2_sync") == 1)
+    b = boxes["env1_shape"]
+    drag((b[2] + b[4]) / 2, (b[3] + b[5]) / 2, 45)
+    check("Env 1 shape: finger up 45 px = +30", proc.v("env1_shape") == 40)
+    b = boxes["mod_depth"]
+    drag((b[2] + b[4]) / 2, (b[3] + b[5]) / 2, 600)
+    check("Mod Depth clamped at 100", proc.v("mod_depth") == 100)
+    drag((b[2] + b[4]) / 2, (b[3] + b[5]) / 2, -60)
+    check("Mod Depth down to 60", proc.v("mod_depth") == 60)
+    cells = {k: v for k, v in wdg.mod_items.items()}
+    side = c.find_withtag("modside")
+    configured = []
+    orig_cfg = c.itemconfigure
+    c.itemconfigure = lambda *a, **k: configured.append(a) or orig_cfg(*a, **k)
+    pump(lambda: False, 0.1)
+    c.itemconfigure = orig_cfg
+    check("nothing redrawn when the values stay", configured == [] and c.find_withtag("modside") == side and
+          wdg.mod_items == cells)
 
     x0, x1 = wdg.tab_boxes[0]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
