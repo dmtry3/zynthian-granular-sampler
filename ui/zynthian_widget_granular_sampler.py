@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# Granular Sampler widget. Tabs (top left): Wave, Grain, Pitch; Filter and Mod come with their stages.
+# Granular Sampler widget. Tabs (top left): Wave, Grain, Pitch, Filter; Mod comes with its stage.
 # Wave:
 # - The sample path is the "sample" LV2 parameter (atom:Path, notOnGUI): a tap opens Zynthian's file selector.
 # - The waveform is read from the file here, in a background thread, and drawn once into an image:
@@ -17,6 +17,10 @@
 # Pitch:
 # - One octave: notes of the Quantize scale lit, the tonic filled, sounding notes (outputs note1..8) dotted;
 #   a tap on a key sets the tonic (LV2 parameter key); scale buttons set the scale (LV2 parameter scale).
+# Filter:
+# - The response of the voice filter for the knobs (Cutoff, Resonance, Type, Key Track at C4): the TPT SVF of
+#   grain_core.c is the bilinear transform of the analog prototype, so |H| is the analog formula at
+#   w = tan(pi f / sr) / tan(pi fc / sr).
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
 import logging
 import os
@@ -37,7 +41,9 @@ ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
 NGRAIN_MARKS = 16
-TABS = ["Wave", "Grain", "Pitch"]
+TABS = ["Wave", "Grain", "Pitch", "Filter"]
+FILTER_TYPES = ["LP", "HP", "BP"]
+SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 # the same scales as gc_scale_names / scale_steps in grain_core.c
 SCALES = [("Chromatic", list(range(12))), ("Major", [0, 2, 4, 5, 7, 9, 11]), ("Minor", [0, 2, 3, 5, 7, 8, 10]),
@@ -88,6 +94,21 @@ def window_value(x, shape):
     q = (1.0 - x) / r
     base = q ** 4
     return base + (q * q * (3 - 2 * q) - base) * smooth
+
+
+def filter_gain(f, fc, res, ftype, sr=SR):
+    """|H| of the voice filter at f Hz (same k as grain_core.c: 1/Q from Butterworth to Q 20)."""
+    import math
+    top = 0.45 * sr
+    fc = min(max(fc, 20.0), top)
+    k = 1.4142136 * (1.0 - res) + 0.05 * res
+    w = math.tan(math.pi * min(f, 0.499 * sr) / sr) / math.tan(math.pi * fc / sr)
+    den = math.sqrt((1.0 - w * w) ** 2 + (k * w) ** 2)
+    if ftype == 1:
+        return w * w / den
+    if ftype == 2:
+        return w / den
+    return 1.0 / den
 
 
 def read_peaks(path, npeaks=NPEAKS):
@@ -161,6 +182,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.grain_view = None       # values the Grain tab was drawn for
         self.buttons = []            # Grain and Pitch tabs: (x0, y0, x1, y1, symbol, value)
         self.pitch_view = None       # values the Pitch tab was drawn for
+        self.filter_view = None      # values the Filter tab was drawn for
         self.pitch_notes = None      # sounding pitch classes drawn
         self.widget_canvas = tkinter.Canvas(
             self, highlightthickness=0, relief='flat',
@@ -197,6 +219,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.grain_view = None
         self.pitch_view = None
         self.pitch_notes = None
+        self.filter_view = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -324,6 +347,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             return
         if self.tab == 2:
             self._draw_pitch()
+            return
+        if self.tab == 3:
+            self._draw_filter()
             return
         size = (self.width, self.height)
         if self.wave_size != size:
@@ -530,6 +556,66 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self.pitch_view = None
                 self.refresh_gui()
                 return
+
+    # ---------- Filter tab ----------
+    DB_TOP, DB_BOTTOM = 30.0, -42.0
+
+    def _filter_layout(self):
+        w, h = max(self.width, 80), max(self.height, 60)
+        pad = 8
+        top = self._header_h() + 6
+        return (pad + 30, top, w - pad, h - self._font_size() * 2 - 6)
+
+    def _fx(self, f, x0, x1):
+        import math
+        return x0 + (math.log10(f) - math.log10(20.0)) / 3.0 * (x1 - x0)
+
+    def _dby(self, db, y0, y1):
+        db = min(max(db, self.DB_BOTTOM), self.DB_TOP)
+        return y0 + (self.DB_TOP - db) / (self.DB_TOP - self.DB_BOTTOM) * (y1 - y0)
+
+    def _draw_filter(self):
+        import math
+        fc = self._zval("cutoff", 20000.0)
+        res = min(max(self._zval("resonance", 0.0) / 100.0, 0.0), 1.0)
+        ftype = min(max(int(round(self._zval("ftype", 0))), 0), 2)
+        kt = self._zval("keytrack", 0.0)
+        view = (round(fc), round(res * 100), ftype, round(kt), self.width, self.height)
+        if view == self.filter_view:
+            return
+        self.filter_view = view
+        c = self.widget_canvas
+        c.delete("filter")
+        x0, y0, x1, y1 = self._filter_layout()
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+        tx_off = zynthian_gui_config.color_tx_off
+        c.create_rectangle(x0, y0, x1, y1, outline="#303030", tags="filter")
+        for f in (100, 1000, 10000):                      # grid
+            x = self._fx(f, x0, x1)
+            c.create_line(x, y0, x, y1, fill="#262626", tags="filter")
+            c.create_text(x, y1 + 2, anchor="n", text=("%dk" % (f // 1000)) if f >= 1000 else str(f),
+                          fill=tx_off, font=(fam, fs), tags="filter")
+        for db in (24, 12, 0, -12, -24, -36):
+            y = self._dby(db, y0, y1)
+            c.create_line(x0, y, x1, y, fill=("#404040" if db == 0 else "#262626"), tags="filter")
+            c.create_text(x0 - 3, y, anchor="e", text="%+d" % db if db else "0", fill=tx_off,
+                          font=(fam, max(7, fs - 2)), tags="filter")
+        open_lp = ftype == 0 and fc >= 20000 * 0.97 and res < 0.01
+        open_hp = ftype == 1 and fc <= 21.0 and res < 0.01
+        pts = []
+        n = max(64, int(x1 - x0) // 3)
+        for i in range(n + 1):
+            f = 20.0 * 10 ** (3.0 * i / n)
+            g = 1.0 if (open_lp or open_hp) else filter_gain(f, fc, res, ftype)
+            pts.extend((self._fx(f, x0, x1), self._dby(20 * math.log10(max(g, 1e-9)), y0, y1)))
+        c.create_line(pts, fill=WAVE_COLOR, width=2, tags="filter")
+        xc = self._fx(min(max(fc, 20.0), 20000.0), x0, x1)
+        c.create_line(xc, y0, xc, y1, fill="#5c7a99", dash=(3, 3), tags="filter")
+        fct = ("%.1f kHz" % (fc / 1000.0)) if fc >= 1000 else ("%d Hz" % round(fc))
+        info = "%s  %s  Res %d %%  Key %d %%%s" % (FILTER_TYPES[ftype], fct, round(res * 100), round(kt),
+                                                 "  (off)" if (open_lp or open_hp) else "")
+        c.create_text(x0, max(self.height, 60) - 3, anchor="sw", text=info, fill=tx_off,
+                      font=(fam, fs), tags="filter")
 
     # ---------- Pitch tab ----------
     def _pitch_layout(self):

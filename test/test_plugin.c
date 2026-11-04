@@ -62,10 +62,10 @@ static void work_all(void) {
 /* ---------- ports ---------- */
 #define NFR 64
 /* control inputs: position scan spray window | size density shape chaos | pitch pitch_spray reverse quantize |
- * attack release spread level */
-#define NCTL 16
-enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15 };
-static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f };
+ * attack release spread level | cutoff resonance ftype keytrack */
+#define NCTL 20
+enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15, C_CUTOFF = 16, C_FTYPE = 18 };
+static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 20000, 0, 0, 0 };
 static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8];
 enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
@@ -301,6 +301,18 @@ int main(int argc, char** argv) {
   for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]) + fabsf(out_r[i]));
   CHECK(mx == 0.0f);                                              /* Level 0 */
   ctls[C_LEVEL] = 0.8f;
+  /* filter: a high-pass at 20 kHz takes almost everything away from the slow ramp of st.wav */
+  in_midi(0, 0x90, 60, 100);
+  for (int k = 0; k < 20; k++) run_once();
+  float open_peak = 0;
+  for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) open_peak = fmaxf(open_peak, fabsf(out_l[i])); }
+  ctls[C_FTYPE] = 1; ctls[C_CUTOFF] = 20000;
+  for (int k = 0; k < 20; k++) run_once();                        /* the cutoff glides there */
+  float hp_peak = 0;
+  for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) hp_peak = fmaxf(hp_peak, fabsf(out_l[i])); }
+  CHECK(open_peak > 0.005f && hp_peak < open_peak * 0.01f);     /* st.wav is a slow ramp: -40 dB at least */
+  ctls[C_FTYPE] = 0;
+  in_midi(0, 0xB0, 120, 0); run_once();
   in_midi(0, 0xB0, 120, 0); run_once();                           /* All Sound Off */
   mx = 0;
   for (int i = 0; i < NFR; i++) mx = fmaxf(mx, fabsf(out_l[i]));

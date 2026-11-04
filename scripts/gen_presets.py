@@ -13,9 +13,11 @@ SAMPLES = "/zynthian/zynthian-my-data/files/Samples/granular-sampler"
 PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("size", 100), ("density", 20), ("shape", 67), ("chaos", 0),
                  ("pitch", 0), ("pitch_spray", 0), ("reverse", 0), ("quantize", 0),
-                 ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8)]
+                 ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8),
+                 ("cutoff", 20000), ("resonance", 0), ("ftype", 0), ("keytrack", 0)]
 PARAM_DEFAULTS = {"sample": "test_pad.wav", "voices": 8, "scale": 0, "key": 0}   # voices 1 mono, 0 legato
 CHROMATIC, MAJOR, MINOR, DORIAN, MAJ_PENT, MIN_PENT = 0, 1, 2, 3, 9, 10
+LP, HP, BP = 0, 1, 2
 SQUARE, DECAY, BELL, REVERSE = 0, 33.3, 67, 100
 
 # (id, label, ports, parameters): each one shows one side of the engine
@@ -59,6 +61,13 @@ PRESETS = [
      {}),
     ("drums_pitch_down", "Drums Octave Down",
      {"pitch": -12, "size": 120, "density": 20, "shape": SQUARE, "release": 300},
+     {"sample": "test_drums.wav"}),
+    ("pad_dark", "Pad Dark Resonant",
+     {"scan": 15, "size": 300, "density": 30, "chaos": 40, "spread": 70, "attack": 300, "release": 2500,
+      "cutoff": 600, "resonance": 60, "keytrack": 50}, {}),
+    ("drums_band", "Drums Band-pass",
+     {"window": 50, "size": 80, "density": 24, "shape": SQUARE, "release": 250,
+      "cutoff": 1500, "resonance": 40, "ftype": BP, "keytrack": 100},
      {"sample": "test_drums.wav"}),
 ]
 

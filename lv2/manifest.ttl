@@ -92,3 +92,15 @@
     rdfs:label "Drums Octave Down" ;
     rdfs:seeAlso <presets.ttl> .
 
+<urn:granularsampler:sampler#preset_pad_dark>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Dark Resonant" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_drums_band>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Band-pass" ;
+    rdfs:seeAlso <presets.ttl> .
+

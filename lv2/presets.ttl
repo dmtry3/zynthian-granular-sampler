@@ -25,7 +25,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 500.0 ] ,
         [ lv2:symbol "spread" ; pset:value 0.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -54,7 +58,11 @@
         [ lv2:symbol "attack" ; pset:value 300.0 ] ,
         [ lv2:symbol "release" ; pset:value 2000.0 ] ,
         [ lv2:symbol "spread" ; pset:value 60.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -83,7 +91,11 @@
         [ lv2:symbol "attack" ; pset:value 150.0 ] ,
         [ lv2:symbol "release" ; pset:value 1500.0 ] ,
         [ lv2:symbol "spread" ; pset:value 40.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -112,7 +124,11 @@
         [ lv2:symbol "attack" ; pset:value 400.0 ] ,
         [ lv2:symbol "release" ; pset:value 3000.0 ] ,
         [ lv2:symbol "spread" ; pset:value 100.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.6 ] ;
+        [ lv2:symbol "level" ; pset:value 0.6 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -141,7 +157,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 800.0 ] ,
         [ lv2:symbol "spread" ; pset:value 100.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -170,7 +190,11 @@
         [ lv2:symbol "attack" ; pset:value 5.0 ] ,
         [ lv2:symbol "release" ; pset:value 300.0 ] ,
         [ lv2:symbol "spread" ; pset:value 20.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 0 ;
@@ -199,7 +223,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 200.0 ] ,
         [ lv2:symbol "spread" ; pset:value 0.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -228,7 +256,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 400.0 ] ,
         [ lv2:symbol "spread" ; pset:value 50.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -257,7 +289,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 600.0 ] ,
         [ lv2:symbol "spread" ; pset:value 80.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 4 ;
@@ -286,7 +322,11 @@
         [ lv2:symbol "attack" ; pset:value 500.0 ] ,
         [ lv2:symbol "release" ; pset:value 3000.0 ] ,
         [ lv2:symbol "spread" ; pset:value 100.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.7 ] ;
+        [ lv2:symbol "level" ; pset:value 0.7 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -315,7 +355,11 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 900.0 ] ,
         [ lv2:symbol "spread" ; pset:value 80.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -344,7 +388,11 @@
         [ lv2:symbol "attack" ; pset:value 200.0 ] ,
         [ lv2:symbol "release" ; pset:value 2500.0 ] ,
         [ lv2:symbol "spread" ; pset:value 60.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;
@@ -373,7 +421,77 @@
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 300.0 ] ,
         [ lv2:symbol "spread" ; pset:value 0.0 ] ,
-        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 20000.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 0.0 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_pad_dark>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Dark Resonant" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 15.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 300.0 ] ,
+        [ lv2:symbol "density" ; pset:value 30.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 67.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 40.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 300.0 ] ,
+        [ lv2:symbol "release" ; pset:value 2500.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 70.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 600.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 60.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 50.0 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_drums_band>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Band-pass" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 100.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 50.0 ] ,
+        [ lv2:symbol "size" ; pset:value 80.0 ] ,
+        [ lv2:symbol "density" ; pset:value 24.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 0.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 10.0 ] ,
+        [ lv2:symbol "release" ; pset:value 250.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 0.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ,
+        [ lv2:symbol "cutoff" ; pset:value 1500.0 ] ,
+        [ lv2:symbol "resonance" ; pset:value 40.0 ] ,
+        [ lv2:symbol "ftype" ; pset:value 2.0 ] ,
+        [ lv2:symbol "keytrack" ; pset:value 100.0 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#voices> 8 ;

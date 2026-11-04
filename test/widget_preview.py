@@ -118,7 +118,9 @@ class Processor:
                                  "voices": NumCtrl("voices", 8),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
-                                 "pitch_spray": NumCtrl("pitch_spray", 0.0)}
+                                 "pitch_spray": NumCtrl("pitch_spray", 0.0),
+                                 "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
+                                 "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
 
     def v(self, sym):
         return self.controllers_dict[sym].value
@@ -338,7 +340,7 @@ def main():
     proc.engine.status = 2
     pump(lambda: wdg.peaks_path == PAD)
     img_before = wdg.wave_img
-    check("three tabs: Wave, Grain, Pitch", len(wdg.tab_boxes) == 3 and wdg.tab == 0)
+    check("four tabs: Wave, Grain, Pitch, Filter", len(wdg.tab_boxes) == 4 and wdg.tab == 0)
     nudges = sample.nudges
     hh = wdg._header_h()
     x0, x1 = wdg.tab_boxes[1]
@@ -434,6 +436,46 @@ def main():
     check("a note change redraws only the dots", c.find_withtag("pitch") == statics and
           len(c.find_withtag("pnotes")) == 1)
     proc.engine.notes = []
+
+    # Filter tab
+    import math
+    x0, x1 = wdg.tab_boxes[3]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+
+    def curve():
+        ln = [i for i in c.find_withtag("filter") if c.type(i) == "line" and c.itemcget(i, "width") == "2.0"]
+        return c.coords(ln[0]) if ln else []
+
+    def db_at(f):
+        """dB of the drawn curve at f Hz (nearest point)"""
+        fx0, fy0, fx1, fy1 = wdg._filter_layout()
+        co = curve()
+        xs = co[0::2]
+        x = wdg._fx(f, fx0, fx1)
+        k = min(range(len(xs)), key=lambda i: abs(xs[i] - x))
+        y = co[2 * k + 1]
+        return wdg.DB_TOP - (y - fy0) / (fy1 - fy0) * (wdg.DB_TOP - wdg.DB_BOTTOM)
+    check("Filter tab: open low-pass is a flat line at 0 dB", wdg.tab == 3 and abs(db_at(100)) < 0.5 and
+          abs(db_at(10000)) < 0.5)
+    proc.controllers_dict["cutoff"].value = 1000.0
+    pump(lambda: False, 0.05)
+    check("LP 1 kHz: 0 dB at 100 Hz, -3 dB at 1 kHz, about -36 at 8 kHz",
+          abs(db_at(100)) < 0.5 and abs(db_at(1000) + 3) < 1.0 and -40 < db_at(8000) < -33)
+    proc.controllers_dict["ftype"].value = 1
+    pump(lambda: False, 0.05)
+    check("HP 1 kHz mirrors it", db_at(100) < -35 and abs(db_at(10000)) < 0.5)
+    proc.controllers_dict["ftype"].value = 0
+    proc.controllers_dict["resonance"].value = 100.0
+    pump(lambda: False, 0.05)
+    check("resonance 100 %: +26 dB peak at the cutoff", abs(db_at(1000) - 26) < 1.5)
+    items = c.find_withtag("filter")
+    pump(lambda: False, 0.1)
+    check("Filter tab not redrawn when the knobs stay", c.find_withtag("filter") == items)
+    check("python curve = engine formula (LP 1k, BP 50 %: +2.7 dB at the centre)",
+          abs(20 * math.log10(mod.filter_gain(1000, 1000, 0.5, 2)) - 2.7) < 0.1)
+    proc.controllers_dict["cutoff"].value = 20000.0
+    proc.controllers_dict["resonance"].value = 0.0
 
     x0, x1 = wdg.tab_boxes[0]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))

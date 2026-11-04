@@ -30,6 +30,7 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
        P_SIZE, P_DENSITY, P_SHAPE, P_CHAOS,           /* page Grain */
        P_PITCH, P_PSPRAY, P_REVERSE, P_QUANTIZE,      /* page Pitch */
        P_ATTACK, P_RELEASE, P_SPREAD, P_LEVEL,        /* page Voice */
+       P_CUTOFF, P_RESONANCE, P_FTYPE, P_KEYTRACK,    /* page Filter */
        P_END,
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
        P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0,     /* outputs for the widget */
@@ -328,6 +329,10 @@ static void read_params(Sampler* S) {
   p->pitch_spray = ctl(S, P_PSPRAY, 0.0f);
   p->reverse     = ctl(S, P_REVERSE, 0.0f) * 0.01f;
   p->quantize    = ctl(S, P_QUANTIZE, 0.0f) * 0.01f;
+  p->cutoff_hz   = ctl(S, P_CUTOFF, GC_CUTOFF_MAX);
+  p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
+  p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_BP);
+  p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;
 }
 
 static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
