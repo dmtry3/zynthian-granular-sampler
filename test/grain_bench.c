@@ -39,7 +39,7 @@ static void measure(int grains, int interp) {
   GcParams p;
   setup(&p, grains);
   G.interp = interp;
-  gc_set_voices(&G, 1, 0);
+  gc_set_voices(&G, 1);
   gc_note_on(&G, &p, 67, 100);              /* a fifth up: fractional read step, interpolation in use */
   for (int k = 0; k < SR / PERIOD; k++) gc_process(&G, &p, l, r, PERIOD);   /* 1 s warm-up: pool fills */
   const long periods = (long)(SECONDS * SR / PERIOD);
@@ -64,7 +64,7 @@ static void measure_poly(int interp) {
   setup(&p, GC_POOL / GC_VOICES);
   p.attack_ms = 5; p.release_ms = 500; p.spread = 0.5f;
   G.interp = interp;
-  gc_set_voices(&G, GC_VOICES, 0);
+  gc_set_voices(&G, GC_VOICES);
   const int chord[GC_VOICES] = { 48, 55, 60, 63, 67, 70, 74, 79 };
   for (int v = 0; v < GC_VOICES; v++) gc_note_on(&G, &p, chord[v], 100);
   for (int k = 0; k < SR / PERIOD; k++) gc_process(&G, &p, l, r, PERIOD);
@@ -89,7 +89,7 @@ static void render(const char* prefix, const char* name, int interp, int levels)
   GcParams p;
   setup(&p, 24);
   p.size_ms = 150.0f; p.density = 60.0f; p.scan = 0.5f; p.spray = 0.1f;
-  gc_set_voices(&G, 1, 0);
+  gc_set_voices(&G, 1);
   G.interp = interp;
   G.use_levels = levels;
   G.rng = 12345;

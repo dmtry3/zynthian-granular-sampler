@@ -103,8 +103,8 @@ typedef struct {
   uint32_t gen;           /* incremented by every gc_set_source */
   int interp;             /* GC_INTERP_* */
   int use_levels;         /* 0: always level 0 (to compare in tests and the bench) */
-  int nvoices;            /* 1..GC_VOICES voices in Poly */
-  int mono;               /* 1: one voice, legato, back to a held key on release */
+  int nvoices;            /* 1..GC_VOICES voices */
+  int mono;               /* nvoices == 1: legato, back to a held key on release */
   int held[GC_HELD], nheld;
   uint32_t age;
   int last_voice;         /* voice of the newest note: its playhead is shown in the widget */
@@ -133,8 +133,8 @@ void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel);
 void gc_note_off(GrainCore* g, int note);
 void gc_all_notes_off(GrainCore* g);    /* every voice goes to release (CC 123) */
 void gc_all_off(GrainCore* g);          /* silence now: grains and voices stopped (CC 120) */
-/* Poly with n voices (1..GC_VOICES) or Mono. Voices above n finish their sound. */
-void gc_set_voices(GrainCore* g, int n, int mono);
+/* n voices (1..GC_VOICES); 1 voice = mono with legato. Voices above n finish their sound. */
+void gc_set_voices(GrainCore* g, int n);
 int gc_active_voices(const GrainCore* g);
 /* Quantize scale: 0 chromatic, 1 major, 2 minor ... (gc_scale_names), tonic 0 = C .. 11 = B. */
 void gc_set_scale(GrainCore* g, int key, int scale);

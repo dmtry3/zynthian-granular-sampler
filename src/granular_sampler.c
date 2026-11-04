@@ -37,9 +37,9 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 #define N_GRAIN_PORTS 16
 #define N_RETIRED 8
 
-enum { IP_MODE = 0, IP_VOICES, IP_SCALE, IP_KEY, N_IPARAMS };
-static const char* const ip_names[N_IPARAMS] = { "mode", "voices", "scale", "key" };
-static const int ip_defaults[N_IPARAMS] = { 0, GC_VOICES, 0, 0 };                              /* grain1..16: read positions of some active grains */
+enum { IP_VOICES = 0, IP_SCALE, IP_KEY, N_IPARAMS };
+static const char* const ip_names[N_IPARAMS] = { "voices", "scale", "key" };
+static const int ip_defaults[N_IPARAMS] = { GC_VOICES, 0, 0 };                              /* grain1..16: read positions of some active grains */
 #define N_CTL P_END
 
 /* Value of the status output port. */
@@ -77,9 +77,10 @@ typedef struct {
   char path[GS_PATH_MAX];      /* last requested path ("" = none), saved in State */
   atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
   int status;
-  int report;                  /* tell the host the path, mode and voices in the next run() */
-  /* integer LV2 parameters set in the widget: mode (0 Poly / 1 Mono), voices 1..8, scale, key */
+  int report;                  /* tell the host the path and the integer parameters in the next run() */
+  /* integer LV2 parameters set in the widget: voices 1..8 (1 = mono, legato), scale, key */
   LV2_URID ip_urid[N_IPARAMS];
+  LV2_URID p_mode_legacy;      /* "mode" of older versions: Mono (1) is restored as 1 voice */
   int ip[N_IPARAMS];
   double sr;
   float level;                 /* last applied level, ramped to the port value over a block */
@@ -161,6 +162,7 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
     S->ip_urid[i] = m->map(m->handle, uri);
     S->ip[i] = ip_defaults[i];
   }
+  S->p_mode_legacy = m->map(m->handle, GS_URI "#mode");
   S->atom_Int       = m->map(m->handle, LV2_ATOM__Int);
   S->atom_Float     = m->map(m->handle, LV2_ATOM__Float);
   S->atom_Double    = m->map(m->handle, LV2_ATOM__Double);
@@ -260,11 +262,10 @@ static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v;
 
 /* Integer parameters into range, then into the engine. */
 static void apply_iparams(Sampler* S) {
-  S->ip[IP_MODE] = S->ip[IP_MODE] ? 1 : 0;
   S->ip[IP_VOICES] = clampi(S->ip[IP_VOICES], 1, GC_VOICES);
   S->ip[IP_SCALE] = clampi(S->ip[IP_SCALE], 0, GC_NSCALES - 1);
   S->ip[IP_KEY] = clampi(S->ip[IP_KEY], 0, 11);
-  gc_set_voices(&S->core, S->ip[IP_VOICES], S->ip[IP_MODE]);
+  gc_set_voices(&S->core, S->ip[IP_VOICES]);
   gc_set_scale(&S->core, S->ip[IP_KEY], S->ip[IP_SCALE]);
 }
 
@@ -475,6 +476,8 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
     const void* iv = retrieve(sh, S->ip_urid[i], &size, &type, &vflags);
     if (iv && type == S->atom_Int && size >= sizeof(int32_t)) S->ip[i] = *(const int32_t*)iv;
   }
+  const void* mv = retrieve(sh, S->p_mode_legacy, &size, &type, &vflags);
+  if (mv && type == S->atom_Int && size >= sizeof(int32_t) && *(const int32_t*)mv == 1) S->ip[IP_VOICES] = 1;
   apply_iparams(S);
   S->report = 1;                                     /* tell the host the restored values */
   return LV2_STATE_SUCCESS;

@@ -28,7 +28,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -58,7 +57,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -88,7 +86,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -118,7 +115,6 @@
         [ lv2:symbol "level" ; pset:value 0.6 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -148,7 +144,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -178,8 +173,7 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
-        <urn:granularsampler:sampler#mode> 1 ;
-        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#voices> 1 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
     ] .
@@ -208,7 +202,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -238,7 +231,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -268,7 +260,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 4 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -298,7 +289,6 @@
         [ lv2:symbol "level" ; pset:value 0.7 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 9 ;
         <urn:granularsampler:sampler#key> 0
@@ -328,7 +318,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 3 ;
         <urn:granularsampler:sampler#key> 2
@@ -358,7 +347,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0
@@ -388,7 +376,6 @@
         [ lv2:symbol "level" ; pset:value 0.8 ] ;
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
-        <urn:granularsampler:sampler#mode> 0 ;
         <urn:granularsampler:sampler#voices> 8 ;
         <urn:granularsampler:sampler#scale> 0 ;
         <urn:granularsampler:sampler#key> 0

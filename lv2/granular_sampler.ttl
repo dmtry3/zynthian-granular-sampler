@@ -30,17 +30,7 @@
     pprops:notOnGUI true ;
     lv2:portProperty pprops:notOnGUI .
 
-# Voice mode and count: set in the widget (Grain tab), saved in the snapshot and in LV2 State.
-<urn:granularsampler:sampler#mode>
-    a lv2:Parameter ;
-    lv2:symbol "mode" ;
-    rdfs:label "Mode" ;
-    rdfs:range atom:Int ;
-    lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 1 ;
-    lv2:scalePoint [ rdfs:label "Poly" ; rdf:value 0 ] , [ rdfs:label "Mono" ; rdf:value 1 ] ;
-    pprops:notOnGUI true ;
-    lv2:portProperty pprops:notOnGUI .
-
+# Number of voices (1 = mono, legato): set in the widget (Grain tab), saved in the snapshot and in LV2 State.
 <urn:granularsampler:sampler#voices>
     a lv2:Parameter ;
     lv2:symbol "voices" ;
@@ -74,12 +64,12 @@
 <urn:granularsampler:sampler>
     a lv2:Plugin , lv2:InstrumentPlugin ;
     doap:name "Granular Sampler" ;
-    lv2:minorVersion 6 ;
+    lv2:minorVersion 7 ;
     lv2:microVersion 0 ;
     lv2:requiredFeature urid:map , work:schedule ;
     lv2:optionalFeature lv2:hardRTCapable , state:mapPath , state:freePath ;
     lv2:extensionData state:interface , work:interface ;
-    patch:writable <urn:granularsampler:sampler#sample> , <urn:granularsampler:sampler#mode> , <urn:granularsampler:sampler#voices> , <urn:granularsampler:sampler#scale> , <urn:granularsampler:sampler#key> ;
+    patch:writable <urn:granularsampler:sampler#sample> , <urn:granularsampler:sampler#voices> , <urn:granularsampler:sampler#scale> , <urn:granularsampler:sampler#key> ;
     # Control input ports MUST be indices 0..N-1 (before atom and audio ports): Zynthian numbers LV2 parameters
     # from len(control ports)+1 and would overwrite a control port with a higher index.
     # Outputs for the widget: playhead and grain1..16 = read positions, 0..1 of the sample, -1 = none;

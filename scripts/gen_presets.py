@@ -14,7 +14,7 @@ PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("size", 100), ("density", 20), ("shape", 67), ("chaos", 0),
                  ("pitch", 0), ("pitch_spray", 0), ("reverse", 0), ("quantize", 0),
                  ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8)]
-PARAM_DEFAULTS = {"sample": "test_pad.wav", "mode": 0, "voices": 8, "scale": 0, "key": 0}
+PARAM_DEFAULTS = {"sample": "test_pad.wav", "voices": 8, "scale": 0, "key": 0}   # voices 1 = mono
 CHROMATIC, MAJOR, MINOR, DORIAN, MAJ_PENT, MIN_PENT = 0, 1, 2, 3, 9, 10
 SQUARE, DECAY, BELL, REVERSE = 0, 33.3, 67, 100
 
@@ -34,7 +34,7 @@ PRESETS = [
      {"sample": "test_pluck.wav"}),
     ("pluck_mono", "Pluck Mono Lead",
      {"scan": 50, "size": 120, "density": 40, "attack": 5, "release": 300, "spread": 20},
-     {"sample": "test_pluck.wav", "mode": 1}),
+     {"sample": "test_pluck.wav", "voices": 1}),
     ("drums_stutter", "Drums Stutter",
      {"window": 25, "size": 60, "density": 16, "shape": SQUARE, "release": 200},
      {"sample": "test_drums.wav"}),
@@ -72,7 +72,6 @@ def preset_ttl(pid, label, ports, params):
     p = dict(PARAM_DEFAULTS, **params)
     out.append("    state:state [")
     out.append("        <%s#sample> <file://%s/%s> ;" % (URI, SAMPLES, p["sample"]))
-    out.append("        <%s#mode> %d ;" % (URI, p["mode"]))
     out.append("        <%s#voices> %d ;" % (URI, p["voices"]))
     out.append("        <%s#scale> %d ;" % (URI, p["scale"]))
     out.append("        <%s#key> %d" % (URI, p["key"]))

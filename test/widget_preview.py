@@ -115,7 +115,7 @@ class Processor:
                                  "position": NumCtrl("position", 0.0), "window": NumCtrl("window", 100.0),
                                  "shape": NumCtrl("shape", 67.0), "size": NumCtrl("size", 100.0),
                                  "density": NumCtrl("density", 20.0),
-                                 "mode": NumCtrl("mode", 0), "voices": NumCtrl("voices", 8),
+                                 "voices": NumCtrl("voices", 8),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0)}
@@ -370,20 +370,17 @@ def main():
                 wdg._on_press(Tap((bx0 + bx1) / 2, (by0 + by1) / 2))
                 return True
         return False
-    check("voices buttons 1..8 in Poly", len([b for b in wdg.buttons if b[4] == "voices"]) == 8)
+    check("voices buttons 1..8, no mode buttons", len([b for b in wdg.buttons if b[4] == "voices"]) == 8 and
+          not [b for b in wdg.buttons if b[4] == "mode"])
     b0 = wdg.buttons[0]
     check("buttons are low: about one text line (%d px)" % (b0[3] - b0[1]),
           b0[3] - b0[1] <= wdg._header_h() * 1.5)
     press_button("voices", 4)
     check("tap on voices 4 sets voices = 4", proc.v("voices") == 4)
-    press_button("mode", 1)
-    check("tap on Mono sets mode = 1", proc.v("mode") == 1)
-    check("in Mono the voices buttons are disabled", not [b for b in wdg.buttons if b[4] == "voices"])
-    writes = proc.controllers_dict["voices"].writes
-    press_button("voices", 2)
-    check("tap on a disabled voices button does nothing", proc.controllers_dict["voices"].writes == writes)
-    press_button("mode", 0)
-    check("back to Poly", proc.v("mode") == 0 and len([b for b in wdg.buttons if b[4] == "voices"]) == 8)
+    press_button("voices", 1)
+    check("tap on 1 sets one voice (mono)", proc.v("voices") == 1)
+    press_button("voices", 8)
+    check("back to 8 voices", proc.v("voices") == 8)
     items = c.find_withtag("grain")
     pump(lambda: False, 0.1)
     check("Grain tab not redrawn when nothing changed", c.find_withtag("grain") == items)

@@ -222,44 +222,56 @@ int main(int argc, char** argv) {
   in_set_path("st.wav"); run_once(); work_all(); run_once();
   in_get(); run_once();
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
-  CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);   /* defaults: Poly, 8 */
+  CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
   run_once();
   CHECK(reported_path() == NULL);                                 /* answered once */
 
-  /* mode and voices arrive as floats from Zynthian; out-of-range values are clamped */
-  in_set_float(P_MODE, 1.0f); in_set_float(P_VOICES, 4.0f); run_once();
+  /* voices arrive as floats from Zynthian; out-of-range values are clamped */
+  in_set_float(P_VOICES, 4.0f); run_once();
   in_get(); run_once();
-  CHECK(reported_int(P_MODE, -1) == 1 && reported_int(P_VOICES, -1) == 4);
-  in_set_float(P_VOICES, 99.0f); in_set_float(P_MODE, 0.0f); run_once();
+  CHECK(reported_int(P_VOICES, -1) == 4);
+  in_set_float(P_VOICES, 99.0f); run_once();
   in_get(); run_once();
-  CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);
+  CHECK(reported_int(P_VOICES, -1) == 8);
+  in_set_float(P_VOICES, 0.0f); run_once();
+  in_get(); run_once();
+  CHECK(reported_int(P_VOICES, -1) == 1);
   in_set_float(P_SCALE, 2.0f); in_set_float(P_KEY, 14.0f); run_once();     /* minor; key clamped to B */
   in_get(); run_once();
   CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 11);
   in_set_float(P_KEY, 9.0f);
-  in_set_float(P_MODE, 1.0f); in_set_float(P_VOICES, 3.0f); run_once();
+  in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
   const LV2_Feature* none[] = { NULL };
   CHECK(si->save(inst, store, NULL, 0, none) == LV2_STATE_SUCCESS);
   const StVal* sv = st_find(U("urn:granularsampler:sampler#sample"));
   CHECK(sv && sv->type == U(LV2_ATOM__Path) && !strcmp(sv->val, "st.wav"));
-  CHECK(st_find(U(P_MODE)) && *(const int32_t*)st_find(U(P_MODE))->val == 1);
+  CHECK(st_find(U(P_MODE)) == NULL);                              /* mode is gone */
   CHECK(st_find(U(P_VOICES)) && *(const int32_t*)st_find(U(P_VOICES))->val == 3);
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
-  in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
+  in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
   CHECK(status == 0);
   CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
   run_once();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored values */
-  CHECK(reported_int(P_MODE, -1) == 1 && reported_int(P_VOICES, -1) == 3);
+  CHECK(reported_int(P_VOICES, -1) == 3);
   CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 9);
-  in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
+  /* a state of an older version with mode = Mono comes back as 1 voice */
+  {
+    const int32_t mono = 1;
+    store(NULL, U(P_MODE), &mono, sizeof mono, U(LV2_ATOM__Int), 0);
+    CHECK(si->restore(inst, retrieve, NULL, 0, none) == LV2_STATE_SUCCESS);
+    run_once();
+    CHECK(reported_int(P_VOICES, -1) == 1);
+    nst--;                                                        /* drop it again */
+  }
+  in_set_float(P_VOICES, 8.0f); run_once();
 
   /* a load still in the worker when a state is restored must not replace the restored sample */
   in_set_path("mono.wav"); run_once();

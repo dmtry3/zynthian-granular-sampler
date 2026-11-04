@@ -403,7 +403,7 @@ static void test_steal(void) {
   Src s = make_src(SR, SR, 1, f_half);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  gc_set_voices(&G, 2, 0);
+  gc_set_voices(&G, 2);
   gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
   gc_note_on(&G, &p, 62, 100); run(&p, 0.05, NULL);
   gc_note_on(&G, &p, 64, 100);                      /* no free voice: the oldest (60) fades in 5 ms */
@@ -466,7 +466,7 @@ static void test_mono(void) {
   Src s = make_src(SR, SR, 1, f_half);
   gc_init(&G, SR, 1);
   gc_set_source(&G, &s.src);
-  gc_set_voices(&G, 8, 1);
+  gc_set_voices(&G, 1);                             /* one voice = mono */
   gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
   const uint32_t age = G.voices[0].age;
   gc_note_on(&G, &p, 64, 100);                      /* legato: same voice, envelope goes on */
@@ -483,7 +483,7 @@ static void test_mono(void) {
   CHECK(G.voices[0].stage == GC_V_RELEASE);
   run(&p, 0.05, NULL);
   CHECK(gc_active_voices(&G) == 0);
-  gc_set_voices(&G, 8, 0);                          /* back to Poly */
+  gc_set_voices(&G, 8);                             /* back to poly */
   gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100);
   CHECK(gc_active_voices(&G) == 2);
   free_src(&s);

@@ -266,12 +266,13 @@ void gc_all_off(GrainCore* g) {
   g->nactive = 0;
 }
 
-void gc_set_voices(GrainCore* g, int n, int mono) {
+void gc_set_voices(GrainCore* g, int n) {
   n = n < 1 ? 1 : n > GC_VOICES ? GC_VOICES : n;
-  if (mono == g->mono && n == g->nvoices) return;
-  if (mono != g->mono) gc_all_notes_off(g);   /* switching mode: everything releases */
+  const int mono = n == 1;                     /* one voice = mono: legato, back to a held key */
+  if (n == g->nvoices && mono == g->mono) return;
+  if (mono != g->mono) gc_all_notes_off(g);   /* to or from mono: everything releases */
   g->mono = mono;
-  g->nvoices = mono ? 1 : n;
+  g->nvoices = n;
 }
 
 int gc_active_voices(const GrainCore* g) {

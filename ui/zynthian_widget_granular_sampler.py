@@ -12,7 +12,7 @@
 #   when they changed.
 # Grain:
 # - The window shape of the Shape knob (same formula as grain_core.c, after Mutable Instruments Beads),
-#   Size, Density and the mean overlap; Poly/Mono and the number of voices (LV2 parameters mode, voices).
+#   Size, Density and the mean overlap; the number of voices (LV2 parameter voices, 1 = mono with legato).
 # Pitch:
 # - One octave: notes of the Quantize scale lit, the tonic filled, sounding notes (outputs note1..8) dotted;
 #   a tap on a key sets the tonic (LV2 parameter key); scale buttons set the scale (LV2 parameter scale).
@@ -464,9 +464,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         shape = min(max(self._zval("shape", 67.0) / 100.0, 0.0), 1.0)
         size = self._zval("size", 100.0)
         dens = self._zval("density", 20.0)
-        mode = int(round(self._zval("mode", 0)))
         voices = int(round(self._zval("voices", MAX_VOICES)))
-        key = (round(shape * 30), round(size, 1), round(dens, 2), mode, voices, self.width, self.height)
+        key = (round(shape * 30), round(size, 1), round(dens, 2), voices, self.width, self.height)
         if key == self.grain_view:
             return
         self.grain_view = key
@@ -492,25 +491,17 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         overlap = dens * size / 1000.0
         c.create_text(right, py1 + 3, anchor="nw", tags="grain", fill=tx_off, font=(fam, fs),
                       text="%d ms  %.1f /s  overlap %.1f" % (round(size), dens, overlap))
-        # Poly / Mono and voices
+        # voices: 1 = mono with legato
         self.buttons = []
         bh = self._button_h()
         y = py0
-        c.create_text(right, y, anchor="nw", text="Mode", fill=tx_off, font=(fam, fs), tags="grain")
-        y += fs * 2
-        bw = (w - pad - right) / 2.0
-        for i, name in enumerate(("Poly", "Mono")):
-            x0 = right + i * bw
-            self._button(x0, y, x0 + bw - 4, y + bh, name, mode == i, True, "mode", i)
-        y += bh + fs
-        c.create_text(right, y, anchor="nw", text="Voices", fill=(tx_off if mode else tx_off),
+        c.create_text(right, y, anchor="nw", text="Voices   (1 = mono, legato)", fill=tx_off,
                       font=(fam, fs), tags="grain")
         y += fs * 2
         bw = (w - pad - right) / float(MAX_VOICES)
         for i in range(MAX_VOICES):
             x0 = right + i * bw
-            self._button(x0, y, x0 + bw - 3, y + bh, str(i + 1), (i + 1) <= voices and not mode, not mode,
-                         "voices", i + 1)
+            self._button(x0, y, x0 + bw - 3, y + bh, str(i + 1), (i + 1) <= voices, True, "voices", i + 1)
 
     def _button_h(self):
         """Button height from the font: text plus a small margin."""
