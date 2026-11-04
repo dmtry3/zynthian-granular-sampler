@@ -150,7 +150,7 @@ static void test_pool(void) {
   int bad = 0;
   float peak = run(&p, 2.0, &bad);
   CHECK(G.nactive <= GC_POOL && G.skipped > 0 && bad == 0);
-  /* the overlap counted for loudness is capped at the pool: 64 grains of 0.5/8 at most */
+  /* the overlap counted for loudness is capped at the pool: GC_POOL grains of 0.5/8 at most */
   CHECK(peak > 0.5f * GC_POOL / 8.0f * 0.4f && peak < 0.5f * GC_POOL / 8.0f + 0.01f);
   free_src(&s);
 }

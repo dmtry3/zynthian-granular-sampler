@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #ifndef GC_POOL
-#define GC_POOL      64     /* grains for all voices; when the pool is full, new grains are skipped */
+#define GC_POOL      128    /* grains for all voices; when the pool is full, new grains are skipped */
 #endif                      /* (the bench builds other sizes to find the limit on the Pi) */
 #define GC_VOICES    8
 #define GC_HELD      16     /* Mono: keys remembered to return to */
