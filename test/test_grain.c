@@ -516,6 +516,126 @@ static void test_spread(void) {
   free_src(&s);
 }
 
+/* ---------- pitch ---------- */
+static void test_pitch(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  G.use_levels = 0;
+  p.pitch = 7.0f;
+  gc_note_on(&G, &p, 60, 100); gc_process(&G, &p, L, R, BUF);
+  CHECK(fabsf(G.last_pitch - 67.0f) < 1e-4f);
+  CHECK(fabsf(G.grains[0].inc - exp2f(7.0f / 12.0f)) < 1e-4f);
+  p.pitch = -12.5f;                                 /* fractional, below */
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100); gc_process(&G, &p, L, R, BUF);
+  CHECK(fabsf(G.last_pitch - 47.5f) < 1e-4f);
+  /* Pitch Spray: spread within +-spray, really spread */
+  p.pitch = 0.0f; p.pitch_spray = 3.0f; p.density = 200; p.size_ms = 5;
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100);
+  float lo = 1e9f, hi = -1e9f;
+  for (int k = 0; k < 1000; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    lo = fminf(lo, G.last_pitch); hi = fmaxf(hi, G.last_pitch);
+  }
+  CHECK(lo >= 57.0f && hi <= 63.0f && hi - lo > 5.0f);
+  free_src(&s);
+}
+
+static void test_quantize(void) {
+  gc_init(&G, SR, 1);
+  gc_set_scale(&G, 0, 1);                           /* C major */
+  CHECK(gc_snap(&G, 61.3f) == 62.0f && gc_snap(&G, 60.4f) == 60.0f && gc_snap(&G, 65.6f) == 65.0f);
+  CHECK(gc_snap(&G, 71.6f) == 72.0f);               /* B -> C across the octave */
+  CHECK(gc_snap(&G, 59.0f) == 59.0f && gc_snap(&G, 58.4f) == 59.0f && gc_snap(&G, 57.9f) == 57.0f);   /* below */
+  gc_set_scale(&G, 2, 2);                           /* D minor: D E F G A Bb C */
+  CHECK(gc_snap(&G, 66.2f) == 67.0f && gc_snap(&G, 65.8f) == 65.0f && gc_snap(&G, 70.9f) == 70.0f &&
+        gc_snap(&G, 61.4f) == 62.0f && gc_snap(&G, 60.6f) == 60.0f);
+  gc_set_scale(&G, 0, 0);                           /* chromatic: nearest semitone */
+  CHECK(gc_snap(&G, 60.4f) == 60.0f && gc_snap(&G, 60.6f) == 61.0f);
+  gc_set_scale(&G, 13, 99);                         /* out of range: key wraps, scale chromatic */
+  CHECK(G.key == 1 && G.scale == 0);
+
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_set_source(&G, &s.src);
+  gc_set_scale(&G, 0, 1);
+  p.pitch = 1.3f; p.quantize = 1.0f;                /* 61.3 -> D */
+  gc_note_on(&G, &p, 60, 100); gc_process(&G, &p, L, R, BUF);
+  CHECK(fabsf(G.last_pitch - 62.0f) < 1e-4f);
+  p.quantize = 0.5f;                                /* half way */
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100); gc_process(&G, &p, L, R, BUF);
+  CHECK(fabsf(G.last_pitch - 61.65f) < 1e-4f);
+  p.pitch = 0.0f; p.quantize = 1.0f;                /* a key outside the scale is pulled in too */
+  gc_all_off(&G); gc_note_on(&G, &p, 66, 100); gc_process(&G, &p, L, R, BUF);
+  CHECK(G.last_pitch == 65.0f || G.last_pitch == 67.0f);
+  /* spray + quantize 100 %: every grain on a note of the scale */
+  p.pitch_spray = 12.0f; p.density = 200; p.size_ms = 5;
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100);
+  int off_scale = 0;
+  for (int k = 0; k < 500; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    const int pc = ((int)lrintf(G.last_pitch) % 12 + 12) % 12;
+    if (fabsf(G.last_pitch - rintf(G.last_pitch)) > 1e-4f || pc == 1 || pc == 3 || pc == 6 || pc == 8 || pc == 10)
+      off_scale++;
+  }
+  CHECK(off_scale == 0);
+  free_src(&s);
+}
+
+/* A ramp read backwards goes down; nothing is read outside the sample (ASan). */
+static void test_reverse(void) {
+  GcParams p = poly_params();
+  const int64_t n = SR;
+  Src s = make_src(n, SR, 1, f_ramp);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  p.reverse = 1.0f; p.shape = 0.0f; p.size_ms = 100; p.density = 5; p.position = 0.5f;
+  gc_note_on(&G, &p, 60, 127);
+  gc_process(&G, &p, L, R, BUF);
+  CHECK(G.grains[0].inc < 0.0f);
+  float a = 0, b = 0;                                /* inside the square window: output ~ ramp value */
+  for (int k = 0; k < 8; k++) gc_process(&G, &p, L, R, BUF);
+  a = L[100];
+  gc_process(&G, &p, L, R, BUF);
+  b = L[100];
+  CHECK(b < a && a > 0.0f);
+  /* near the start, backwards: the start moves so the grain ends inside the sample */
+  p.position = 0.0f;
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 127);
+  gc_process(&G, &p, L, R, BUF);
+  /* started at span = 4800 + 3 frames, then went down by one block */
+  CHECK(G.grains[0].idx >= (int64_t)(0.1f * SR) - BUF && G.grains[0].idx <= (int64_t)(0.1f * SR));
+  float prev = L[BUF - 1], jump = 0;
+  int bad = 0;
+  for (int k = 0; k < SR / BUF / 2; k++) {
+    gc_process(&G, &p, L, R, BUF);
+    for (int i = 0; i < BUF; i++) {
+      if (!isfinite(L[i])) bad++;
+      jump = fmaxf(jump, fabsf(L[i] - prev)); prev = L[i];
+    }
+  }
+  CHECK(bad == 0 && jump < 0.05f);
+  /* short looping sample backwards, both interpolations, pitched */
+  Src t = make_src(1000, SR, 1, f_half);
+  for (int mode = 0; mode < 2; mode++) {
+    gc_init(&G, SR, 1);
+    gc_set_source(&G, &t.src);
+    G.interp = mode;
+    gc_note_on(&G, &p, 79, 127);
+    float pk = run(&p, 0.3, &bad);
+    CHECK(bad == 0 && fabsf(pk - 0.5f * G.win_gain[0]) < 1e-3f);
+  }
+  /* 50 %: about half the grains */
+  p.reverse = 0.5f; p.density = 200; p.size_ms = 5;
+  gc_init(&G, SR, 9);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  for (int k = 0; k < 1000; k++) gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(G.born > 100 && G.born_back > G.born * 2 / 5 && G.born_back < G.born * 3 / 5);
+  free_src(&s); free_src(&t);
+}
+
 int main(void) {
   test_windows();
   test_silence();
@@ -534,6 +654,9 @@ int main(void) {
   test_envelope();
   test_mono();
   test_spread();
+  test_pitch();
+  test_quantize();
+  test_reverse();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

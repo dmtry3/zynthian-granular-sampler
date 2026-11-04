@@ -31,6 +31,9 @@
 #define GC_ATTACK_MAX  10000.0f
 #define GC_RELEASE_MIN 10.0f   /* ms, to -60 dB */
 #define GC_RELEASE_MAX 20000.0f
+#define GC_PITCH_MAX   24.0f   /* semitones, both ways */
+#define GC_PSPRAY_MAX  24.0f   /* semitones */
+#define GC_NSCALES     12      /* see gc_scale_names in grain_core.c */
 
 enum { GC_INTERP_LINEAR = 0, GC_INTERP_HERMITE };
 
@@ -47,6 +50,10 @@ typedef struct {
   float attack_ms;  /* voice envelope: linear rise from the current level */
   float release_ms; /* exponential fall, time to -60 dB */
   float spread;     /* 0..1: random pan of each grain */
+  float pitch;      /* -24..24 semitones, added to the note */
+  float pitch_spray;/* 0..24: random +-semitones per grain */
+  float reverse;    /* 0..1: probability that a grain plays backwards */
+  float quantize;   /* 0..1: pull of the grain pitch to the nearest note of the scale */
 } GcParams;
 
 /* The sample as the engine reads it: interleaved stereo, GC_LEVELS rates, each level followed by
@@ -107,8 +114,11 @@ typedef struct {
   GcGrain grains[GC_POOL];
   int nactive;
   uint64_t born, skipped; /* statistics: grains born and skipped because the pool was full */
+  uint64_t born_back;     /* of them, born backwards (Reverse) */
   double last_start;      /* start frame (level 0) of the newest grain */
   int last_level;         /* level of the newest grain */
+  float last_pitch;       /* MIDI pitch of the newest grain (after spray and quantize) */
+  int scale, key;         /* Quantize: scale (GC_NSCALES) and tonic 0..11 */
   float win_gain[GC_SHAPES];               /* loudness compensation of each window (bell = 1) */
   float win[GC_SHAPES][GC_WIN + 1];
 } GrainCore;
@@ -126,6 +136,11 @@ void gc_all_off(GrainCore* g);          /* silence now: grains and voices stoppe
 /* Poly with n voices (1..GC_VOICES) or Mono. Voices above n finish their sound. */
 void gc_set_voices(GrainCore* g, int n, int mono);
 int gc_active_voices(const GrainCore* g);
+/* Quantize scale: 0 chromatic, 1 major, 2 minor ... (gc_scale_names), tonic 0 = C .. 11 = B. */
+void gc_set_scale(GrainCore* g, int key, int scale);
+extern const char* const gc_scale_names[GC_NSCALES];
+/* Nearest pitch of the scale to `semis` (MIDI, fractional allowed). */
+float gc_snap(const GrainCore* g, float semis);
 /* Writes n samples (not adds). */
 void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uint32_t n);
 /* Flush denormals to zero in this thread (call at the start of run()). */

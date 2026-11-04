@@ -7,6 +7,34 @@
 
 static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+/* Scales for Quantize: semitones above the tonic (the same list as in Generative Arp). */
+const char* const gc_scale_names[GC_NSCALES] = {
+  "Chromatic", "Major", "Minor", "Dorian", "Phrygian", "Lydian", "Mixolydian",
+  "Harm. minor", "Mel. minor", "Major pent.", "Minor pent.", "Blues" };
+static const int8_t scale_steps[GC_NSCALES][13] = {   /* -1 ends the list */
+  { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, -1 }, { 0, 2, 4, 5, 7, 9, 11, -1 }, { 0, 2, 3, 5, 7, 8, 10, -1 },
+  { 0, 2, 3, 5, 7, 9, 10, -1 }, { 0, 1, 3, 5, 7, 8, 10, -1 }, { 0, 2, 4, 6, 7, 9, 11, -1 },
+  { 0, 2, 4, 5, 7, 9, 10, -1 }, { 0, 2, 3, 5, 7, 8, 11, -1 }, { 0, 2, 3, 5, 7, 9, 11, -1 },
+  { 0, 2, 4, 7, 9, -1 }, { 0, 3, 5, 7, 10, -1 }, { 0, 3, 5, 6, 7, 10, -1 } };
+
+void gc_set_scale(GrainCore* g, int key, int scale) {
+  g->key = ((key % 12) + 12) % 12;
+  g->scale = scale < 0 || scale >= GC_NSCALES ? 0 : scale;
+}
+
+float gc_snap(const GrainCore* g, float semis) {
+  const float rel = semis - (float)g->key;
+  const float oct = floorf(rel / 12.0f);
+  float best = rel, dist = 1e9f;
+  for (int o = -1; o <= 1; o++)
+    for (const int8_t* d = scale_steps[g->scale]; *d >= 0; d++) {
+      const float c = (oct + (float)o) * 12.0f + (float)*d;
+      const float e = fabsf(c - rel);
+      if (e < dist) { dist = e; best = c; }
+    }
+  return best + (float)g->key;
+}
+
 static float rnd(GrainCore* g) {          /* xorshift32 -> [0, 1) */
   uint32_t x = g->rng;
   x ^= x << 13; x ^= x >> 17; x ^= x << 5;
@@ -93,6 +121,7 @@ void gc_default_params(GcParams* p) {
   p->size_ms = 100.0f; p->density = 20.0f; p->shape = 2.0f / 3.0f; p->chaos = 0.0f;
   p->root = 60.0f;
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
+  p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
 }
 
 uint32_t gc_set_source(GrainCore* g, const GcSource* s) {
@@ -266,15 +295,29 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   g->last_start = start;
   const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
 
+  /* Pitch: note + Pitch + random Pitch Spray, pulled to the scale by Quantize; fixed for the grain. */
+  float semis = (float)v->note + clampf(p->pitch, -GC_PITCH_MAX, GC_PITCH_MAX);
+  const float ps = clampf(p->pitch_spray, 0.0f, GC_PSPRAY_MAX);
+  if (ps > 0.0f) semis += ps * (rnd(g) * 2.0f - 1.0f);
+  const float q = clampf(p->quantize, 0.0f, 1.0f);
+  if (q > 0.0f) semis += q * (gc_snap(g, semis) - semis);
+  g->last_pitch = semis;
+  const int backwards = p->reverse > 0.0f && rnd(g) < p->reverse;
+
   /* Pitched up: read a band-limited level at a lower rate, so nothing folds back above Nyquist. */
-  float inc = (g->src.rate > 0 ? g->src.rate / g->sr : 1.0f) * exp2f(((float)v->note - p->root) / 12.0f);
+  float inc = (g->src.rate > 0 ? g->src.rate / g->sr : 1.0f) * exp2f((semis - p->root) / 12.0f);
   int lv = 0;
   while (g->use_levels && lv + 1 < g->src.nlevels && inc > GC_MIP_UP) { inc *= 0.5f; start *= 0.5; lv++; }
   const int64_t frames = g->src.frames[lv];
-  /* Do not run over the end of the sample (a jump to its start would click): start earlier if it fits. */
+  /* Do not run over the end (forward) or the start (backwards) of the sample: a jump would click.
+   * Move the start if the grain fits in the sample at all. */
   const double span = (double)len * inc + 3.0;
-  if (span < (double)frames - 2.0 && start > (double)frames - 2.0 - span) start = (double)frames - 2.0 - span;
+  if (span < (double)frames - 2.0) {
+    if (!backwards && start > (double)frames - 2.0 - span) start = (double)frames - 2.0 - span;
+    if (backwards && start < span) start = span;
+  }
   if (start < 0.0) start = 0.0;
+  if (backwards) { inc = -inc; g->born_back++; }
 
   /* Loudness: grains add up by power. The overlap cannot exceed the pool. */
   float overlap = dens * size_s;
@@ -345,20 +388,22 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   const int64_t idx = gr->idx;
   float* restrict dl = ol + d;
   float* restrict dr = orr + d;
-  const int64_t last = idx + (int64_t)(frac + (float)cnt * inc);    /* last integer frame read */
+  /* frames read: from idx (+frac) for cnt samples, forward or backwards (inc < 0) */
+  const int64_t last = idx + (int64_t)floorf(frac + (float)(cnt - 1) * inc);
+  const int64_t lo = inc < 0.0f ? last : idx, hi = inc < 0.0f ? idx : last;
   /* fast path: all frames needed (j-1 .. j+2) exist without wrapping; levels end with guard frames */
-  const int fast = idx >= 1 && last + 2 < frames + 2;
+  const int fast = lo >= 1 && hi < frames;
 
   const int hermite_on = g->interp == GC_INTERP_HERMITE;
 
-  if (!fast || fstep != 0.0f) {
-    /* general path: wraps at the end (short samples) and fades out (sample swap); rarely used */
+  if (!fast || fstep != 0.0f || inc < 0.0f) {
+    /* general path: backwards grains, wrap at the ends (short samples), fade-out (sample swap) */
     for (int i = 0; i < cnt; i++) {
       const float pf = frac + (float)i * inc;
-      const int k = (int)pf;
+      const int k = (int)floorf(pf);
       const float t = pf - (float)k;
       int64_t j = idx + k, jm = j - 1;
-      if (!fast) { j %= frames; jm = j ? j - 1 : frames - 1; }   /* guard frames cover j+1, j+2 */
+      if (!fast) { j = ((j % frames) + frames) % frames; jm = j ? j - 1 : frames - 1; }   /* guard: j+1, j+2 */
       const float* p = s + 2 * j;
       const float a = w[(int)(wph + (float)i * wstep)] * (fade + (float)i * fstep);
       if (hermite_on) {
@@ -393,8 +438,8 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
     }
   }
   const float total = frac + (float)cnt * inc;
-  const int64_t adv = (int64_t)total;
-  gr->idx = (idx + adv) % frames;
+  const int64_t adv = (int64_t)floorf(total);
+  gr->idx = (((idx + adv) % frames) + frames) % frames;
   gr->frac = total - (float)adv;
   gr->wph = wph + (float)cnt * wstep;
   if (gr->wph > (float)GC_WIN) gr->wph = (float)GC_WIN;
