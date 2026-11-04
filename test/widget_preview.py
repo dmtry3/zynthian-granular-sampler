@@ -365,6 +365,9 @@ def main():
                 return True
         return False
     check("voices buttons 1..8 in Poly", len([b for b in wdg.buttons if b[4] == "voices"]) == 8)
+    b0 = wdg.buttons[0]
+    check("buttons are low: about one text line (%d px)" % (b0[3] - b0[1]),
+          b0[3] - b0[1] <= wdg._header_h() * 1.5)
     press_button("voices", 4)
     check("tap on voices 4 sets voices = 4", proc.v("voices") == 4)
     press_button("mode", 1)

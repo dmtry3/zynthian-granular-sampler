@@ -475,7 +475,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                       text="%d ms  %.1f /s  overlap %.1f" % (round(size), dens, overlap))
         # Poly / Mono and voices
         self.buttons = []
-        bh = max(fs * 2 + 6, (py1 - py0) // 5)
+        bh = self._button_h()
         y = py0
         c.create_text(right, y, anchor="nw", text="Mode", fill=tx_off, font=(fam, fs), tags="grain")
         y += fs * 2
@@ -492,6 +492,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             x0 = right + i * bw
             self._button(x0, y, x0 + bw - 3, y + bh, str(i + 1), (i + 1) <= voices and not mode, not mode,
                          "voices", i + 1)
+
+    def _button_h(self):
+        """Button height from the font: text plus a small margin."""
+        return int(self._header_h() * 1.3)
 
     def _button(self, x0, y0, x1, y1, text, on, enabled, sym, value):
         c = self.widget_canvas
