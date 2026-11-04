@@ -61,11 +61,12 @@ static void work_all(void) {
 
 /* ---------- ports ---------- */
 #define NFR 64
-/* control inputs: position scan spray window | size density shape chaos | attack release spread level */
-#define NCTL 12
-enum { C_SHAPE = 6, C_ATTACK = 8, C_RELEASE = 9, C_LEVEL = 11 };
-static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 10, 50, 0, 0.8f };
-static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16];
+/* control inputs: position scan spray window | size density shape chaos | pitch pitch_spray reverse quantize |
+ * attack release spread level */
+#define NCTL 16
+enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15 };
+static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f };
+static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8];
 enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
 static LV2_Atom_Forge forge;
@@ -128,6 +129,8 @@ static int reported_int(const char* prop, int def) {
 }
 #define P_MODE "urn:granularsampler:sampler#mode"
 #define P_VOICES "urn:granularsampler:sampler#voices"
+#define P_SCALE "urn:granularsampler:sampler#scale"
+#define P_KEY "urn:granularsampler:sampler#key"
 /* patch:Set of a number, as Zynthian sends it (a float) */
 static void in_set_float(const char* prop, float val) {
   LV2_Atom_Forge_Frame f;
@@ -190,6 +193,7 @@ int main(int argc, char** argv) {
   d->connect_port(inst, P_SECONDS, &seconds);
   d->connect_port(inst, P_PLAYHEAD, &playhead);
   for (int i = 0; i < 16; i++) d->connect_port(inst, P_GRAIN0 + i, &grains[i]);
+  for (int i = 0; i < 8; i++) d->connect_port(inst, P_GRAIN0 + 16 + i, &notes[i]);
   lv2_atom_forge_init(&forge, &map);
   d->activate(inst);
 
@@ -219,6 +223,7 @@ int main(int argc, char** argv) {
   in_get(); run_once();
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);   /* defaults: Poly, 8 */
+  CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
   run_once();
   CHECK(reported_path() == NULL);                                 /* answered once */
 
@@ -229,6 +234,10 @@ int main(int argc, char** argv) {
   in_set_float(P_VOICES, 99.0f); in_set_float(P_MODE, 0.0f); run_once();
   in_get(); run_once();
   CHECK(reported_int(P_MODE, -1) == 0 && reported_int(P_VOICES, -1) == 8);
+  in_set_float(P_SCALE, 2.0f); in_set_float(P_KEY, 14.0f); run_once();     /* minor; key clamped to B */
+  in_get(); run_once();
+  CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 11);
+  in_set_float(P_KEY, 9.0f);
   in_set_float(P_MODE, 1.0f); in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -238,6 +247,9 @@ int main(int argc, char** argv) {
   CHECK(sv && sv->type == U(LV2_ATOM__Path) && !strcmp(sv->val, "st.wav"));
   CHECK(st_find(U(P_MODE)) && *(const int32_t*)st_find(U(P_MODE))->val == 1);
   CHECK(st_find(U(P_VOICES)) && *(const int32_t*)st_find(U(P_VOICES))->val == 3);
+  CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
+  CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
+  in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
   CHECK(status == 0);
@@ -246,6 +258,7 @@ int main(int argc, char** argv) {
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));   /* host learns the restored values */
   CHECK(reported_int(P_MODE, -1) == 1 && reported_int(P_VOICES, -1) == 3);
+  CHECK(reported_int(P_SCALE, -1) == 2 && reported_int(P_KEY, -1) == 9);
   in_set_float(P_MODE, 0.0f); in_set_float(P_VOICES, 8.0f); run_once();
 
   /* a load still in the worker when a state is restored must not replace the restored sample */
@@ -263,6 +276,9 @@ int main(int argc, char** argv) {
     run_once();
   }
   CHECK(peak > 0.0f);                                             /* a note plays the sample */
+  int seen = 0;
+  for (int i = 0; i < 8; i++) if (notes[i] == 60.0f) seen++;
+  CHECK(seen == 1);                                               /* the sounding note on a note output */
   CHECK(playhead >= 0.0f && playhead <= 1.0f);
   CHECK(grains[0] >= 0.0f && grains[0] <= 1.0f && grains[15] == -1.0f);   /* few grains: the rest is -1 */
   ctls[C_LEVEL] = 0.0f; run_once(); run_once();

@@ -18,6 +18,10 @@
         [ lv2:symbol "density" ; pset:value 20.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 500.0 ] ,
         [ lv2:symbol "spread" ; pset:value 0.0 ] ,
@@ -25,7 +29,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_freeze>
@@ -42,6 +48,10 @@
         [ lv2:symbol "density" ; pset:value 30.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 30.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 300.0 ] ,
         [ lv2:symbol "release" ; pset:value 2000.0 ] ,
         [ lv2:symbol "spread" ; pset:value 60.0 ] ,
@@ -49,7 +59,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_drift>
@@ -66,6 +78,10 @@
         [ lv2:symbol "density" ; pset:value 25.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 50.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 150.0 ] ,
         [ lv2:symbol "release" ; pset:value 1500.0 ] ,
         [ lv2:symbol "spread" ; pset:value 40.0 ] ,
@@ -73,7 +89,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pad_dense>
@@ -90,6 +108,10 @@
         [ lv2:symbol "density" ; pset:value 200.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 70.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 400.0 ] ,
         [ lv2:symbol "release" ; pset:value 3000.0 ] ,
         [ lv2:symbol "spread" ; pset:value 100.0 ] ,
@@ -97,7 +119,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pluck_cloud>
@@ -114,6 +138,10 @@
         [ lv2:symbol "density" ; pset:value 60.0 ] ,
         [ lv2:symbol "shape" ; pset:value 33.3 ] ,
         [ lv2:symbol "chaos" ; pset:value 80.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 800.0 ] ,
         [ lv2:symbol "spread" ; pset:value 100.0 ] ,
@@ -121,7 +149,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_pluck_mono>
@@ -138,6 +168,10 @@
         [ lv2:symbol "density" ; pset:value 40.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 5.0 ] ,
         [ lv2:symbol "release" ; pset:value 300.0 ] ,
         [ lv2:symbol "spread" ; pset:value 20.0 ] ,
@@ -145,7 +179,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
         <urn:granularsampler:sampler#mode> 1 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_stutter>
@@ -162,6 +198,10 @@
         [ lv2:symbol "density" ; pset:value 16.0 ] ,
         [ lv2:symbol "shape" ; pset:value 0.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 200.0 ] ,
         [ lv2:symbol "spread" ; pset:value 0.0 ] ,
@@ -169,7 +209,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_reverse>
@@ -186,6 +228,10 @@
         [ lv2:symbol "density" ; pset:value 8.0 ] ,
         [ lv2:symbol "shape" ; pset:value 100.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 400.0 ] ,
         [ lv2:symbol "spread" ; pset:value 50.0 ] ,
@@ -193,7 +239,9 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 8
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 
 <urn:granularsampler:sampler#preset_drums_freeze>
@@ -210,6 +258,10 @@
         [ lv2:symbol "density" ; pset:value 40.0 ] ,
         [ lv2:symbol "shape" ; pset:value 67.0 ] ,
         [ lv2:symbol "chaos" ; pset:value 100.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
         [ lv2:symbol "attack" ; pset:value 10.0 ] ,
         [ lv2:symbol "release" ; pset:value 600.0 ] ,
         [ lv2:symbol "spread" ; pset:value 80.0 ] ,
@@ -217,6 +269,128 @@
     state:state [
         <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
         <urn:granularsampler:sampler#mode> 0 ;
-        <urn:granularsampler:sampler#voices> 4
+        <urn:granularsampler:sampler#voices> 4 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_pad_shimmer>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Shimmer Octaves" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 20.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 250.0 ] ,
+        [ lv2:symbol "density" ; pset:value 50.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 67.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 60.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 12.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 100.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 500.0 ] ,
+        [ lv2:symbol "release" ; pset:value 3000.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 100.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.7 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
+        <urn:granularsampler:sampler#mode> 0 ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 9 ;
+        <urn:granularsampler:sampler#key> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_pluck_scale>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pluck Spray in D dorian" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 100.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 20.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 90.0 ] ,
+        [ lv2:symbol "density" ; pset:value 45.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 33.3 ] ,
+        [ lv2:symbol "chaos" ; pset:value 70.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 7.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 100.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 10.0 ] ,
+        [ lv2:symbol "release" ; pset:value 900.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 80.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pluck.wav> ;
+        <urn:granularsampler:sampler#mode> 0 ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 3 ;
+        <urn:granularsampler:sampler#key> 2
+    ] .
+
+<urn:granularsampler:sampler#preset_pad_backwards>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Half Reverse" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 25.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 400.0 ] ,
+        [ lv2:symbol "density" ; pset:value 20.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 67.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 40.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 50.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 200.0 ] ,
+        [ lv2:symbol "release" ; pset:value 2500.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 60.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_pad.wav> ;
+        <urn:granularsampler:sampler#mode> 0 ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
+    ] .
+
+<urn:granularsampler:sampler#preset_drums_pitch_down>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Octave Down" ;
+    pset:bank <urn:granularsampler:sampler#bank_factory> ;
+    lv2:port
+        [ lv2:symbol "position" ; pset:value 0.0 ] ,
+        [ lv2:symbol "scan" ; pset:value 100.0 ] ,
+        [ lv2:symbol "spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "window" ; pset:value 100.0 ] ,
+        [ lv2:symbol "size" ; pset:value 120.0 ] ,
+        [ lv2:symbol "density" ; pset:value 20.0 ] ,
+        [ lv2:symbol "shape" ; pset:value 0.0 ] ,
+        [ lv2:symbol "chaos" ; pset:value 0.0 ] ,
+        [ lv2:symbol "pitch" ; pset:value -12.0 ] ,
+        [ lv2:symbol "pitch_spray" ; pset:value 0.0 ] ,
+        [ lv2:symbol "reverse" ; pset:value 0.0 ] ,
+        [ lv2:symbol "quantize" ; pset:value 0.0 ] ,
+        [ lv2:symbol "attack" ; pset:value 10.0 ] ,
+        [ lv2:symbol "release" ; pset:value 300.0 ] ,
+        [ lv2:symbol "spread" ; pset:value 0.0 ] ,
+        [ lv2:symbol "level" ; pset:value 0.8 ] ;
+    state:state [
+        <urn:granularsampler:sampler#sample> <file:///zynthian/zynthian-my-data/files/Samples/granular-sampler/test_drums.wav> ;
+        <urn:granularsampler:sampler#mode> 0 ;
+        <urn:granularsampler:sampler#voices> 8 ;
+        <urn:granularsampler:sampler#scale> 0 ;
+        <urn:granularsampler:sampler#key> 0
     ] .
 

@@ -15,6 +15,7 @@
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "grain_core.h"
@@ -27,12 +28,18 @@
  * so a control port with a higher index would be overwritten by a parameter in its list. */
 enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
        P_SIZE, P_DENSITY, P_SHAPE, P_CHAOS,           /* page Grain */
+       P_PITCH, P_PSPRAY, P_REVERSE, P_QUANTIZE,      /* page Pitch */
        P_ATTACK, P_RELEASE, P_SPREAD, P_LEVEL,        /* page Voice */
        P_END,
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
-       P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };   /* outputs for the widget */
+       P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0,     /* outputs for the widget */
+       P_NOTE0 = P_GRAIN0 + 16 };                     /* note1..8: MIDI note of each sounding voice */
 #define N_GRAIN_PORTS 16
-#define N_RETIRED 8                              /* grain1..16: read positions of some active grains */
+#define N_RETIRED 8
+
+enum { IP_MODE = 0, IP_VOICES, IP_SCALE, IP_KEY, N_IPARAMS };
+static const char* const ip_names[N_IPARAMS] = { "mode", "voices", "scale", "key" };
+static const int ip_defaults[N_IPARAMS] = { 0, GC_VOICES, 0, 0 };                              /* grain1..16: read positions of some active grains */
 #define N_CTL P_END
 
 /* Value of the status output port. */
@@ -54,12 +61,13 @@ typedef struct {
   float* seconds_out;
   float* playhead_out;
   float* grain_out[N_GRAIN_PORTS];
+  float* note_out[GC_VOICES];
 
   LV2_URID_Map* map;
   LV2_Worker_Schedule* sched;
   LV2_Atom_Forge forge;
   LV2_URID midi_Event, atom_Object, atom_Path, atom_String, atom_URID;
-  LV2_URID patch_Set, patch_Get, patch_property, patch_value, p_sample, p_mode, p_voices;
+  LV2_URID patch_Set, patch_Get, patch_property, patch_value, p_sample;
   LV2_URID atom_Int, atom_Float, atom_Double, atom_Long;
 
   GsSample* sample;            /* owned by the audio thread; swapped in work_response() */
@@ -70,7 +78,9 @@ typedef struct {
   atomic_uint req_seq;         /* number of the newest load request; older ones are skipped */
   int status;
   int report;                  /* tell the host the path, mode and voices in the next run() */
-  int mode, voices;            /* LV2 parameters: 0 Poly / 1 Mono, 1..8 voices */
+  /* integer LV2 parameters set in the widget: mode (0 Poly / 1 Mono), voices 1..8, scale, key */
+  LV2_URID ip_urid[N_IPARAMS];
+  int ip[N_IPARAMS];
   double sr;
   float level;                 /* last applied level, ramped to the port value over a block */
   GcParams params;
@@ -145,14 +155,16 @@ static LV2_Handle instantiate(const LV2_Descriptor* d, double rate, const char* 
   S->patch_property = m->map(m->handle, LV2_PATCH__property);
   S->patch_value    = m->map(m->handle, LV2_PATCH__value);
   S->p_sample       = m->map(m->handle, GS_URI "#sample");
-  S->p_mode         = m->map(m->handle, GS_URI "#mode");
-  S->p_voices       = m->map(m->handle, GS_URI "#voices");
+  for (int i = 0; i < N_IPARAMS; i++) {
+    char uri[96];
+    snprintf(uri, sizeof uri, GS_URI "#%s", ip_names[i]);
+    S->ip_urid[i] = m->map(m->handle, uri);
+    S->ip[i] = ip_defaults[i];
+  }
   S->atom_Int       = m->map(m->handle, LV2_ATOM__Int);
   S->atom_Float     = m->map(m->handle, LV2_ATOM__Float);
   S->atom_Double    = m->map(m->handle, LV2_ATOM__Double);
   S->atom_Long      = m->map(m->handle, LV2_ATOM__Long);
-  S->mode = 0;
-  S->voices = GC_VOICES;
   lv2_atom_forge_init(&S->forge, m);
   atomic_init(&S->req_seq, 0);
   S->sr = rate;
@@ -173,6 +185,7 @@ static void connect_port(LV2_Handle h, uint32_t port, void* data) {
   else if (port == P_SECONDS) S->seconds_out = (float*)data;
   else if (port == P_PLAYHEAD) S->playhead_out = (float*)data;
   else if (port >= P_GRAIN0 && port < P_GRAIN0 + N_GRAIN_PORTS) S->grain_out[port - P_GRAIN0] = (float*)data;
+  else if (port >= P_NOTE0 && port < P_NOTE0 + GC_VOICES) S->note_out[port - P_NOTE0] = (float*)data;
 }
 
 static void activate(LV2_Handle h) { (void)h; }
@@ -243,10 +256,16 @@ static int atom_int(const Sampler* S, const LV2_Atom* a, int def) {
   return def;
 }
 
-static void apply_voices(Sampler* S) {
-  S->mode = S->mode ? 1 : 0;
-  S->voices = S->voices < 1 ? 1 : S->voices > GC_VOICES ? GC_VOICES : S->voices;
-  gc_set_voices(&S->core, S->voices, S->mode);
+static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/* Integer parameters into range, then into the engine. */
+static void apply_iparams(Sampler* S) {
+  S->ip[IP_MODE] = S->ip[IP_MODE] ? 1 : 0;
+  S->ip[IP_VOICES] = clampi(S->ip[IP_VOICES], 1, GC_VOICES);
+  S->ip[IP_SCALE] = clampi(S->ip[IP_SCALE], 0, GC_NSCALES - 1);
+  S->ip[IP_KEY] = clampi(S->ip[IP_KEY], 0, 11);
+  gc_set_voices(&S->core, S->ip[IP_VOICES], S->ip[IP_MODE]);
+  gc_set_scale(&S->core, S->ip[IP_KEY], S->ip[IP_SCALE]);
 }
 
 static void handle_patch_set(Sampler* S, const LV2_Atom_Object* obj) {
@@ -254,8 +273,8 @@ static void handle_patch_set(Sampler* S, const LV2_Atom_Object* obj) {
   lv2_atom_object_get(obj, S->patch_property, &prop, S->patch_value, &val, 0);
   if (!prop || prop->type != S->atom_URID || !val) return;
   const LV2_URID key = ((const LV2_Atom_URID*)prop)->body;
-  if (key == S->p_mode) { S->mode = atom_int(S, val, S->mode); apply_voices(S); return; }
-  if (key == S->p_voices) { S->voices = atom_int(S, val, S->voices); apply_voices(S); return; }
+  for (int i = 0; i < N_IPARAMS; i++)
+    if (key == S->ip_urid[i]) { S->ip[i] = atom_int(S, val, S->ip[i]); apply_iparams(S); return; }
   if (key != S->p_sample) return;
   if (val->type != S->atom_Path && val->type != S->atom_String) return;
   request_load(S, (const char*)LV2_ATOM_BODY_CONST(val), val->size);
@@ -280,9 +299,10 @@ static int report_param(Sampler* S, LV2_URID key, int ival) {
 
 static void report_path(Sampler* S) {
   /* all or nothing: when the buffer is full, everything is sent again in the next run */
-  if (report_param(S, S->p_sample, 0) && report_param(S, S->p_mode, S->mode) &&
-      report_param(S, S->p_voices, S->voices))
-    S->report = 0;
+  if (!report_param(S, S->p_sample, 0)) return;
+  for (int i = 0; i < N_IPARAMS; i++)
+    if (!report_param(S, S->ip_urid[i], S->ip[i])) return;
+  S->report = 0;
 }
 
 static float ctl(const Sampler* S, int port, float def) {
@@ -303,6 +323,10 @@ static void read_params(Sampler* S) {
   p->attack_ms  = ctl(S, P_ATTACK, 10.0f);
   p->release_ms = ctl(S, P_RELEASE, 500.0f);
   p->spread     = ctl(S, P_SPREAD, 0.0f) * 0.01f;
+  p->pitch       = ctl(S, P_PITCH, 0.0f);
+  p->pitch_spray = ctl(S, P_PSPRAY, 0.0f);
+  p->reverse     = ctl(S, P_REVERSE, 0.0f) * 0.01f;
+  p->quantize    = ctl(S, P_QUANTIZE, 0.0f) * 0.01f;
 }
 
 static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
@@ -336,6 +360,10 @@ static void write_monitors(Sampler* S) {
   }
   for (; k < N_GRAIN_PORTS; k++)
     if (S->grain_out[k]) *S->grain_out[k] = -1.0f;
+  for (int i = 0; i < GC_VOICES; i++)
+    if (S->note_out[i])
+      *S->note_out[i] = g->voices[i].stage != GC_V_IDLE && g->voices[i].stage != GC_V_STEAL ?
+                        (float)g->voices[i].note : -1.0f;
 }
 
 static void run(LV2_Handle h, uint32_t n) {
@@ -398,9 +426,10 @@ static LV2_State_Status save(LV2_Handle h, LV2_State_Store_Function store, LV2_S
                              uint32_t flags, const LV2_Feature* const* features) {
   (void)flags;
   Sampler* S = (Sampler*)h;
-  const int32_t mode = S->mode, voices = S->voices;
-  store(sh, S->p_mode, &mode, sizeof mode, S->atom_Int, LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-  store(sh, S->p_voices, &voices, sizeof voices, S->atom_Int, LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+  for (int i = 0; i < N_IPARAMS; i++) {
+    const int32_t v = S->ip[i];
+    store(sh, S->ip_urid[i], &v, sizeof v, S->atom_Int, LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+  }
   if (is_empty_path(S->path)) return LV2_STATE_SUCCESS;
   const LV2_State_Map_Path* mp = (const LV2_State_Map_Path*)get_feature(features, LV2_STATE__mapPath);
   const LV2_State_Free_Path* fp = (const LV2_State_Free_Path*)get_feature(features, LV2_STATE__freePath);
@@ -440,14 +469,13 @@ static LV2_State_Status restore(LV2_Handle h, LV2_State_Retrieve_Function retrie
   S->sample = s;
   S->status = s ? ST_LOADED : (err ? ST_ERROR : ST_EMPTY);
   use_sample(S);
-  /* mode and voices; missing in old presets: Poly, 8 */
-  S->mode = 0;
-  S->voices = GC_VOICES;
-  const void* mv = retrieve(sh, S->p_mode, &size, &type, &vflags);
-  if (mv && type == S->atom_Int && size >= sizeof(int32_t)) S->mode = *(const int32_t*)mv;
-  const void* vv = retrieve(sh, S->p_voices, &size, &type, &vflags);
-  if (vv && type == S->atom_Int && size >= sizeof(int32_t)) S->voices = *(const int32_t*)vv;
-  apply_voices(S);
+  /* integer parameters; missing in old presets: defaults */
+  for (int i = 0; i < N_IPARAMS; i++) {
+    S->ip[i] = ip_defaults[i];
+    const void* iv = retrieve(sh, S->ip_urid[i], &size, &type, &vflags);
+    if (iv && type == S->atom_Int && size >= sizeof(int32_t)) S->ip[i] = *(const int32_t*)iv;
+  }
+  apply_iparams(S);
   S->report = 1;                                     /* tell the host the restored values */
   return LV2_STATE_SUCCESS;
 }

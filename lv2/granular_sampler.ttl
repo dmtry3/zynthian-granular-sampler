@@ -15,6 +15,7 @@
 # Knob pages, in this order (higher displayPriority first). Later stages add Pitch, Voice (full), Filter, Mod.
 <urn:granularsampler:sampler#g_position> a pg:Group ; lv2:symbol "g_position" ; lv2:name "Position" ; lv2:index 0 ; lv2:displayPriority 60 .
 <urn:granularsampler:sampler#g_grain> a pg:Group ; lv2:symbol "g_grain" ; lv2:name "Grain" ; lv2:index 1 ; lv2:displayPriority 50 .
+<urn:granularsampler:sampler#g_pitch> a pg:Group ; lv2:symbol "g_pitch" ; lv2:name "Pitch" ; lv2:index 2 ; lv2:displayPriority 40 .
 <urn:granularsampler:sampler#g_voice> a pg:Group ; lv2:symbol "g_voice" ; lv2:name "Voice" ; lv2:index 3 ; lv2:displayPriority 30 .
 
 # Sample file: Zynthian shows its file selector for an atom:Path parameter (folders by mod:fileTypes).
@@ -49,18 +50,40 @@
     pprops:notOnGUI true ;
     lv2:portProperty pprops:notOnGUI .
 
+# Quantize scale and tonic: set in the widget (Pitch tab), saved in the snapshot and in LV2 State.
+<urn:granularsampler:sampler#scale>
+    a lv2:Parameter ;
+    lv2:symbol "scale" ;
+    rdfs:label "Scale" ;
+    rdfs:range atom:Int ;
+    lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 11 ;
+    lv2:scalePoint [ rdfs:label "Chromatic" ; rdf:value 0 ] , [ rdfs:label "Major" ; rdf:value 1 ] , [ rdfs:label "Minor" ; rdf:value 2 ] , [ rdfs:label "Dorian" ; rdf:value 3 ] , [ rdfs:label "Phrygian" ; rdf:value 4 ] , [ rdfs:label "Lydian" ; rdf:value 5 ] , [ rdfs:label "Mixolydian" ; rdf:value 6 ] , [ rdfs:label "Harm. minor" ; rdf:value 7 ] , [ rdfs:label "Mel. minor" ; rdf:value 8 ] , [ rdfs:label "Major pent." ; rdf:value 9 ] , [ rdfs:label "Minor pent." ; rdf:value 10 ] , [ rdfs:label "Blues" ; rdf:value 11 ] ;
+    pprops:notOnGUI true ;
+    lv2:portProperty pprops:notOnGUI .
+
+<urn:granularsampler:sampler#key>
+    a lv2:Parameter ;
+    lv2:symbol "key" ;
+    rdfs:label "Key" ;
+    rdfs:range atom:Int ;
+    lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 11 ;
+    lv2:scalePoint [ rdfs:label "C" ; rdf:value 0 ] , [ rdfs:label "C#" ; rdf:value 1 ] , [ rdfs:label "D" ; rdf:value 2 ] , [ rdfs:label "D#" ; rdf:value 3 ] , [ rdfs:label "E" ; rdf:value 4 ] , [ rdfs:label "F" ; rdf:value 5 ] , [ rdfs:label "F#" ; rdf:value 6 ] , [ rdfs:label "G" ; rdf:value 7 ] , [ rdfs:label "G#" ; rdf:value 8 ] , [ rdfs:label "A" ; rdf:value 9 ] , [ rdfs:label "A#" ; rdf:value 10 ] , [ rdfs:label "B" ; rdf:value 11 ] ;
+    pprops:notOnGUI true ;
+    lv2:portProperty pprops:notOnGUI .
+
 <urn:granularsampler:sampler>
     a lv2:Plugin , lv2:InstrumentPlugin ;
     doap:name "Granular Sampler" ;
-    lv2:minorVersion 5 ;
+    lv2:minorVersion 6 ;
     lv2:microVersion 0 ;
     lv2:requiredFeature urid:map , work:schedule ;
     lv2:optionalFeature lv2:hardRTCapable , state:mapPath , state:freePath ;
     lv2:extensionData state:interface , work:interface ;
-    patch:writable <urn:granularsampler:sampler#sample> , <urn:granularsampler:sampler#mode> , <urn:granularsampler:sampler#voices> ;
+    patch:writable <urn:granularsampler:sampler#sample> , <urn:granularsampler:sampler#mode> , <urn:granularsampler:sampler#voices> , <urn:granularsampler:sampler#scale> , <urn:granularsampler:sampler#key> ;
     # Control input ports MUST be indices 0..N-1 (before atom and audio ports): Zynthian numbers LV2 parameters
     # from len(control ports)+1 and would overwrite a control port with a higher index.
-    # Outputs for the widget: playhead and grain1..16 = read positions, 0..1 of the sample, -1 = none.
+    # Outputs for the widget: playhead and grain1..16 = read positions, 0..1 of the sample, -1 = none;
+    # note1..8 = MIDI note of each sounding voice, -1 = idle.
     lv2:port
     [
         a lv2:InputPort , lv2:ControlPort ;
@@ -114,27 +137,51 @@
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 8 ; lv2:symbol "attack" ; lv2:name "Attack ms" ;
+        lv2:index 8 ; lv2:symbol "pitch" ; lv2:name "Pitch" ;
+        lv2:default 0 ; lv2:minimum -24 ; lv2:maximum 24 ;
+        lv2:displayPriority 40 ; pg:group <urn:granularsampler:sampler#g_pitch> ;
+    ] ,
+    [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 9 ; lv2:symbol "pitch_spray" ; lv2:name "Pitch Spray" ;
+        lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 24 ;
+        lv2:displayPriority 30 ; pg:group <urn:granularsampler:sampler#g_pitch> ;
+    ] ,
+    [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 10 ; lv2:symbol "reverse" ; lv2:name "Reverse %" ;
+        lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 100 ;
+        lv2:displayPriority 20 ; pg:group <urn:granularsampler:sampler#g_pitch> ;
+    ] ,
+    [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 11 ; lv2:symbol "quantize" ; lv2:name "Quantize %" ;
+        lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 100 ;
+        lv2:displayPriority 10 ; pg:group <urn:granularsampler:sampler#g_pitch> ;
+    ] ,
+    [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 12 ; lv2:symbol "attack" ; lv2:name "Attack ms" ;
         lv2:default 10 ; lv2:minimum 1 ; lv2:maximum 10000 ;
         lv2:portProperty pprops:logarithmic ;
         lv2:displayPriority 40 ; pg:group <urn:granularsampler:sampler#g_voice> ;
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 9 ; lv2:symbol "release" ; lv2:name "Release ms" ;
+        lv2:index 13 ; lv2:symbol "release" ; lv2:name "Release ms" ;
         lv2:default 500 ; lv2:minimum 10 ; lv2:maximum 20000 ;
         lv2:portProperty pprops:logarithmic ;
         lv2:displayPriority 30 ; pg:group <urn:granularsampler:sampler#g_voice> ;
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 10 ; lv2:symbol "spread" ; lv2:name "Stereo Spread" ;
+        lv2:index 14 ; lv2:symbol "spread" ; lv2:name "Stereo Spread" ;
         lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 100 ;
         lv2:displayPriority 20 ; pg:group <urn:granularsampler:sampler#g_voice> ;
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 11 ; lv2:symbol "level" ; lv2:name "Level" ;
+        lv2:index 15 ; lv2:symbol "level" ; lv2:name "Level" ;
         lv2:default 0.8 ; lv2:minimum 0.0 ; lv2:maximum 1.0 ;
         lv2:displayPriority 10 ; pg:group <urn:granularsampler:sampler#g_voice> ;
     ] ,
@@ -143,115 +190,147 @@
         atom:bufferType atom:Sequence ;
         atom:supports midi:MidiEvent , patch:Message ;
         lv2:designation lv2:control ;
-        lv2:index 12 ; lv2:symbol "midi_in" ; lv2:name "MIDI In" ;
+        lv2:index 16 ; lv2:symbol "midi_in" ; lv2:name "MIDI In" ;
     ] ,
     [
         a lv2:OutputPort , lv2:AudioPort ;
-        lv2:index 13 ; lv2:symbol "out_l" ; lv2:name "Out L" ;
+        lv2:index 17 ; lv2:symbol "out_l" ; lv2:name "Out L" ;
     ] ,
     [
         a lv2:OutputPort , lv2:AudioPort ;
-        lv2:index 14 ; lv2:symbol "out_r" ; lv2:name "Out R" ;
+        lv2:index 18 ; lv2:symbol "out_r" ; lv2:name "Out R" ;
     ] ,
     [
         a lv2:OutputPort , atom:AtomPort ;
         atom:bufferType atom:Sequence ;
         atom:supports patch:Message ;
         lv2:designation lv2:control ;
-        lv2:index 15 ; lv2:symbol "notify" ; lv2:name "Notify" ;
+        lv2:index 19 ; lv2:symbol "notify" ; lv2:name "Notify" ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 16 ; lv2:symbol "status" ; lv2:name "Status" ;
+        lv2:index 20 ; lv2:symbol "status" ; lv2:name "Status" ;
         lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 3 ; lv2:portProperty lv2:integer ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 17 ; lv2:symbol "seconds" ; lv2:name "Seconds" ;
+        lv2:index 21 ; lv2:symbol "seconds" ; lv2:name "Seconds" ;
         lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 600 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 18 ; lv2:symbol "playhead" ; lv2:name "Playhead" ;
+        lv2:index 22 ; lv2:symbol "playhead" ; lv2:name "Playhead" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 19 ; lv2:symbol "grain1" ; lv2:name "Grain 1" ;
+        lv2:index 23 ; lv2:symbol "grain1" ; lv2:name "Grain 1" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 20 ; lv2:symbol "grain2" ; lv2:name "Grain 2" ;
+        lv2:index 24 ; lv2:symbol "grain2" ; lv2:name "Grain 2" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 21 ; lv2:symbol "grain3" ; lv2:name "Grain 3" ;
+        lv2:index 25 ; lv2:symbol "grain3" ; lv2:name "Grain 3" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 22 ; lv2:symbol "grain4" ; lv2:name "Grain 4" ;
+        lv2:index 26 ; lv2:symbol "grain4" ; lv2:name "Grain 4" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 23 ; lv2:symbol "grain5" ; lv2:name "Grain 5" ;
+        lv2:index 27 ; lv2:symbol "grain5" ; lv2:name "Grain 5" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 24 ; lv2:symbol "grain6" ; lv2:name "Grain 6" ;
+        lv2:index 28 ; lv2:symbol "grain6" ; lv2:name "Grain 6" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 25 ; lv2:symbol "grain7" ; lv2:name "Grain 7" ;
+        lv2:index 29 ; lv2:symbol "grain7" ; lv2:name "Grain 7" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 26 ; lv2:symbol "grain8" ; lv2:name "Grain 8" ;
+        lv2:index 30 ; lv2:symbol "grain8" ; lv2:name "Grain 8" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 27 ; lv2:symbol "grain9" ; lv2:name "Grain 9" ;
+        lv2:index 31 ; lv2:symbol "grain9" ; lv2:name "Grain 9" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 28 ; lv2:symbol "grain10" ; lv2:name "Grain 10" ;
+        lv2:index 32 ; lv2:symbol "grain10" ; lv2:name "Grain 10" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 29 ; lv2:symbol "grain11" ; lv2:name "Grain 11" ;
+        lv2:index 33 ; lv2:symbol "grain11" ; lv2:name "Grain 11" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 30 ; lv2:symbol "grain12" ; lv2:name "Grain 12" ;
+        lv2:index 34 ; lv2:symbol "grain12" ; lv2:name "Grain 12" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 31 ; lv2:symbol "grain13" ; lv2:name "Grain 13" ;
+        lv2:index 35 ; lv2:symbol "grain13" ; lv2:name "Grain 13" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 32 ; lv2:symbol "grain14" ; lv2:name "Grain 14" ;
+        lv2:index 36 ; lv2:symbol "grain14" ; lv2:name "Grain 14" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 33 ; lv2:symbol "grain15" ; lv2:name "Grain 15" ;
+        lv2:index 37 ; lv2:symbol "grain15" ; lv2:name "Grain 15" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
     ] ,
     [
         a lv2:OutputPort , lv2:ControlPort ;
-        lv2:index 34 ; lv2:symbol "grain16" ; lv2:name "Grain 16" ;
+        lv2:index 38 ; lv2:symbol "grain16" ; lv2:name "Grain 16" ;
         lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 1 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 39 ; lv2:symbol "note1" ; lv2:name "Note 1" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 40 ; lv2:symbol "note2" ; lv2:name "Note 2" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 41 ; lv2:symbol "note3" ; lv2:name "Note 3" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 42 ; lv2:symbol "note4" ; lv2:name "Note 4" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 43 ; lv2:symbol "note5" ; lv2:name "Note 5" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 44 ; lv2:symbol "note6" ; lv2:name "Note 6" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 45 ; lv2:symbol "note7" ; lv2:name "Note 7" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
+    ] , [
+        a lv2:OutputPort , lv2:ControlPort ;
+        lv2:index 46 ; lv2:symbol "note8" ; lv2:name "Note 8" ;
+        lv2:default -1 ; lv2:minimum -1 ; lv2:maximum 127 ;
     ] .

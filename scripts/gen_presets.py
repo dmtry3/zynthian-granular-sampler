@@ -12,8 +12,10 @@ SAMPLES = "/zynthian/zynthian-my-data/files/Samples/granular-sampler"
 # control ports in index order, with their defaults (granular_sampler.ttl)
 PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("size", 100), ("density", 20), ("shape", 67), ("chaos", 0),
+                 ("pitch", 0), ("pitch_spray", 0), ("reverse", 0), ("quantize", 0),
                  ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8)]
-PARAM_DEFAULTS = {"sample": "test_pad.wav", "mode": 0, "voices": 8}
+PARAM_DEFAULTS = {"sample": "test_pad.wav", "mode": 0, "voices": 8, "scale": 0, "key": 0}
+CHROMATIC, MAJOR, MINOR, DORIAN, MAJ_PENT, MIN_PENT = 0, 1, 2, 3, 9, 10
 SQUARE, DECAY, BELL, REVERSE = 0, 33.3, 67, 100
 
 # (id, label, ports, parameters): each one shows one side of the engine
@@ -43,6 +45,21 @@ PRESETS = [
      {"scan": 0, "position": 25, "window": 50, "spray": 100, "size": 40, "density": 40, "chaos": 100,
       "shape": BELL, "spread": 80, "release": 600},
      {"sample": "test_drums.wav", "voices": 4}),
+    ("pad_shimmer", "Pad Shimmer Octaves",
+     {"scan": 20, "size": 250, "density": 50, "pitch_spray": 12, "quantize": 100, "chaos": 60, "spread": 100,
+      "attack": 500, "release": 3000, "level": 0.7},
+     {"scale": MAJ_PENT, "key": 0}),
+    ("pluck_scale", "Pluck Spray in D dorian",
+     {"size": 90, "density": 45, "pitch_spray": 7, "quantize": 100, "spray": 20, "chaos": 70, "shape": DECAY,
+      "spread": 80, "release": 900},
+     {"sample": "test_pluck.wav", "scale": DORIAN, "key": 2}),
+    ("pad_backwards", "Pad Half Reverse",
+     {"scan": 25, "size": 400, "density": 20, "reverse": 50, "chaos": 40, "spread": 60, "attack": 200,
+      "release": 2500},
+     {}),
+    ("drums_pitch_down", "Drums Octave Down",
+     {"pitch": -12, "size": 120, "density": 20, "shape": SQUARE, "release": 300},
+     {"sample": "test_drums.wav"}),
 ]
 
 
@@ -56,7 +73,9 @@ def preset_ttl(pid, label, ports, params):
     out.append("    state:state [")
     out.append("        <%s#sample> <file://%s/%s> ;" % (URI, SAMPLES, p["sample"]))
     out.append("        <%s#mode> %d ;" % (URI, p["mode"]))
-    out.append("        <%s#voices> %d" % (URI, p["voices"]))
+    out.append("        <%s#voices> %d ;" % (URI, p["voices"]))
+    out.append("        <%s#scale> %d ;" % (URI, p["scale"]))
+    out.append("        <%s#key> %d" % (URI, p["key"]))
     out.append("    ] .\n")
     return "\n".join(out)
 

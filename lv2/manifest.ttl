@@ -68,3 +68,27 @@
     rdfs:label "Drums Freeze Spray" ;
     rdfs:seeAlso <presets.ttl> .
 
+<urn:granularsampler:sampler#preset_pad_shimmer>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Shimmer Octaves" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_pluck_scale>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pluck Spray in D dorian" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_pad_backwards>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Pad Half Reverse" ;
+    rdfs:seeAlso <presets.ttl> .
+
+<urn:granularsampler:sampler#preset_drums_pitch_down>
+    a pset:Preset ;
+    lv2:appliesTo <urn:granularsampler:sampler> ;
+    rdfs:label "Drums Octave Down" ;
+    rdfs:seeAlso <presets.ttl> .
+
