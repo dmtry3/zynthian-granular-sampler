@@ -824,7 +824,7 @@
     [
         a lv2:InputPort , lv2:ControlPort ;
         lv2:index 4 ; lv2:symbol "size" ; lv2:name "Size ms" ;
-        lv2:default 100 ; lv2:minimum 5 ; lv2:maximum 1000 ;
+        lv2:default 100 ; lv2:minimum 5 ; lv2:maximum 5000 ;
         lv2:portProperty pprops:logarithmic ;
         lv2:displayPriority 40 ; pg:group <urn:granularsampler:sampler#g_grain> ;
     ] ,
