@@ -45,17 +45,18 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range", "root", "tune", "gain" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range", "root", "tune", "gain", "mark_start", "mark_end" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
   { GC_SYNC_FREE, 0, GC_SYNC_TEMPO }, { GC_SYNC_FREE, 0, GC_SYNC_TEMPO },
   { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 },
   { 2, 0, (int)GC_BEND_MAX }, { 60, 0, 127 }, { 0, -50, 50 },
-  { 0, -240, 240 } };    /* gain: tenths of a dB */
+  { 0, -240, 240 },      /* gain: tenths of a dB */
+  { 0, 0, 10000 }, { 10000, 0, 10000 } };   /* markers: 1/10000 of the sample */
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
   "pan", "level", "cutoff" };
@@ -320,7 +321,11 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
     case IP_LFO1_DIV: gc_set_lfo_div(&S->core, 0, ip[IP_LFO1_DIV]); break;
     case IP_LFO2_DIV: gc_set_lfo_div(&S->core, 1, ip[IP_LFO2_DIV]); break;
-    case IP_ROOT: case IP_TUNE: case IP_GAIN: break;                /* read with the knobs (read_params) */
+    case IP_ROOT: case IP_TUNE:                     /* the key that plays the file as it is */
+      S->params.root = (float)ip[IP_ROOT] + (float)ip[IP_TUNE] * 0.01f; break;
+    case IP_MARK_START: S->params.mark_start = (float)ip[IP_MARK_START] * 1e-4f; break;
+    case IP_MARK_END: S->params.mark_end = (float)ip[IP_MARK_END] * 1e-4f; break;
+    case IP_GAIN: break;                            /* applied with Level in run() */                /* read with the knobs (read_params) */
     case IP_BEND_RANGE: gc_set_bend(&S->core, S->bend * (float)ip[IP_BEND_RANGE]); break;
     default: {
       const int c = i - IP_CELL0;
@@ -399,7 +404,6 @@ static void read_params(Sampler* S) {
   p->lfo_rate[1] = ctl(S, P_LFO2_RATE, 0.25f);
   p->env_time[0] = ctl(S, P_ENV1_TIME, 1.0f);
   p->env_time[1] = ctl(S, P_ENV2_TIME, 2.0f);
-  p->root = (float)S->ip[IP_ROOT] + (float)S->ip[IP_TUNE] * 0.01f;   /* the key that plays the file as it is */
 }
 
 static double atom_num(const Sampler* S, const LV2_Atom* a, double def) {

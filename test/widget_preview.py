@@ -122,6 +122,7 @@ class Processor:
                                  "bend_range": NumCtrl("bend_range", 2),
                                  "root": NumCtrl("root", 60), "tune": NumCtrl("tune", 0),
                                  "gain": NumCtrl("gain", 0),
+                                 "mark_start": NumCtrl("mark_start", 0), "mark_end": NumCtrl("mark_end", 10000),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
@@ -337,6 +338,44 @@ def main():
     class Tap:
         def __init__(self, x, y):
             self.x, self.y = x, y
+
+    # markers: drag left/right near a marker line; what is cut away is shaded; Position lives between them
+    W = wdg._wave_w()
+    top, bottom = wdg._area()
+    my = (top + bottom) // 2
+    nudges0 = sample.nudges
+    proc.controllers_dict["position"].value = 0.0
+    proc.controllers_dict["window"].value = 100.0
+    wdg._on_press(Tap(2, my)); wdg._on_motion(Tap(2 + W // 4, my)); wdg._on_release(None)
+    check("drag the start marker right a quarter: 25 %", abs(proc.v("mark_start") - 2500) <= 20 and
+          sample.nudges == nudges0)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(W - 2, my)); wdg._on_motion(Tap(W / 2.0 - 2, my)); wdg._on_release(None)
+    check("drag the end marker left to the middle: 50 %", abs(proc.v("mark_end") - 5000) <= 20)
+    pump(lambda: False, 0.1)
+    shades = [i for i in c.find_withtag("markers") if c.type(i) == "rectangle"]
+    check("both cut-away parts shaded", len(shades) == 2)
+    zones = [i for i in c.find_withtag("zone") if c.type(i) == "rectangle"]
+    check("Position/Window zone between the markers", len(zones) == 1 and
+          abs(c.coords(zones[0])[0] - 0.25 * W) < 2 and abs(c.coords(zones[0])[2] - 0.5 * W) < 2)
+    check("info shows the part in use", "-" in info() and "of" in info())
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    x = int(0.25 * W)
+    wdg._on_press(Tap(x, my)); wdg._on_motion(Tap(W, my)); wdg._on_release(None)
+    check("the start marker stops before the end marker", proc.v("mark_start") < proc.v("mark_end"))
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(int(0.1 * W), my))
+    check("a tap away from the markers opens the file selector", sample.nudges == nudges0 + 1)
+    wdg._on_release(None)
+    for sym, xm in (("mark_start", proc.v("mark_start") / 10000.0), ("mark_end", 0.5)):
+        time.sleep(mod.DOUBLE_TAP + 0.02)
+        a_, b_ = wdg._markers()
+        xx = int((a_ if sym == "mark_start" else b_) * W)
+        for _ in range(2):
+            wdg._on_press(Tap(xx, my)); wdg._on_release(None)
+    check("double tap on each marker: back to the whole file", proc.v("mark_start") == 0 and
+          proc.v("mark_end") == 10000)
+    pump(lambda: False, 0.1)
 
     # sample gain: slider at the right of the waveform; double tap = normalize; the waveform follows
     gb = wdg._gain_box()

@@ -643,6 +643,45 @@ static void test_align(void) {
   free_src(&s);
 }
 
+/* Markers: Position, Window, Spray and the playhead live between them; no grain reads outside */
+static void test_markers(void) {
+  GcParams p = poly_params();
+  p.mark_start = 0.25f; p.mark_end = 0.5f;
+  p.size_ms = 80; p.density = 100; p.spray = 1.0f; p.scan = 2.0f; p.chaos = 1.0f;
+  Src s = make_src(SR * 2, SR, 3, f_ramp);
+  gc_init(&G, SR, 3);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  CHECK(fabs(G.voices[0].playhead - 0.25 * 2 * SR) < 1.0);       /* Position 0 = the start marker */
+  int out = 0, seen = 0;
+  const float pitches[] = { 0, 12, 19, -12 };
+  const float revs[] = { 0, 1 };
+  for (int k = 0; k < 8; k++) {
+    p.pitch = pitches[k % 4]; p.reverse = revs[k / 4];
+    p.position = (k % 3) * 0.45f;
+    for (int b = 0; b < 200; b++) {
+      gc_process(&G, &p, L, R, BUF);
+      for (int i = 0; i < GC_POOL; i++) {
+        const GcGrain* gr = &G.grains[i];
+        if (!gr->active || gr->delay) continue;
+        const double x = ((double)gr->idx + gr->frac) / (double)gr->frames;
+        seen++;
+        if (x < 0.25 - 0.002 || x > 0.5 + 0.002) out++;
+      }
+    }
+  }
+  CHECK(seen > 1000 && out == 0);
+  /* swapped markers work the same; markers on one spot keep a tiny region */
+  p.mark_start = 0.5f; p.mark_end = 0.25f; p.position = 0; p.pitch = 0; p.reverse = 0;
+  gc_note_on(&G, &p, 62, 127);
+  CHECK(fabs(G.voices[voice_of(62)].playhead - 0.25 * 2 * SR) < 1.0);
+  p.mark_start = p.mark_end = 1.0f;
+  int bad = 0;
+  run(&p, 0.2, &bad);
+  CHECK(bad == 0);
+  free_src(&s);
+}
+
 /* mono portamento: a new key glides from the sounding pitch in Glide ms */
 static void test_glide(void) {
   GcParams p = poly_params();
@@ -1186,6 +1225,7 @@ int main(void) {
   test_sustain();
   test_bend();
   test_align();
+  test_markers();
   test_spread();
   test_pitch();
   test_quantize();

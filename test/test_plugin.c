@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 81);                                      /* the path and the 80 integer parameters */
+  CHECK(last_reports == 83);                                      /* the path and the 82 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -311,6 +311,8 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 2);     /* default +-2 semitones */
   CHECK(reported_int("urn:granularsampler:sampler#root", -1) == 60);          /* C4 */
   CHECK(reported_int("urn:granularsampler:sampler#tune", -1) == 0);
+  CHECK(reported_int("urn:granularsampler:sampler#mark_start", -1) == 0);
+  CHECK(reported_int("urn:granularsampler:sampler#mark_end", -1) == 10000);   /* the whole sample */
   in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -323,7 +325,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 81);                                               /* sample + 80 integer parameters */
+  CHECK(nst == 83);                                               /* sample + 82 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
@@ -442,6 +444,16 @@ int main(int argc, char** argv) {
     in_set_float("urn:granularsampler:sampler#gain", 0.0f);
     in_midi(0, 0xB0, 120, 0); run_once();
   }
+  /* markers: a note starts reading at the start marker (Position 0) */
+  in_set_float("urn:granularsampler:sampler#mark_start", 5000.0f);
+  in_set_float("urn:granularsampler:sampler#mark_end", 7500.0f);
+  in_midi(0, 0x90, 60, 127); run_once();
+  CHECK(playhead >= 0.5f && playhead < 0.51f);
+  for (int k = 0; k < 300; k++) run_once();                       /* 0.4 s: the playhead loops inside */
+  CHECK(playhead >= 0.5f && playhead <= 0.75f);
+  in_set_float("urn:granularsampler:sampler#mark_start", 0.0f);
+  in_set_float("urn:granularsampler:sampler#mark_end", 10000.0f);
+  in_midi(0, 0xB0, 120, 0); run_once();
   /* a new sample while playing: no stale pointers (ASan) */
   in_midi(0, 0x90, 60, 127); run_once();
   in_set_path("mono.wav"); run_once(); work_all();

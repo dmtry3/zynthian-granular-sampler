@@ -136,6 +136,7 @@ void gc_default_params(GcParams* p) {
   p->position = 0.0f; p->scan = 1.0f; p->spray = 0.0f; p->window = 1.0f;
   p->size_ms = 100.0f; p->density = 20.0f; p->shape = 2.0f / 3.0f; p->chaos = 0.0f;
   p->root = 60.0f;
+  p->mark_start = 0.0f; p->mark_end = 1.0f;
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
   p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
   p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f;
@@ -269,11 +270,24 @@ int gc_gen_busy(const GrainCore* g, uint32_t gen) {
   return n;
 }
 
+/* The part of the sample between the markers, in frames of level 0: [*r0, *r0 + *rl). */
+static void region(const GrainCore* g, const GcParams* p, double* r0, double* rl) {
+  const double n = (double)g->src.frames[0];
+  double a = (double)clampf(p->mark_start, 0.0f, 1.0f) * n, b = (double)clampf(p->mark_end, 0.0f, 1.0f) * n;
+  if (b < a) { const double t = a; a = b; b = t; }
+  if (b - a < 2.0) { b = a + 2.0; if (b > n) { b = n; a = n - 2.0 > 0.0 ? n - 2.0 : 0.0; } }
+  *r0 = a;
+  *rl = b - a;
+}
 static double window_start(const GrainCore* g, const GcParams* p) {
-  return (double)clampf(p->position, 0.0f, 1.0f) * (double)(g->src.frames[0] - 1);
+  double r0, rl;
+  region(g, p, &r0, &rl);
+  return r0 + (double)clampf(p->position, 0.0f, 1.0f) * (rl - 1.0);
 }
 static double window_len(const GrainCore* g, const GcParams* p) {
-  double w = (double)clampf(p->window, GC_WINDOW_MIN, 1.0f) * (double)g->src.frames[0];
+  double r0, rl;
+  region(g, p, &r0, &rl);
+  double w = (double)clampf(p->window, GC_WINDOW_MIN, 1.0f) * rl;
   return w < 2.0 ? 2.0 : w;
 }
 static double wrap(double x, double len) {
@@ -479,8 +493,10 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   const double wlen = window_len(g, p);
   const float spray = clampf(p->spray + bm[GC_DST_SPRAY] * GC_MOD_SPRAY, 0.0f, 1.0f);
   double start = v->playhead + (double)((rnd(g) * 2.0f - 1.0f) * spray * 0.5f) * wlen;
-  start += (double)(bm[GC_DST_POSITION] * GC_MOD_POSITION) * (double)g->src.frames[0];
-  start = wrap(start, (double)g->src.frames[0]);
+  double r0, rl;                                  /* between the markers; the window wraps inside them */
+  region(g, p, &r0, &rl);
+  start += (double)(bm[GC_DST_POSITION] * GC_MOD_POSITION) * rl;
+  start = r0 + wrap(start - r0, rl);
   g->last_start = start;
   const int len = (int)(size_s * g->sr) > 1 ? (int)(size_s * g->sr) : 1;
 
@@ -511,23 +527,26 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
       if (d > 0.5 * per) d -= per;
       if (d < -0.5 * per) d += per;
       /* at the ends of the sample a whole period the other way: wrapping round would move it far */
-      const double room = (double)g->src.frames[0] - 2.0 - ((double)len * fabsf(inc) + 3.0);
-      if (start + d < 0.0) d += per;
-      else if (!backwards && start + d > room && start + d - per >= 0.0) d -= per;
+      const double room = r0 + rl - 2.0 - ((double)len * fabsf(inc) + 3.0);
+      if (start + d < r0) d += per;
+      else if (!backwards && start + d > room && start + d - per >= r0) d -= per;
       start += d;
     }
   }
   int lv = 0;
   while (g->use_levels && lv + 1 < g->src.nlevels && inc > GC_MIP_UP) { inc *= 0.5f; start *= 0.5; lv++; }
   const int64_t frames = g->src.frames[lv];
-  /* Do not run over the end (forward) or the start (backwards) of the sample: a jump would click.
-   * Move the start if the grain fits in the sample at all. */
+  /* Do not run past the end marker (forward) or the start marker (backwards): past the end of the sample a
+   * jump would click, past a marker the grain would play what was cut away. Move the start if the grain
+   * fits between the markers at all. */
+  const double sc = 1.0 / (double)(1 << lv), m0 = r0 * sc, m1 = (r0 + rl) * sc;
   const double span = (double)len * inc + 3.0;
-  if (span < (double)frames - 2.0) {
-    if (!backwards && start > (double)frames - 2.0 - span) start = (double)frames - 2.0 - span;
-    if (backwards && start < span) start = span;
+  if (span < m1 - m0 - 2.0) {
+    if (!backwards && start > m1 - 2.0 - span) start = m1 - 2.0 - span;
+    if (backwards && start < m0 + span) start = m0 + span;
   }
   if (start < 0.0) start = 0.0;
+  if (start > (double)frames - 1.0) start = (double)frames - 1.0;
   if (backwards) { inc = -inc; g->born_back++; }
 
   /* Loudness: grains add up by power. The overlap cannot exceed the pool. */

@@ -45,6 +45,9 @@ NPEAKS = 1024                   # min/max pairs over the whole file
 ST_EMPTY, ST_LOADING, ST_LOADED, ST_ERROR = range(4)
 WAVE_COLOR = "#4dabf7"
 CLIP_COLOR = "#ff6b6b"           # waveform columns past 0 dBFS after the sample gain
+MARKER_COLOR = "#ffd43b"         # start and end markers
+MARK_MAX = 10000                 # marker unit: 1/10000 of the sample
+MARK_MIN_GAP = 10                # the markers keep at least 0.1 % apart
 NORM_COLOR = "#51cf66"           # gain slider: the normalize point
 GAIN_MAX = 240                   # sample gain, tenths of a dB, both ways
 NORM_DB = -1.0                   # normalize: the sample peak goes here
@@ -242,6 +245,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.wave_size = None        # (width, height, gain) the waveform was drawn for
         self.wave_built = 0.0        # when it was drawn
         self.gain_view = None        # values the gain slider was drawn for
+        self.mark_view = None        # values the start and end markers were drawn for
         self.info = None             # text shown now, to redraw it only when it changes
         self.title = None            # knob page name shown now
         self.zone = None             # (position, window, size) the zone was drawn for
@@ -312,6 +316,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.wave_boxes = {}
         self.wave_ctl = None
         self.gain_view = None
+        self.mark_view = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -535,9 +540,73 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.widget_canvas.tag_raise("info")
         self._draw_zone()
         self._draw_marks()
+        self._draw_markers()
         self._draw_wave_ctl()
         self._draw_gain()
         self._draw_info(path)
+
+    def _markers(self):
+        """Start and end markers, 0..1 of the sample, start <= end."""
+        a = min(max(self._zval("mark_start", 0) / MARK_MAX, 0.0), 1.0)
+        b = min(max(self._zval("mark_end", MARK_MAX) / MARK_MAX, 0.0), 1.0)
+        return (a, b) if a <= b else (b, a)
+
+    def _draw_markers(self):
+        """Yellow lines with a grab tab in the zone band; what is cut away is shaded."""
+        a, b = self._markers()
+        view = (a, b, self.width, self.height, bool(self.peaks))
+        if view == self.mark_view:
+            return
+        self.mark_view = view
+        c = self.widget_canvas
+        c.delete("markers")
+        if not self.peaks:
+            return
+        w = self._wave_w()
+        top, bottom = self._area()
+        s0 = self._strip()[0] - ZONE_BAND - 1
+        for x0, x1 in ((0, a * w), (b * w, w)):
+            if x1 - x0 >= 1:
+                c.create_rectangle(x0, top, x1, bottom, fill=zynthian_gui_config.color_bg, stipple="gray50",
+                                   width=0, tags="markers")
+        tab = max(6, self._font_size() // 2 + 2)
+        for x, d in ((a * w, 1), (b * w, -1)):
+            x = min(max(x, 1), w - 1)
+            c.create_line(x, s0, x, bottom, fill=MARKER_COLOR, width=2, tags="markers")
+            c.create_polygon(x, s0, x + d * tab, s0, x, s0 + tab, fill=MARKER_COLOR, outline="", tags="markers")
+        c.tag_raise("marks")
+        c.tag_raise("info")
+
+    def _marker_press(self, event):
+        """A press near a marker drags it (finger left/right); a double tap puts it back at the file's edge."""
+        if not self.peaks:
+            return False
+        top, bottom = self._area()
+        if not (self._strip()[0] - ZONE_BAND - 1 <= event.y <= bottom):
+            return False
+        w = self._wave_w()
+        a, b = self._markers()
+        grab = max(10, self._font_size())
+        da, db = abs(event.x - a * w), abs(event.x - b * w)
+        if min(da, db) > grab:
+            return False
+        if da < db or (da == db and event.x <= a * w):
+            sym, dflt = "mark_start", 0
+            lo, hi = 0, int(round(b * MARK_MAX)) - MARK_MIN_GAP
+        else:
+            sym, dflt = "mark_end", MARK_MAX
+            lo, hi = int(round(a * MARK_MAX)) + MARK_MIN_GAP, MARK_MAX
+        now = time.monotonic()
+        if self.last_tap[0] == sym and now - self.last_tap[1] < DOUBLE_TAP:
+            self._zset(sym, dflt)
+            self.last_tap = (None, 0.0)
+            self.drag = None
+            self.refresh_gui()
+            return True
+        self.last_tap = (sym, now)
+        cur = int(round(self._zval(sym, dflt)))
+        self.drag = (sym, cur, event.x, max(lo, 0), min(max(hi, 0), MARK_MAX), MARK_MAX / float(max(w, 20)), "x")
+        return True
 
     def _gain_box(self):
         top, bottom = self._area()
@@ -652,7 +721,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         A band above the waveform and a line at Position (on top of the image: drawn once per change)."""
         pos = min(max(self._zval("position", 0.0) / 100.0, 0.0), 1.0)
         win = min(max(self._zval("window", 100.0) / 100.0, 0.001), 1.0)
-        key = (pos, win, self.width, self.height, bool(self.peaks))
+        ma, mb = self._markers()
+        key = (pos, win, ma, mb, self.width, self.height, bool(self.peaks))
         if key == self.zone:
             return
         self.zone = key
@@ -664,10 +734,11 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         top, bottom = self._area()
         b1 = self._strip()[0] - 1
         b0 = b1 - ZONE_BAND
-        x0, x1 = pos * w, (pos + win) * w
-        c.create_rectangle(x0, b0, min(x1, w), b1, fill=ZONE_COLOR, width=0, tags="zone")
-        if x1 > w:
-            c.create_rectangle(0, b0, x1 - w, b1, fill=ZONE_COLOR, width=0, tags="zone")
+        ra, rl = ma * w, max(mb - ma, 0.0002) * w          # Position and Window live between the markers
+        x0, x1 = ra + pos * rl, ra + (pos + win) * rl
+        c.create_rectangle(x0, b0, min(x1, ra + rl), b1, fill=ZONE_COLOR, width=0, tags="zone")
+        if x1 > ra + rl:
+            c.create_rectangle(ra, b0, x1 - rl, b1, fill=ZONE_COLOR, width=0, tags="zone")
         c.create_line(x0, b0, x0, bottom, fill="#5c7a99", tags="zone")      # Position
         c.tag_raise("marks")
 
@@ -850,8 +921,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         """Wave tab controls row: Root and Tune sliders, Auto takes the detected pitch."""
         if event is None:                              # a press without a position: the file selector
             return False
+        if self._marker_press(event):                  # markers first: the end one sits next to the gain bar
+            return True
         gb = self._gain_box()
-        if gb[0] - 4 <= event.x <= gb[2] + 2 and gb[1] <= event.y <= gb[3]:
+        if gb[0] - 1 <= event.x <= gb[2] + 2 and gb[1] <= event.y <= gb[3]:
             now = time.monotonic()
             if self.last_tap[0] == "gain" and now - self.last_tap[1] < DOUBLE_TAP:
                 norm = self._norm_gain()                  # double tap: normalize
@@ -1271,7 +1344,12 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         elif status == ST_ERROR:
             text = "%s  can't load" % name
         elif status == ST_LOADED:
-            text = "%s  %.1f s" % (name, self._mon("seconds", 0.0))
+            secs = self._mon("seconds", 0.0)
+            ma, mb = self._markers()
+            if ma > 0.0 or mb < 1.0:                  # markers moved: the part in use
+                text = "%s  %.2f-%.2f of %.1f s" % (name, ma * secs, mb * secs, secs)
+            else:
+                text = "%s  %.1f s" % (name, secs)
         else:
             text = name
         if self.peaks_path != path and path:

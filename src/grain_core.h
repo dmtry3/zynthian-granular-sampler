@@ -87,6 +87,8 @@ typedef struct {
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
   float lfo_rate[2];/* Hz */
   float env_time[2];/* s: attack + decay of Env 1 / Env 2 */
+  float mark_start, mark_end; /* 0..1: the part of the sample in use (markers); Position, Window and the
+                       playhead live inside it, grains do not read past it */
 } GcParams;
 
 enum { GC_LP = 0, GC_HP, GC_BP };
