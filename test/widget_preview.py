@@ -128,7 +128,7 @@ class Processor:
                                  "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
-                       ("lfo1_div", 4), ("lfo2_div", 4),
+                       ("lfo1_rate", 61), ("lfo2_rate", 42),
                        ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
@@ -694,10 +694,6 @@ def main():
     for _ in range(5):
         tap_box("lfo1_shape")
     check("shape wraps around after Smooth", proc.v("lfo1_shape") == 0)
-    tap_box("lfo2_sync")
-    check("tap on LFO 2 sync: Key", proc.v("lfo2_sync") == 1)
-    tap_box("lfo2_sync")
-    check("next tap: Tempo", proc.v("lfo2_sync") == 2)
 
     def sync_label(sym):
         b = boxes[sym]
@@ -706,19 +702,31 @@ def main():
                 x, y = c.coords(t)
                 if b[2] <= x <= b[4] and b[3] <= y <= b[5]:
                     return c.itemcget(t, "text")
-    check("Tempo shows the division (1/4)", sync_label("lfo2_sync").endswith("1/4"))
-    b = boxes["lfo2_sync"]
-    bx, by = (b[2] + b[4]) / 2, (b[3] + b[5]) / 2
-    wdg._on_press(Tap(bx, by)); wdg._on_motion(Tap(bx, by - 24)); wdg._on_release(Tap(bx, by - 24))
-    pump(lambda: False, 0.05)
-    check("finger up 24 px in Tempo: two divisions faster (1/8), still Tempo",
-          proc.v("lfo2_div") == 6 and proc.v("lfo2_sync") == 2 and sync_label("lfo2_sync").endswith("1/8"))
+    check("Free shows the Rate knob in Hz (42 = 0.24 Hz)", sync_label("lfo2_sync") == "Free\n0.24 Hz")
+    tap_box("lfo2_sync")
+    check("tap on LFO 2 sync: Key, still Hz", proc.v("lfo2_sync") == 1 and sync_label("lfo2_sync") == "Key\n0.24 Hz")
+    tap_box("lfo2_sync")
+    check("next tap: Tempo, the same knob as a cycle length (42 = 1/4)",
+          proc.v("lfo2_sync") == 2 and sync_label("lfo2_sync").endswith("1/4"))
+    proc.controllers_dict["lfo2_rate"].value = 61                # the knob turned
+    wdg.refresh_gui()
+    check("Rate 61 in Tempo: 1/8", sync_label("lfo2_sync").endswith("1/8"))
+    for u, want in ((0, "4 bars"), (100, "1/32"), (20, "1 bar")):
+        proc.controllers_dict["lfo2_rate"].value = u
+        wdg.refresh_gui()
+        check("Rate %d in Tempo: %s" % (u, want), sync_label("lfo2_sync").endswith(" " + want))
+    check("helpers match gc_rate_hz at the ends and the defaults",
+          abs(mod.rate_hz(0) - 0.01) < 1e-9 and abs(mod.rate_hz(100) - 20) < 1e-9 and
+          mod.hz_text(mod.rate_hz(61)) == "1.0 Hz" and mod.hz_text(mod.rate_hz(100)) == "20 Hz")
+    proc.controllers_dict["lfo2_rate"].value = 61
     time.sleep(mod.DOUBLE_TAP + 0.02)
     tap_box("lfo2_sync")
-    check("tap in Tempo: back to Free", proc.v("lfo2_sync") == 0)
-    writes = proc.controllers_dict["lfo2_div"].writes
+    check("tap in Tempo: back to Free, in Hz", proc.v("lfo2_sync") == 0 and sync_label("lfo2_sync") == "Free\n1.0 Hz")
+    b = boxes["lfo2_sync"]
+    bx, by = (b[2] + b[4]) / 2, (b[3] + b[5]) / 2
+    writes = proc.controllers_dict["lfo2_rate"].writes
     wdg._on_press(Tap(bx, by)); wdg._on_motion(Tap(bx, by - 40)); wdg._on_release(Tap(bx, by - 40))
-    check("a drag in Free changes nothing", proc.controllers_dict["lfo2_div"].writes == writes and
+    check("a drag on the sync button changes nothing", proc.controllers_dict["lfo2_rate"].writes == writes and
           proc.v("lfo2_sync") == 0)
     time.sleep(mod.DOUBLE_TAP + 0.02)
     tap_box("lfo2_sync")
@@ -803,6 +811,17 @@ def main():
         first_cell = wdg.mod_items[(0, 0)][0]
         check("%s Mod: row labels clear of the grid" % geo,
               all(c.bbox(r)[2] <= c.bbox(first_cell)[0] + 1 for r in rows))
+        inside = True
+        for sb in wdg._side_boxes():
+            if sb[1] != "sync":
+                continue
+            for t in c.find_withtag("modside"):
+                if c.type(t) == "text":
+                    x, y = c.coords(t)
+                    if sb[2] <= x <= sb[4] and sb[3] <= y <= sb[5]:
+                        tb = c.bbox(t)
+                        inside &= tb[0] >= sb[2] - 1 and tb[2] <= sb[4] + 1 and tb[1] >= sb[3] - 1 and tb[3] <= sb[5] + 1
+        check("%s Mod: sync buttons hold their two lines (mode, Hz)" % geo, inside)
         x0, x1 = wdg.tab_boxes[0]
         wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
         pump(lambda: False, 0.1)

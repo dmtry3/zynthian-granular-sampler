@@ -45,15 +45,15 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range", "root", "tune", "gain", "mark_start", "mark_end" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "bend_range", "root", "tune", "gain", "mark_start", "mark_end" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
   { GC_SYNC_FREE, 0, GC_SYNC_TEMPO }, { GC_SYNC_FREE, 0, GC_SYNC_TEMPO },
-  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 },
+  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 },
   { 2, 0, (int)GC_BEND_MAX }, { 60, 0, 127 }, { 0, -50, 50 },
   { 0, -240, 240 },      /* gain: tenths of a dB */
   { 0, 0, 10000 }, { 10000, 0, 10000 } };   /* markers: 1/10000 of the sample */
@@ -319,8 +319,6 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_ENV2_SHAPE: gc_set_env(&S->core, 1, ip[IP_ENV2_SHAPE] * 0.01f); break;
     case IP_MOD_DEPTH: gc_set_mod_depth(&S->core, ip[IP_MOD_DEPTH] * 0.01f); break;
     case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
-    case IP_LFO1_DIV: gc_set_lfo_div(&S->core, 0, ip[IP_LFO1_DIV]); break;
-    case IP_LFO2_DIV: gc_set_lfo_div(&S->core, 1, ip[IP_LFO2_DIV]); break;
     case IP_ROOT: case IP_TUNE:                     /* the key that plays the file as it is */
       S->params.root = (float)ip[IP_ROOT] + (float)ip[IP_TUNE] * 0.01f; break;
     case IP_MARK_START: S->params.mark_start = (float)ip[IP_MARK_START] * 1e-4f; break;
@@ -400,8 +398,11 @@ static void read_params(Sampler* S) {
   p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
   p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_BP);
   p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;
-  p->lfo_rate[0] = ctl(S, P_LFO1_RATE, 1.0f);
-  p->lfo_rate[1] = ctl(S, P_LFO2_RATE, 0.25f);
+  for (int k = 0; k < 2; k++) {                 /* Rate: Hz in Free/Key, a cycle length in Tempo */
+    const float u = ctl(S, P_LFO1_RATE + k, k ? 42.0f : 61.0f);
+    p->lfo_rate[k] = gc_rate_hz(u);
+    gc_set_lfo_div(&S->core, k, gc_rate_div(u));
+  }
   p->env_time[0] = ctl(S, P_ENV1_TIME, 1.0f);
   p->env_time[1] = ctl(S, P_ENV2_TIME, 2.0f);
 }

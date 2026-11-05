@@ -30,8 +30,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -47,8 +47,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 18 ;
@@ -146,8 +144,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -163,8 +161,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 38 ;
         <urn:granularsampler:sampler#tune> -7 ;
@@ -262,8 +258,8 @@
         [ lv2:symbol "resonance" ; pset:value 20.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 0.1 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 30.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -279,8 +275,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 38 ;
         <urn:granularsampler:sampler#tune> -7 ;
@@ -378,8 +372,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -395,8 +389,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 150 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 38 ;
         <urn:granularsampler:sampler#tune> -7 ;
@@ -494,8 +486,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -511,8 +503,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 18 ;
@@ -610,8 +600,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -627,8 +617,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 18 ;
@@ -726,8 +714,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -743,8 +731,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -842,8 +828,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.05 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 21.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -859,8 +845,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 51 ;
         <urn:granularsampler:sampler#tune> -25 ;
@@ -958,8 +942,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -975,8 +959,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 51 ;
         <urn:granularsampler:sampler#tune> -25 ;
@@ -1074,8 +1056,8 @@
         [ lv2:symbol "resonance" ; pset:value 30.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 1.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1091,8 +1073,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1190,8 +1170,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1207,8 +1187,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1306,8 +1284,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1323,8 +1301,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1422,8 +1398,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1439,8 +1415,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1538,8 +1512,8 @@
         [ lv2:symbol "resonance" ; pset:value 50.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 20.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 60.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1555,8 +1529,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 2 ;
-        <urn:granularsampler:sampler#lfo2_div> 6 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1654,8 +1626,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1671,8 +1643,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1770,8 +1740,8 @@
         [ lv2:symbol "resonance" ; pset:value 50.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 2.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1787,8 +1757,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -1886,8 +1854,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 1.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 61.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1903,8 +1871,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 4 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;
@@ -2002,8 +1968,8 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 1.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 0.25 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 60.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -2019,8 +1985,6 @@
         <urn:granularsampler:sampler#env2_shape> 50 ;
         <urn:granularsampler:sampler#mod_depth> 100 ;
         <urn:granularsampler:sampler#glide> 0 ;
-        <urn:granularsampler:sampler#lfo1_div> 6 ;
-        <urn:granularsampler:sampler#lfo2_div> 4 ;
         <urn:granularsampler:sampler#bend_range> 2 ;
         <urn:granularsampler:sampler#root> 60 ;
         <urn:granularsampler:sampler#tune> 0 ;

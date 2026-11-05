@@ -3,6 +3,7 @@
 Each preset sets every control port and every LV2 parameter (missing values would keep the old ones).
 Samples are the ones install.sh links into Zynthian's User Samples: an absolute file URI in the state
 reaches restore() as an atom:Path (lilv/sratom), unchanged."""
+import math
 import os
 
 URI = "urn:granularsampler:sampler"
@@ -15,13 +16,13 @@ PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("pitch", 0), ("pitch_spray", 0), ("reverse", 0), ("quantize", 0),
                  ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8),
                  ("cutoff", 20000), ("resonance", 0), ("ftype", 0), ("keytrack", 0),
-                 ("lfo1_rate", 1), ("lfo2_rate", 0.25), ("env1_time", 1), ("env2_time", 2)]
+                 ("lfo1_rate", 61), ("lfo2_rate", 42), ("env1_time", 1), ("env2_time", 2)]
 # integer parameters in the plugin's order (granular_sampler.c), cells m_<src>_<dst> default 0
 SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
 DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"]
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100),
-                ("glide", 0), ("lfo1_div", 4), ("lfo2_div", 4), ("bend_range", 2), ("root", 60), ("tune", 0), ("gain", 0), ("mark_start", 0), ("mark_end", 10000)] + \
+                ("glide", 0), ("bend_range", 2), ("root", 60), ("tune", 0), ("gain", 0), ("mark_start", 0), ("mark_end", 10000)] + \
                [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS]
 PARAM_DEFAULTS = dict([("sample", "kalimba_c.wav")] + INT_DEFAULTS)   # voices 1 mono, 0 legato
 SINE, TRI, SAW_UP, SAW_DOWN, SQUARE_LFO, SH, SMOOTH = range(7)
@@ -45,7 +46,17 @@ SAMPLE = {
 # breakbeat_140: 4 bars at 140 BPM; a 1/16 note is 107 ms, 9.33 of them per second
 SIXTEENTH_MS, SIXTEENTHS = 60000.0 / 140 / 4, 140 * 4 / 60.0
 TEMPO = 2
-DIV_BAR, DIV_HALF, DIV_QUARTER, DIV_EIGHTH, DIV_SIXTEENTH = 2, 3, 4, 6, 8
+DIVS = ["4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
+
+
+def hz(f):
+    """LFO Rate knob (0..100) for f Hz in Free/Key: gc_hz_rate"""
+    return int(round(100 * math.log(f / 0.01) / math.log(2000)))
+
+
+def div(name):
+    """LFO Rate knob (0..100) for a cycle length in Tempo: gc_rate_div"""
+    return DIVS.index(name) * 10
 
 
 def S(name, boost=0.0, **params):
@@ -67,7 +78,7 @@ PRESETS = [
      S("cello_d2.wav", mark_start=500, mark_end=9000, m_lfo1_pan=40)),
     ("cello_frozen", "Cello Frozen Bow",
      {"position": 45, "scan": 0, "window": 10, "size": 500, "density": 25, "chaos": 40, "spray": 15,
-      "attack": 800, "release": 4000, "spread": 80, "cutoff": 3000, "resonance": 20, "lfo1_rate": 0.1,
+      "attack": 800, "release": 4000, "spread": 80, "cutoff": 3000, "resonance": 20, "lfo1_rate": hz(0.1),
       "level": 0.4},
      S("cello_d2.wav", m_lfo1_cutoff=25, m_lfo2_position=10)),
     ("cello_legato", "Cello Mono Legato",
@@ -91,7 +102,7 @@ PRESETS = [
     # singing bowl: long and inharmonic; drones and slow textures
     ("bowl_drone", "Bowl Drone",
      {"position": 30, "scan": 0, "window": 20, "size": 800, "density": 15, "spray": 20, "chaos": 50,
-      "spread": 100, "attack": 2000, "release": 6000, "lfo2_rate": 0.05},
+      "spread": 100, "attack": 2000, "release": 6000, "lfo2_rate": hz(0.05)},
      S("singing_bowl.wav", boost=4, m_lfo2_spray=40)),
     ("bowl_octaves", "Bowl Octaves",
      {"position": 20, "scan": 5, "window": 30, "size": 600, "density": 20, "pitch_spray": 12, "quantize": 100,
@@ -119,9 +130,9 @@ PRESETS = [
      S("breakbeat_140.wav", boost=7, voices=1)),
     ("break_filter", "Break Tempo Filter",
      {"scan": 100, "size": 2 * SIXTEENTH_MS, "density": SIXTEENTHS / 2, "shape": SQUARE, "attack": 1,
-      "release": 200, "cutoff": 800, "resonance": 50, "ftype": LP},
-     S("breakbeat_140.wav", boost=7, voices=1, lfo1_shape=TRI, lfo1_sync=TEMPO, lfo1_div=DIV_BAR, m_lfo1_cutoff=50,
-       lfo2_shape=SQUARE_LFO, lfo2_sync=TEMPO, lfo2_div=DIV_EIGHTH, m_lfo2_level=-30)),
+      "release": 200, "cutoff": 800, "resonance": 50, "ftype": LP, "lfo1_rate": div("1 bar"), "lfo2_rate": div("1/8")},
+     S("breakbeat_140.wav", boost=7, voices=1, lfo1_shape=TRI, lfo1_sync=TEMPO, m_lfo1_cutoff=50,
+       lfo2_shape=SQUARE_LFO, lfo2_sync=TEMPO, m_lfo2_level=-30)),
 
     # voices
     ("voice_choir", "Voice Granular Choir",
@@ -137,8 +148,9 @@ PRESETS = [
       "attack": 1500, "release": 5000, "cutoff": 400, "ftype": HP},
      S("whisper.wav", boost=12)),
     ("whisper_pulse", "Whisper Pulse",
-     {"scan": 40, "size": 80, "density": 20, "shape": BELL, "spray": 20, "spread": 60, "release": 800},
-     S("whisper.wav", boost=3, lfo1_shape=SQUARE_LFO, lfo1_sync=TEMPO, lfo1_div=DIV_EIGHTH, m_lfo1_level=-70,
+     {"scan": 40, "size": 80, "density": 20, "shape": BELL, "spray": 20, "spread": 60, "release": 800,
+      "lfo1_rate": div("1/8")},
+     S("whisper.wav", boost=3, lfo1_shape=SQUARE_LFO, lfo1_sync=TEMPO, m_lfo1_level=-70,
        m_env1_size=50)),
 ]
 

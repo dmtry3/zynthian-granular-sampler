@@ -123,26 +123,6 @@
     pprops:notOnGUI true ;
     lv2:portProperty pprops:notOnGUI .
 
-<urn:granularsampler:sampler#lfo1_div>
-    a lv2:Parameter ;
-    lv2:symbol "lfo1_div" ;
-    rdfs:label "LFO 1 tempo" ;
-    rdfs:range atom:Int ;
-    lv2:default 4 ; lv2:minimum 0 ; lv2:maximum 10 ;
-    lv2:scalePoint [ rdfs:label "4 bars" ; rdf:value 0 ] , [ rdfs:label "2 bars" ; rdf:value 1 ] , [ rdfs:label "1 bar" ; rdf:value 2 ] , [ rdfs:label "1/2" ; rdf:value 3 ] , [ rdfs:label "1/4" ; rdf:value 4 ] , [ rdfs:label "1/4T" ; rdf:value 5 ] , [ rdfs:label "1/8" ; rdf:value 6 ] , [ rdfs:label "1/8T" ; rdf:value 7 ] , [ rdfs:label "1/16" ; rdf:value 8 ] , [ rdfs:label "1/16T" ; rdf:value 9 ] , [ rdfs:label "1/32" ; rdf:value 10 ] ;
-    pprops:notOnGUI true ;
-    lv2:portProperty pprops:notOnGUI .
-
-<urn:granularsampler:sampler#lfo2_div>
-    a lv2:Parameter ;
-    lv2:symbol "lfo2_div" ;
-    rdfs:label "LFO 2 tempo" ;
-    rdfs:range atom:Int ;
-    lv2:default 4 ; lv2:minimum 0 ; lv2:maximum 10 ;
-    lv2:scalePoint [ rdfs:label "4 bars" ; rdf:value 0 ] , [ rdfs:label "2 bars" ; rdf:value 1 ] , [ rdfs:label "1 bar" ; rdf:value 2 ] , [ rdfs:label "1/2" ; rdf:value 3 ] , [ rdfs:label "1/4" ; rdf:value 4 ] , [ rdfs:label "1/4T" ; rdf:value 5 ] , [ rdfs:label "1/8" ; rdf:value 6 ] , [ rdfs:label "1/8T" ; rdf:value 7 ] , [ rdfs:label "1/16" ; rdf:value 8 ] , [ rdfs:label "1/16T" ; rdf:value 9 ] , [ rdfs:label "1/32" ; rdf:value 10 ] ;
-    pprops:notOnGUI true ;
-    lv2:portProperty pprops:notOnGUI .
-
 <urn:granularsampler:sampler#mark_start>
     a lv2:Parameter ;
     lv2:symbol "mark_start" ;
@@ -791,7 +771,7 @@
     lv2:optionalFeature lv2:hardRTCapable , state:mapPath , state:freePath ;
     lv2:extensionData state:interface , work:interface ;
     patch:writable <urn:granularsampler:sampler#sample> , <urn:granularsampler:sampler#voices> , <urn:granularsampler:sampler#scale> , <urn:granularsampler:sampler#key> ,
-        <urn:granularsampler:sampler#lfo1_shape> , <urn:granularsampler:sampler#lfo2_shape> , <urn:granularsampler:sampler#lfo1_sync> , <urn:granularsampler:sampler#lfo2_sync> , <urn:granularsampler:sampler#env1_shape> , <urn:granularsampler:sampler#env2_shape> , <urn:granularsampler:sampler#mod_depth> , <urn:granularsampler:sampler#glide> , <urn:granularsampler:sampler#lfo1_div> , <urn:granularsampler:sampler#lfo2_div> , <urn:granularsampler:sampler#bend_range> , <urn:granularsampler:sampler#root> , <urn:granularsampler:sampler#tune> , <urn:granularsampler:sampler#gain> , <urn:granularsampler:sampler#mark_start> , <urn:granularsampler:sampler#mark_end> , <urn:granularsampler:sampler#m_lfo1_position> , <urn:granularsampler:sampler#m_lfo1_scan> , <urn:granularsampler:sampler#m_lfo1_spray> , <urn:granularsampler:sampler#m_lfo1_size> , <urn:granularsampler:sampler#m_lfo1_density> , <urn:granularsampler:sampler#m_lfo1_pitch> , <urn:granularsampler:sampler#m_lfo1_pan> , <urn:granularsampler:sampler#m_lfo1_level> , <urn:granularsampler:sampler#m_lfo1_cutoff> , <urn:granularsampler:sampler#m_lfo2_position> , <urn:granularsampler:sampler#m_lfo2_scan> , <urn:granularsampler:sampler#m_lfo2_spray> , <urn:granularsampler:sampler#m_lfo2_size> , <urn:granularsampler:sampler#m_lfo2_density> , <urn:granularsampler:sampler#m_lfo2_pitch> , <urn:granularsampler:sampler#m_lfo2_pan> , <urn:granularsampler:sampler#m_lfo2_level> , <urn:granularsampler:sampler#m_lfo2_cutoff> , <urn:granularsampler:sampler#m_env1_position> , <urn:granularsampler:sampler#m_env1_scan> , <urn:granularsampler:sampler#m_env1_spray> , <urn:granularsampler:sampler#m_env1_size> , <urn:granularsampler:sampler#m_env1_density> , <urn:granularsampler:sampler#m_env1_pitch> , <urn:granularsampler:sampler#m_env1_pan> , <urn:granularsampler:sampler#m_env1_level> , <urn:granularsampler:sampler#m_env1_cutoff> , <urn:granularsampler:sampler#m_env2_position> , <urn:granularsampler:sampler#m_env2_scan> , <urn:granularsampler:sampler#m_env2_spray> , <urn:granularsampler:sampler#m_env2_size> , <urn:granularsampler:sampler#m_env2_density> , <urn:granularsampler:sampler#m_env2_pitch> , <urn:granularsampler:sampler#m_env2_pan> , <urn:granularsampler:sampler#m_env2_level> , <urn:granularsampler:sampler#m_env2_cutoff> , <urn:granularsampler:sampler#m_vel_position> , <urn:granularsampler:sampler#m_vel_scan> , <urn:granularsampler:sampler#m_vel_spray> , <urn:granularsampler:sampler#m_vel_size> , <urn:granularsampler:sampler#m_vel_density> , <urn:granularsampler:sampler#m_vel_pitch> , <urn:granularsampler:sampler#m_vel_pan> , <urn:granularsampler:sampler#m_vel_level> , <urn:granularsampler:sampler#m_vel_cutoff> , <urn:granularsampler:sampler#m_wheel_position> , <urn:granularsampler:sampler#m_wheel_scan> , <urn:granularsampler:sampler#m_wheel_spray> , <urn:granularsampler:sampler#m_wheel_size> , <urn:granularsampler:sampler#m_wheel_density> , <urn:granularsampler:sampler#m_wheel_pitch> , <urn:granularsampler:sampler#m_wheel_pan> , <urn:granularsampler:sampler#m_wheel_level> , <urn:granularsampler:sampler#m_wheel_cutoff> , <urn:granularsampler:sampler#m_rnd_position> , <urn:granularsampler:sampler#m_rnd_scan> , <urn:granularsampler:sampler#m_rnd_spray> , <urn:granularsampler:sampler#m_rnd_size> , <urn:granularsampler:sampler#m_rnd_density> , <urn:granularsampler:sampler#m_rnd_pitch> , <urn:granularsampler:sampler#m_rnd_pan> , <urn:granularsampler:sampler#m_rnd_level> , <urn:granularsampler:sampler#m_rnd_cutoff> ;
+        <urn:granularsampler:sampler#lfo1_shape> , <urn:granularsampler:sampler#lfo2_shape> , <urn:granularsampler:sampler#lfo1_sync> , <urn:granularsampler:sampler#lfo2_sync> , <urn:granularsampler:sampler#env1_shape> , <urn:granularsampler:sampler#env2_shape> , <urn:granularsampler:sampler#mod_depth> , <urn:granularsampler:sampler#glide> , <urn:granularsampler:sampler#bend_range> , <urn:granularsampler:sampler#root> , <urn:granularsampler:sampler#tune> , <urn:granularsampler:sampler#gain> , <urn:granularsampler:sampler#mark_start> , <urn:granularsampler:sampler#mark_end> , <urn:granularsampler:sampler#m_lfo1_position> , <urn:granularsampler:sampler#m_lfo1_scan> , <urn:granularsampler:sampler#m_lfo1_spray> , <urn:granularsampler:sampler#m_lfo1_size> , <urn:granularsampler:sampler#m_lfo1_density> , <urn:granularsampler:sampler#m_lfo1_pitch> , <urn:granularsampler:sampler#m_lfo1_pan> , <urn:granularsampler:sampler#m_lfo1_level> , <urn:granularsampler:sampler#m_lfo1_cutoff> , <urn:granularsampler:sampler#m_lfo2_position> , <urn:granularsampler:sampler#m_lfo2_scan> , <urn:granularsampler:sampler#m_lfo2_spray> , <urn:granularsampler:sampler#m_lfo2_size> , <urn:granularsampler:sampler#m_lfo2_density> , <urn:granularsampler:sampler#m_lfo2_pitch> , <urn:granularsampler:sampler#m_lfo2_pan> , <urn:granularsampler:sampler#m_lfo2_level> , <urn:granularsampler:sampler#m_lfo2_cutoff> , <urn:granularsampler:sampler#m_env1_position> , <urn:granularsampler:sampler#m_env1_scan> , <urn:granularsampler:sampler#m_env1_spray> , <urn:granularsampler:sampler#m_env1_size> , <urn:granularsampler:sampler#m_env1_density> , <urn:granularsampler:sampler#m_env1_pitch> , <urn:granularsampler:sampler#m_env1_pan> , <urn:granularsampler:sampler#m_env1_level> , <urn:granularsampler:sampler#m_env1_cutoff> , <urn:granularsampler:sampler#m_env2_position> , <urn:granularsampler:sampler#m_env2_scan> , <urn:granularsampler:sampler#m_env2_spray> , <urn:granularsampler:sampler#m_env2_size> , <urn:granularsampler:sampler#m_env2_density> , <urn:granularsampler:sampler#m_env2_pitch> , <urn:granularsampler:sampler#m_env2_pan> , <urn:granularsampler:sampler#m_env2_level> , <urn:granularsampler:sampler#m_env2_cutoff> , <urn:granularsampler:sampler#m_vel_position> , <urn:granularsampler:sampler#m_vel_scan> , <urn:granularsampler:sampler#m_vel_spray> , <urn:granularsampler:sampler#m_vel_size> , <urn:granularsampler:sampler#m_vel_density> , <urn:granularsampler:sampler#m_vel_pitch> , <urn:granularsampler:sampler#m_vel_pan> , <urn:granularsampler:sampler#m_vel_level> , <urn:granularsampler:sampler#m_vel_cutoff> , <urn:granularsampler:sampler#m_wheel_position> , <urn:granularsampler:sampler#m_wheel_scan> , <urn:granularsampler:sampler#m_wheel_spray> , <urn:granularsampler:sampler#m_wheel_size> , <urn:granularsampler:sampler#m_wheel_density> , <urn:granularsampler:sampler#m_wheel_pitch> , <urn:granularsampler:sampler#m_wheel_pan> , <urn:granularsampler:sampler#m_wheel_level> , <urn:granularsampler:sampler#m_wheel_cutoff> , <urn:granularsampler:sampler#m_rnd_position> , <urn:granularsampler:sampler#m_rnd_scan> , <urn:granularsampler:sampler#m_rnd_spray> , <urn:granularsampler:sampler#m_rnd_size> , <urn:granularsampler:sampler#m_rnd_density> , <urn:granularsampler:sampler#m_rnd_pitch> , <urn:granularsampler:sampler#m_rnd_pan> , <urn:granularsampler:sampler#m_rnd_level> , <urn:granularsampler:sampler#m_rnd_cutoff> ;
     # Control input ports MUST be indices 0..N-1 (before atom and audio ports): Zynthian numbers LV2 parameters
     # from len(control ports)+1 and would overwrite a control port with a higher index.
     # Outputs for the widget: playhead and grain1..16 = read positions, 0..1 of the sample, -1 = none;
@@ -926,16 +906,16 @@
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 20 ; lv2:symbol "lfo1_rate" ; lv2:name "LFO 1 Hz" ;
-        lv2:default 1 ; lv2:minimum 0.01 ; lv2:maximum 20 ;
-        lv2:portProperty pprops:logarithmic ;
+        lv2:index 20 ; lv2:symbol "lfo1_rate" ; lv2:name "LFO 1 Rate" ;
+        lv2:default 61 ; lv2:minimum 0 ; lv2:maximum 100 ;
+        lv2:portProperty lv2:integer ;
         lv2:displayPriority 40 ; pg:group <urn:granularsampler:sampler#g_mod> ;
     ] ,
     [
         a lv2:InputPort , lv2:ControlPort ;
-        lv2:index 21 ; lv2:symbol "lfo2_rate" ; lv2:name "LFO 2 Hz" ;
-        lv2:default 0.25 ; lv2:minimum 0.01 ; lv2:maximum 20 ;
-        lv2:portProperty pprops:logarithmic ;
+        lv2:index 21 ; lv2:symbol "lfo2_rate" ; lv2:name "LFO 2 Rate" ;
+        lv2:default 42 ; lv2:minimum 0 ; lv2:maximum 100 ;
+        lv2:portProperty lv2:integer ;
         lv2:displayPriority 30 ; pg:group <urn:granularsampler:sampler#g_mod> ;
     ] ,
     [

@@ -168,6 +168,19 @@ const char* const gc_div_names[GC_NDIVS] = { "4 bars", "2 bars", "1 bar", "1/2",
 void gc_set_lfo_div(GrainCore* g, int i, int div) {
   if (i >= 0 && i <= 1) g->lfo_div[i] = div < 0 || div >= GC_NDIVS ? 4 : div;
 }
+float gc_rate_hz(float u) {
+  const float x = (u < 0.0f ? 0.0f : u > GC_RATE_MAX ? GC_RATE_MAX : u) / GC_RATE_MAX;
+  return GC_LFO_MIN * powf(GC_LFO_MAX / GC_LFO_MIN, x);
+}
+int gc_rate_div(float u) {                        /* u * 10 / 100: halves exact, rounded to even as in the widget */
+  const float x = u < 0.0f ? 0.0f : u > GC_RATE_MAX ? GC_RATE_MAX : u;
+  return (int)lrintf(x * (float)(GC_NDIVS - 1) / GC_RATE_MAX);
+}
+float gc_hz_rate(float hz) {
+  if (hz <= GC_LFO_MIN) return 0.0f;
+  if (hz >= GC_LFO_MAX) return GC_RATE_MAX;
+  return GC_RATE_MAX * logf(hz / GC_LFO_MIN) / logf(GC_LFO_MAX / GC_LFO_MIN);
+}
 void gc_set_tempo(GrainCore* g, float bpm, double beat) {
   if (bpm >= 20.0f && bpm <= 400.0f) g->bpm = bpm;
   if (beat >= 0.0) g->beat = beat;

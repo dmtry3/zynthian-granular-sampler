@@ -233,6 +233,12 @@ void gc_set_lfo_div(GrainCore* g, int i, int div);               /* 0..GC_NDIVS-
 void gc_set_tempo(GrainCore* g, float bpm, double beat);
 extern const float gc_div_beats[GC_NDIVS];
 extern const char* const gc_div_names[GC_NDIVS];
+/* LFO Rate knob, 0..GC_RATE_MAX units: Free/Key read it as Hz (GC_LFO_MIN..GC_LFO_MAX, logarithmic),
+ * Tempo as a cycle length (4 bars .. 1/32, faster to the right). The widget shows which. */
+#define GC_RATE_MAX 100.0f
+float gc_rate_hz(float units);
+int gc_rate_div(float units);
+float gc_hz_rate(float hz);                                      /* inverse of gc_rate_hz */
 void gc_set_env(GrainCore* g, int i, float shape);
 float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */
 float gc_env_value(float shape, float t, float time);                 /* 0..1 */

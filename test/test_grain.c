@@ -1203,7 +1203,21 @@ static void test_lfo_tempo(void) {
   free_src(&s);
 }
 
+/* LFO Rate knob units: Hz (log) in Free/Key, a cycle length in Tempo; the ends and the defaults */
+static void test_rate_units(void) {
+  CHECK(fabsf(gc_rate_hz(0) - GC_LFO_MIN) < 1e-6f && fabsf(gc_rate_hz(GC_RATE_MAX) - GC_LFO_MAX) < 1e-3f);
+  CHECK(fabsf(gc_rate_hz(-5) - GC_LFO_MIN) < 1e-6f && fabsf(gc_rate_hz(500) - GC_LFO_MAX) < 1e-3f);
+  CHECK(fabsf(gc_rate_hz(61) - 1.0f) < 0.05f && fabsf(gc_rate_hz(42) - 0.25f) < 0.01f);
+  for (float hz = 0.02f; hz < 20.0f; hz *= 1.7f) CHECK(fabsf(gc_rate_hz(gc_hz_rate(hz)) / hz - 1.0f) < 1e-3f);
+  CHECK(gc_rate_div(0) == 0 && gc_rate_div(GC_RATE_MAX) == GC_NDIVS - 1 && gc_rate_div(200) == GC_NDIVS - 1);
+  for (int d = 0; d < GC_NDIVS; d++) CHECK(gc_rate_div(d * 10.0f) == d);
+  CHECK(gc_rate_div(42) == 4 && !strcmp(gc_div_names[gc_rate_div(61)], "1/8"));
+  float prev = 0;                                    /* right = faster in both modes */
+  for (int u = 0; u <= 100; u++) { CHECK(gc_rate_hz((float)u) > prev); prev = gc_rate_hz((float)u); }
+}
+
 int main(void) {
+  test_rate_units();
   test_windows();
   test_silence();
   test_note_cycle();
