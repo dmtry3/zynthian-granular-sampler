@@ -44,6 +44,11 @@ MULTI_INSTANCE = True
 NPEAKS = 1024                   # min/max pairs over the whole file
 ST_EMPTY, ST_LOADING, ST_LOADED, ST_ERROR = range(4)
 WAVE_COLOR = "#4dabf7"
+CLIP_COLOR = "#ff6b6b"           # waveform columns past 0 dBFS after the sample gain
+NORM_COLOR = "#51cf66"           # gain slider: the normalize point
+GAIN_MAX = 240                   # sample gain, tenths of a dB, both ways
+NORM_DB = -1.0                   # normalize: the sample peak goes here
+GAIN_REBUILD = 0.15              # s: waveform redrawn at most this often while the gain is dragged
 ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
@@ -234,7 +239,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.peaks_path = None
         self.loading_path = None     # file read by the thread now
         self.result = None           # (path, peaks or None, error) handed over by the thread
-        self.wave_size = None        # canvas size the waveform was drawn for
+        self.wave_size = None        # (width, height, gain) the waveform was drawn for
+        self.wave_built = 0.0        # when it was drawn
+        self.gain_view = None        # values the gain slider was drawn for
         self.info = None             # text shown now, to redraw it only when it changes
         self.title = None            # knob page name shown now
         self.zone = None             # (position, window, size) the zone was drawn for
@@ -304,6 +311,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.bend_box = None
         self.wave_boxes = {}
         self.wave_ctl = None
+        self.gain_view = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -402,6 +410,23 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         h = max(self.height, 20)
         return self._header_h() + ZONE_BAND + GRAIN_STRIP + 4, h - self._button_h() - 6
 
+    def _gain_w(self):
+        """Width of the gain slider at the right of the waveform."""
+        return max(16, self._font_size() * 2)
+
+    def _wave_w(self):
+        return max(int(self.width), 40) - self._gain_w() - 4
+
+    def _gain(self):
+        return min(max(int(round(self._zval("gain", 0))), -GAIN_MAX), GAIN_MAX)
+
+    def _norm_gain(self):
+        """Gain (tenths of a dB) that puts the sample peak at NORM_DB, or None."""
+        pk = self._mon("peak", -100.0)
+        if pk <= -99.0:
+            return None
+        return min(max(int(round((NORM_DB - pk) * 10)), -GAIN_MAX), GAIN_MAX)
+
     def _strip(self):
         top = self._area()[0]
         return top - GRAIN_STRIP - 1, top - 1
@@ -493,8 +518,11 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         if self.tab == 4:
             self._draw_mod()
             return
-        size = (self.width, self.height)
-        if self.wave_size != size:
+        size = (self.width, self.height, self._gain())
+        dragging = bool(self.drag) and self.drag[0] == "gain"
+        if self.wave_size != size and (not dragging or self.wave_size is None or
+                                       time.monotonic() - self.wave_built >= GAIN_REBUILD):
+            self.wave_built = time.monotonic()
             self._build_wave()
             self.wave_size = size
             self.wave_shown = False
@@ -508,7 +536,38 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self._draw_zone()
         self._draw_marks()
         self._draw_wave_ctl()
+        self._draw_gain()
         self._draw_info(path)
+
+    def _gain_box(self):
+        top, bottom = self._area()
+        x1 = max(int(self.width), 40) - 2
+        return (x1 - self._gain_w(), self._strip()[0], x1, bottom)
+
+    def _gain_y(self, gain, box):
+        return box[1] + (GAIN_MAX - gain) / (2.0 * GAIN_MAX) * (box[3] - box[1])
+
+    def _draw_gain(self):
+        """Sample gain: a vertical bar at the right of the waveform, 0 dB in the middle; the normalize
+        point is a green tick. Finger up/down, double tap = normalize."""
+        gain, norm = self._gain(), self._norm_gain()
+        view = (gain, norm, self.width, self.height)
+        if view == self.gain_view:
+            return
+        self.gain_view = view
+        c = self.widget_canvas
+        c.delete("gain")
+        box = self._gain_box()
+        x0, y0, x1, y1 = box
+        c.create_rectangle(x0, y0, x1, y1, fill=BUTTON_OFF, outline="#505050", tags="gain")
+        yz, yg = self._gain_y(0, box), self._gain_y(gain, box)
+        c.create_line(x0, yz, x1, yz, fill="#606060", tags="gain")              # 0 dB
+        if gain:
+            c.create_rectangle(x0 + 2, min(yz, yg), x1 - 2, max(yz, yg), fill="#2d6c99", width=0, tags="gain")
+        if norm is not None:
+            yn = self._gain_y(norm, box)
+            c.create_line(x0, yn, x1, yn, fill=NORM_COLOR, width=2, tags="gain")
+        c.create_line(x0, yg, x1, yg, fill=zynthian_gui_config.color_tx, width=3, tags="gain")
 
     def _draw_wave_ctl(self):
         """Root, Tune and Auto at the right of the bottom row; redrawn only when their values change."""
@@ -560,9 +619,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     def _build_wave(self):
         """The waveform image, built once per file and size (kept across tab switches)."""
         self.wave_img = None
-        w = max(int(self.width), 20)
+        w = self._wave_w()
         top, bottom = self._area()
         hgt = max(int(bottom - top), 2)
+        g = 10.0 ** (self._gain() / 200.0)            # the waveform as it sounds: with the sample gain
         img = tkinter.PhotoImage(width=w, height=hgt)
         img.put(zynthian_gui_config.color_bg, to=(0, 0, w, hgt))
         mid, half = hgt / 2.0, hgt / 2.0
@@ -575,15 +635,16 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             for x in range(w + 1):
                 if x < w:
                     seg = p[x * n // w:max(x * n // w + 1, (x + 1) * n // w)]
-                    mx = max(s[1] for s in seg)
-                    mn = min(s[0] for s in seg)
+                    mx = max(s[1] for s in seg) * g
+                    mn = min(s[0] for s in seg) * g
                     y0 = int(mid - max(min(mx, 1.0), 0.0) * half)
                     y1 = max(int(mid - min(max(mn, -1.0), 0.0) * half), y0) + 1
-                if run and (x == w or (y0, y1) != (run[1], run[2])):
-                    img.put(WAVE_COLOR, to=(run[0], run[1], x, min(run[2], hgt)))
+                    clip = mx > 1.0 or mn < -1.0
+                if run and (x == w or (y0, y1, clip) != (run[1], run[2], run[3])):
+                    img.put(CLIP_COLOR if run[3] else WAVE_COLOR, to=(run[0], run[1], x, min(run[2], hgt)))
                     run = None
                 if x < w and run is None:
-                    run = [x, y0, y1]
+                    run = [x, y0, y1, clip]
         self.wave_img = img
 
     def _draw_zone(self):
@@ -599,7 +660,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         c.delete("zone")
         if not self.peaks:
             return
-        w = max(self.width, 20)
+        w = self._wave_w()
         top, bottom = self._area()
         b1 = self._strip()[0] - 1
         b0 = b1 - ZONE_BAND
@@ -617,7 +678,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             for _ in range(NGRAIN_MARKS):
                 self.marks.append(c.create_line(0, 0, 0, 0, fill=GRAIN_COLOR, width=1, state="hidden", tags="marks"))
             self.mark_state = [None] * len(self.marks)
-        w = max(self.width, 20)
+        w = self._wave_w()
         top, bottom = self._area()
         s0, s1 = self._strip()
         vals = [self._mon("playhead", -1.0)] + [self._mon("grain%d" % (i + 1), -1.0) for i in range(NGRAIN_MARKS)]
@@ -789,6 +850,21 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         """Wave tab controls row: Root and Tune sliders, Auto takes the detected pitch."""
         if event is None:                              # a press without a position: the file selector
             return False
+        gb = self._gain_box()
+        if gb[0] - 4 <= event.x <= gb[2] + 2 and gb[1] <= event.y <= gb[3]:
+            now = time.monotonic()
+            if self.last_tap[0] == "gain" and now - self.last_tap[1] < DOUBLE_TAP:
+                norm = self._norm_gain()                  # double tap: normalize
+                if norm is not None:
+                    self._zset("gain", norm)
+                self.last_tap = (None, 0.0)
+                self.drag = None
+                self.refresh_gui()
+                return True
+            self.last_tap = ("gain", now)
+            self.drag = ("gain", self._gain(), event.y, -GAIN_MAX, GAIN_MAX,
+                         2.0 * GAIN_MAX / float(max(gb[3] - gb[1], 20)))
+            return True
         if self._slider_press(event):
             return True
         b = self.wave_boxes.get("auto")
@@ -1200,6 +1276,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             text = name
         if self.peaks_path != path and path:
             text += "  (reading wave)"
+        if path and self._gain():
+            text += "  %+.1f dB" % (self._gain() / 10.0)
         room = max(self.width, 80) - 16
         if (text, room) == self.info:
             return

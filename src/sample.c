@@ -164,6 +164,7 @@ GsSample* gs_sample_load(const char* path, double max_seconds, int* err) {
   /* The header may promise more frames than the file holds: zero the rest (this also touches its pages). */
   memset(d + 2 * n, 0, (size_t)(info.frames - n) * 2 * sizeof(float));
   add_guard(d, info.frames);
+  for (int64_t i = 0; i < 2 * info.frames; i++) if (fabsf(d[i]) > s->peak) s->peak = fabsf(d[i]);
 
   for (int k = 1; k < GS_LEVELS; k++) {
     const int64_t m = s->frames[k - 1] / 2;

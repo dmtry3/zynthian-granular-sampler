@@ -14,6 +14,7 @@ typedef struct {
   int64_t frames[GS_LEVELS];
   int channels;           /* channels in the file (only the first two are used) */
   double rate;            /* sample rate of the file */
+  float peak;             /* largest |sample| of the first two channels (0 = silent) */
   float pitch;            /* detected pitch (MIDI, fractional), -1 = none found (drums, noise, a melody) */
   char path[GS_PATH_MAX];
 } GsSample;

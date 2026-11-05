@@ -98,10 +98,11 @@ class Engine:
         self.grains = []
         self.notes = []
         self.detected = -1.0
+        self.peak = -100.0
 
     def get_monitors_dict(self):
         m = {"status": float(self.status), "seconds": float(self.seconds), "playhead": float(self.playhead),
-             "detected": float(self.detected)}
+             "detected": float(self.detected), "peak": float(self.peak)}
         for i in range(16):
             m["grain%d" % (i + 1)] = float(self.grains[i]) if i < len(self.grains) else -1.0
         for i in range(8):
@@ -120,6 +121,7 @@ class Processor:
                                  "voices": NumCtrl("voices", 8), "glide": NumCtrl("glide", 0),
                                  "bend_range": NumCtrl("bend_range", 2),
                                  "root": NumCtrl("root", 60), "tune": NumCtrl("tune", 0),
+                                 "gain": NumCtrl("gain", 0),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
@@ -297,7 +299,7 @@ def main():
     proc.engine.grains = [0.4, 0.6]
     pump(lambda: False, 0.05)
     zones = [i for i in c.find_withtag("zone") if c.type(i) == "rectangle"]
-    W = wdg.width
+    W = wdg._wave_w()                                # the gain slider takes the right edge
     check("window zone from Position 25 % to 75 %", len(zones) == 1 and
           abs(c.coords(zones[0])[0] - 0.25 * W) < 1 and abs(c.coords(zones[0])[2] - 0.75 * W) < 1)
     marks = wdg.marks
@@ -332,21 +334,52 @@ def main():
     pump(lambda: False, 0.2)
     check("waveform not redrawn on every update", c.find_withtag("wave") == before)
 
+    class Tap:
+        def __init__(self, x, y):
+            self.x, self.y = x, y
+
+    # sample gain: slider at the right of the waveform; double tap = normalize; the waveform follows
+    gb = wdg._gain_box()
+    check("gain slider right of the waveform", gb[0] >= wdg._wave_w() and gb[2] <= wdg.width and
+          gb[3] <= wdg._area()[1])
+    nudges0 = sample.nudges
+    img0 = wdg.wave_img
+    gx, gy = (gb[0] + gb[2]) // 2, (gb[1] + gb[3]) // 2
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gb[1])); wdg._on_release(None)
+    pump(lambda: False, 0.3)
+    check("drag to the top of the gain slider: +24 dB (about)", proc.v("gain") >= 230 and sample.nudges == nudges0)
+    check("waveform redrawn with the gain", wdg.wave_img is not img0)
+    clip = tuple(int(mod.CLIP_COLOR[k:k + 2], 16) for k in (1, 3, 5))
+    img = wdg.wave_img
+    check("+24 dB: clipping shown in red", any(tuple(img.get(x, 1)) == clip for x in range(0, img.width(), 3)))
+    check("info shows the gain", "+2" in info() and "dB" in info())
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    check("double tap without a known peak: unchanged", proc.v("gain") >= 230)
+    proc.engine.peak = -12.6                          # cello_d2
+    pump(lambda: False, 0.1)
+    norm_ticks = [i for i in c.find_withtag("gain") if c.type(i) == "line" and c.itemcget(i, "fill") == mod.NORM_COLOR]
+    check("the normalize point is marked", len(norm_ticks) == 1)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
+    check("double tap: normalize, the peak at -1 dB (gain +11.6)", proc.v("gain") == 116)
+    proc.controllers_dict["gain"].value = 0
+    proc.engine.peak = -100.0
+    pump(lambda: False, 0.3)
+
     # resize redraws it
     root.geometry("360x200")
     pump(lambda: wdg.width < 400, 2)
     check("waveform redrawn after resize", c.find_withtag("wave") != before and wave_drawn() and
-          wdg.wave_img.width() == wdg.width)
+          wdg.wave_img.width() == wdg._wave_w())
 
     # plugin error, file the widget can't read
     sample.value = "/no/such/file.wav"
     proc.engine.status = 3
     pump(lambda: wdg.peaks_path == "/no/such/file.wav")
     check("missing file: error shown, no waveform", "can't load" in info() and not wave_drawn())
-
-    class Tap:
-        def __init__(self, x, y):
-            self.x, self.y = x, y
 
     # Wave tab bottom row: Root, Tune, Auto
     check("Wave tab: Root, Tune and Auto in the bottom row", set(wdg.wave_boxes) == {"root", "tune", "auto"} and
@@ -739,6 +772,9 @@ def main():
         check("%s Wave: Root, Tune, Auto inside the widget, under the waveform" % geo,
               len(boxes) == 3 and all(b[0] >= 0 and b[2] <= wdg.width and b[3] <= wdg.height and
                                       b[1] >= wdg._area()[1] for b in boxes))
+        gb = wdg._gain_box()
+        check("%s Wave: gain slider inside the widget, clear of the bottom row" % geo,
+              gb[2] <= wdg.width and gb[3] <= wdg._area()[1] and gb[3] - gb[1] > 40)
         tinfo = [i for i in c.find_withtag("info") if c.type(i) == "text"]
         check("%s Wave: file info inside the widget" % geo, tinfo and c.bbox(tinfo[0])[2] <= wdg.width)
         x0, x1 = wdg.tab_boxes[2]

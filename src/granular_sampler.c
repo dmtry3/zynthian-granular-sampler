@@ -37,23 +37,25 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
        P_MIDI_IN = P_END, P_OUT_L, P_OUT_R, P_NOTIFY,
        P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0,     /* outputs for the widget */
        P_NOTE0 = P_GRAIN0 + 16,                       /* note1..8: MIDI note of each sounding voice */
-       P_DETECTED = P_NOTE0 + GC_VOICES };            /* detected pitch of the sample (MIDI), -1 = none */
+       P_DETECTED = P_NOTE0 + GC_VOICES,              /* detected pitch of the sample (MIDI), -1 = none */
+       P_PEAK };                                      /* peak of the sample in dBFS (-100 = none or silent) */
 #define N_GRAIN_PORTS 16
 #define N_RETIRED 8
 
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range", "root", "tune" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range", "root", "tune", "gain" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
   { GC_SYNC_FREE, 0, GC_SYNC_TEMPO }, { GC_SYNC_FREE, 0, GC_SYNC_TEMPO },
   { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 },
-  { 2, 0, (int)GC_BEND_MAX }, { 60, 0, 127 }, { 0, -50, 50 } };
+  { 2, 0, (int)GC_BEND_MAX }, { 60, 0, 127 }, { 0, -50, 50 },
+  { 0, -240, 240 } };    /* gain: tenths of a dB */
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
   "pan", "level", "cutoff" };
@@ -84,6 +86,7 @@ typedef struct {
   float* grain_out[N_GRAIN_PORTS];
   float* note_out[GC_VOICES];
   float* detected_out;
+  float* peak_out;
 
   LV2_URID_Map* map;
   LV2_Worker_Schedule* sched;
@@ -229,6 +232,7 @@ static void connect_port(LV2_Handle h, uint32_t port, void* data) {
   else if (port >= P_GRAIN0 && port < P_GRAIN0 + N_GRAIN_PORTS) S->grain_out[port - P_GRAIN0] = (float*)data;
   else if (port >= P_NOTE0 && port < P_NOTE0 + GC_VOICES) S->note_out[port - P_NOTE0] = (float*)data;
   else if (port == P_DETECTED) S->detected_out = (float*)data;
+  else if (port == P_PEAK) S->peak_out = (float*)data;
 }
 
 static void activate(LV2_Handle h) { (void)h; }
@@ -316,7 +320,7 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
     case IP_LFO1_DIV: gc_set_lfo_div(&S->core, 0, ip[IP_LFO1_DIV]); break;
     case IP_LFO2_DIV: gc_set_lfo_div(&S->core, 1, ip[IP_LFO2_DIV]); break;
-    case IP_ROOT: case IP_TUNE: break;                /* read with the knobs (read_params) */
+    case IP_ROOT: case IP_TUNE: case IP_GAIN: break;                /* read with the knobs (read_params) */
     case IP_BEND_RANGE: gc_set_bend(&S->core, S->bend * (float)ip[IP_BEND_RANGE]); break;
     default: {
       const int c = i - IP_CELL0;
@@ -490,8 +494,8 @@ static void run(LV2_Handle h, uint32_t n) {
   if (S->report_next >= 0) report_params(S);
   lv2_atom_forge_pop(&S->forge, &seq);
 
-  /* Level, ramped over the block so turning the knob does not click */
-  const float target = ctl(S, P_LEVEL, 0.8f);
+  /* Level times the sample gain (Wave tab), ramped over the block so neither clicks */
+  const float target = ctl(S, P_LEVEL, 0.8f) * powf(10.0f, (float)S->ip[IP_GAIN] * 0.005f);
   const float start = S->level < 0.0f ? target : S->level;
   const float step = n ? (target - start) / (float)n : 0.0f;
   for (uint32_t i = 0; i < n; i++) {
@@ -502,6 +506,8 @@ static void run(LV2_Handle h, uint32_t n) {
   S->level = target;
 
   if (S->status_out) *S->status_out = (float)S->status;
+  if (S->peak_out)
+    *S->peak_out = S->sample && S->sample->peak > 1e-5f ? 20.0f * log10f(S->sample->peak) : -100.0f;
   if (S->detected_out) *S->detected_out = S->sample ? S->sample->pitch : -1.0f;
   if (S->seconds_out) *S->seconds_out = S->sample ? (float)(S->sample->frames[0] / S->sample->rate) : 0.0f;
   if (S->nretired) free_retired(S);
