@@ -761,10 +761,12 @@ static const float vowel_bw[GC_NFORM] = { 80, 90, 120, 150, 200 };
 #define GC_VOWEL_AIR 0.5f
 #define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
-/* Position 0..4 between the vowels A .. U from the cutoff (log, over the whole knob). */
+/* Position 0..4 between the vowels A .. U from the Cutoff knob, evenly over its travel. Zynthian turns a
+ * logarithmic knob along hz = min + range (10^x - 1) / 9, x = 0..1 in 100 steps (one decade of curve, so the
+ * bottom steps are about 50 Hz): A to E in 25 steps, not in one or two as on a log2 scale. */
 float gc_vowel_pos(float fc) {
-  const float x = (log2f(clampf(fc, GC_CUTOFF_MIN, GC_CUTOFF_MAX)) - log2f(GC_CUTOFF_MIN)) /
-                  (log2f(GC_CUTOFF_MAX) - log2f(GC_CUTOFF_MIN));
+  const float x = log10f(9.0f * (clampf(fc, GC_CUTOFF_MIN, GC_CUTOFF_MAX) - GC_CUTOFF_MIN) /
+                         (GC_CUTOFF_MAX - GC_CUTOFF_MIN) + 1.0f);
   return 4.0f * x;
 }
 /* Comb feedback from Resonance; the output is scaled by sqrt(1 - fb^2) (noise keeps its loudness) */
@@ -786,7 +788,8 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
   const int open = (lp && fc >= fminf(GC_CUTOFF_MAX * 0.97f, top) && res < 0.01f) ||
                    (hp && fc <= GC_CUTOFF_MIN * 1.05f && res < 0.01f);
   if (open || off) { v->filter_on = 0; v->ftype = -1; return; }
-  if (!v->filter_on || v->ftype != type) {   /* switching on or to another type: start from an empty state */
+  const int fresh = !v->filter_on || v->ftype != type;
+  if (fresh) {                                /* switching on or to another type: start from an empty state */
     memset(v->fs, 0, sizeof v->fs);
     if (type == GC_COMB) memset(v->comb, 0, sizeof v->comb);
     v->comb_d = 0.0f;
@@ -827,7 +830,13 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
     /* five formants, each two equal band-passes in series (24 dB/oct skirts: the dips between the formants
      * are deep, so the vowel is heard clearly), normalized to the formant level at the peak (1/k each stage);
      * between two vowels the formants glide. Plus the air: the input's top, so the sound is not dull. */
-    const float pos = gc_vowel_pos(fc);
+    /* the knob picks the vowel; Key Track and the Cutoff modulation move it as they move a cutoff
+     * (the whole 20 Hz .. 20 kHz = the whole A .. U); smoothed like the cutoff */
+    const float knob = clampf(p->cutoff_hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX);
+    const float oct = target - log2f(knob);   /* octaves of Key Track and modulation */
+    const float vt = clampf(gc_vowel_pos(knob) + 4.0f * oct / log2f(GC_CUTOFF_MAX / GC_CUTOFF_MIN), 0.0f, 4.0f);
+    v->vpos = fresh ? vt : v->vpos + (vt - v->vpos) * a;
+    const float pos = v->vpos;
     const int i0 = pos >= 4.0f ? 3 : (int)pos;
     const float t = pos - (float)i0;
     const float bw = 1.6f - 1.2f * res;        /* x the bandwidths: wide and soft .. narrow and sharp */

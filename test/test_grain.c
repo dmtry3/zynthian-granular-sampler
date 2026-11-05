@@ -937,8 +937,12 @@ static void test_filter(void) {
   CHECK(c1 < 10.0);                                                 /* +20 dB at most */
   /* vowels: A (cutoff at the bottom) has its first formant at 650 Hz, I (the middle) at 290 Hz */
   CHECK(fabsf(gc_vowel_pos(GC_CUTOFF_MIN)) < 1e-4f && fabsf(gc_vowel_pos(GC_CUTOFF_MAX) - 4.0f) < 1e-3f);
-  const float vow_i = GC_CUTOFF_MIN * sqrtf(GC_CUTOFF_MAX / GC_CUTOFF_MIN);
+  /* evenly over the knob as Zynthian turns it: hz = 20 + 19980 (10^x - 1) / 9, 100 steps */
+#define KNOB_HZ(x) (GC_CUTOFF_MIN + (GC_CUTOFF_MAX - GC_CUTOFF_MIN) * (powf(10.0f, (x)) - 1.0f) / 9.0f)
+  const float vow_i = KNOB_HZ(0.5f);
   CHECK(fabsf(gc_vowel_pos(vow_i) - 2.0f) < 1e-3f);
+  CHECK(fabsf(gc_vowel_pos(KNOB_HZ(0.25f)) - 1.0f) < 1e-3f && fabsf(gc_vowel_pos(KNOB_HZ(0.75f)) - 3.0f) < 1e-3f);
+  CHECK(gc_vowel_pos(KNOB_HZ(0.01f)) < 0.05f);                       /* one encoder step from A: still A */
   const double a650 = filter_gain(650, GC_VOWEL, GC_CUTOFF_MIN, 0.5f);
   CHECK(a650 > 4.0 * filter_gain(290, GC_VOWEL, GC_CUTOFF_MIN, 0.5f) &&
         a650 > 4.0 * filter_gain(1500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));

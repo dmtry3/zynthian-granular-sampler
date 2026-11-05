@@ -653,12 +653,13 @@ def main():
     check("python curve = engine: Notch 1k is a deep hole", gdb(1000, 1000, 0, 5) < -60 and abs(gdb(150, 1000, 0, 5)) < 1)
     check("python curve = engine: Comb 500 Hz res 100 %: +18.2 / -18.2 dB",
           abs(gdb(500, 500, 1, 6) - 18.2) < 0.5 and abs(gdb(750, 500, 1, 6) + 18.2) < 0.5)
-    vow_i = 20 * 1000 ** 0.5
+    knob_hz = lambda x: 20 + 19980 * (10 ** x - 1) / 9.0      # Zynthian's log knob
+    vow_i = knob_hz(0.5)
     check("python curve = engine: Vowel A +9.5 dB at 650 Hz, I +9.5 dB at 290 Hz",
           abs(gdb(650, 20, 0.5, 7) - 9.5) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 9.5) < 0.5)
     check("python curve = engine: Vowel keeps the top (-6 dB at 10 kHz)", -8 < gdb(10000, 20, 0.5, 7) < -4)
     texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
-    for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, 20 * 1000 ** 0.625, "Vowel  I-O"),
+    for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, knob_hz(0.625), "Vowel  I-O"),
                         (6, 220.0, "Comb  220 Hz"), (3, 1000.0, "LP24  1.0 kHz")):
         proc.controllers_dict["ftype"].value = t
         proc.controllers_dict["cutoff"].value = fc

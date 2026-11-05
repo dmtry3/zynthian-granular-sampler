@@ -153,6 +153,7 @@ typedef struct {
   float glide_step;       /* semitones per sample while gliding */
   float fc_log;           /* filter cutoff, log2 Hz, smoothed toward the knob */
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
+  float vpos;             /* Vowel: position 0..4 (A .. U), smoothed toward the knob and its modulation */
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed / Mix 0) */
   float fmix;             /* the dry/wet mix of the last block (ramped to the knob); -1 = take the knob */
   int ftype;              /* the type the state below belongs to; -1 = state to clear first */
@@ -261,7 +262,7 @@ extern const char* const gc_div_names[GC_NDIVS];
 float gc_rate_hz(float units);
 int gc_rate_div(float units);
 float gc_hz_rate(float hz);                                      /* inverse of gc_rate_hz */
-float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U */
+float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U, from the knob */
 float gc_comb_fb(float resonance);                               /* Comb filter feedback */
 void gc_set_env(GrainCore* g, int i, float shape);
 float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */

@@ -206,10 +206,11 @@ VOWEL_AIR_HZ, VOWEL_AIR = 6000.0, 0.5             # the input's top added back: 
 
 
 def vowel_pos(fc):
-    """Vowel filter: 0..4 = A E I O U from the cutoff (gc_vowel_pos)"""
+    """Vowel filter: 0..4 = A E I O U, evenly over the Cutoff knob's travel in Zynthian
+    (hz = 20 + 19980 (10^x - 1) / 9; gc_vowel_pos)"""
     import math
     fc = min(max(fc, 20.0), 20000.0)
-    return 4.0 * math.log(fc / 20.0) / math.log(1000.0)
+    return 4.0 * math.log10(9.0 * (fc - 20.0) / 19980.0 + 1.0)
 
 
 def filter_gain(f, fc, res, ftype, sr=SR, mix=1.0):
