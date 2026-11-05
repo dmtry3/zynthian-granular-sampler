@@ -37,7 +37,7 @@ PRESETS = [
       "attack": 300, "release": 2000, "spread": 60}, {}),
     ("pad_drift", "Pad Slow Drift",
      {"scan": 10, "size": 200, "density": 25, "chaos": 50, "spread": 40, "attack": 150, "release": 1500}, {}),
-    ("pad_dense", "Pad Dense 64",
+    ("pad_dense", "Pad Dense",
      {"scan": 30, "size": 1000, "density": 200, "spray": 40, "chaos": 70, "spread": 100,
       "attack": 400, "release": 3000, "level": 0.6}, {}),
     ("pluck_cloud", "Pluck Cloud",

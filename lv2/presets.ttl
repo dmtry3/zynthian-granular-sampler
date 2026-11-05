@@ -337,7 +337,7 @@
 <urn:granularsampler:sampler#preset_pad_dense>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Dense 64" ;
+    rdfs:label "Pad Dense" ;
     pset:bank <urn:granularsampler:sampler#bank_factory> ;
     lv2:port
         [ lv2:symbol "position" ; pset:value 0.0 ] ,
