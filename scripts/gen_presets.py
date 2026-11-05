@@ -15,7 +15,7 @@ PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("size", 100), ("density", 20), ("shape", 67), ("chaos", 0),
                  ("pitch", 0), ("pitch_spray", 0), ("reverse", 0), ("quantize", 0),
                  ("attack", 10), ("release", 500), ("spread", 0), ("level", 0.8),
-                 ("cutoff", 20000), ("resonance", 0), ("ftype", 0), ("keytrack", 0),
+                 ("cutoff", 100), ("resonance", 0), ("ftype", 0), ("keytrack", 0),
                  ("lfo1_rate", 61), ("lfo2_rate", 42), ("env1_time", 1), ("env2_time", 2)]
 # integer parameters in the plugin's order (granular_sampler.c), cells m_<src>_<dst> default 0
 SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
@@ -57,6 +57,11 @@ def hz(f):
     return int(round(100 * math.log(f / 0.01) / math.log(2000)))
 
 
+def cut(f):
+    """Cutoff knob units (0..100) of f Hz: 20 Hz * 1000^(u / 100) (gc_cutoff_hz)"""
+    return round(100.0 * math.log(f / 20.0) / math.log(1000.0), 1)
+
+
 def div(name):
     """LFO Rate knob (0..100) for a cycle length in Tempo: gc_rate_div"""
     return int(round(DIVS.index(name) * 100.0 / (len(DIVS) - 1)))
@@ -81,7 +86,7 @@ PRESETS = [
      S("cello_d2.wav", mark_start=500, mark_end=9000, m_lfo1_pan=40)),
     ("cello_frozen", "Cello Frozen Bow",
      {"position": 45, "scan": 0, "window": 10, "size": 500, "density": 25, "chaos": 40, "spray": 15,
-      "attack": 800, "release": 4000, "spread": 80, "cutoff": 3000, "resonance": 20, "lfo1_rate": hz(0.1),
+      "attack": 800, "release": 4000, "spread": 80, "cutoff": cut(3000), "resonance": 20, "lfo1_rate": hz(0.1),
       "level": 0.4},
      S("cello_d2.wav", m_lfo1_cutoff=25, m_lfo2_position=10)),
     ("cello_legato", "Cello Mono Legato",
@@ -109,13 +114,13 @@ PRESETS = [
      S("singing_bowl.wav", boost=4, m_lfo2_spray=40)),
     ("bowl_octaves", "Bowl Octaves",
      {"position": 20, "scan": 5, "window": 30, "size": 600, "density": 20, "pitch_spray": 12, "quantize": 100,
-      "chaos": 60, "spread": 100, "attack": 1500, "release": 5000, "cutoff": 5000, "level": 0.7},
+      "chaos": 60, "spread": 100, "attack": 1500, "release": 5000, "cutoff": cut(5000), "level": 0.7},
      S("singing_bowl.wav", boost=7, scale=MIN_PENT, key=3)),
 
     # bowed cymbal: noise; wash and swell
     ("cymbal_wash", "Cymbal Wash",
      {"scan": 10, "size": 400, "density": 40, "spray": 50, "chaos": 80, "spread": 100, "attack": 600,
-      "release": 5000, "cutoff": 300, "resonance": 30, "ftype": HP, "level": 0.6},
+      "release": 5000, "cutoff": cut(300), "resonance": 30, "ftype": HP, "level": 0.6},
      S("cymbal_bow.wav", boost=7, m_lfo1_cutoff=30)),
     ("cymbal_swell", "Cymbal Reverse Swell",
      {"scan": 20, "size": 600, "density": 15, "shape": REVERSE, "reverse": 100, "spread": 70,
@@ -133,22 +138,22 @@ PRESETS = [
      S("breakbeat_140.wav", boost=7, voices=1)),
     ("break_filter", "Break Tempo Filter",
      {"scan": 100, "size": 2 * SIXTEENTH_MS, "density": SIXTEENTHS / 2, "shape": SQUARE, "attack": 1,
-      "release": 200, "cutoff": 800, "resonance": 50, "ftype": LP, "lfo1_rate": div("1 bar"), "lfo2_rate": div("1/8")},
+      "release": 200, "cutoff": cut(800), "resonance": 50, "ftype": LP, "lfo1_rate": div("1 bar"), "lfo2_rate": div("1/8")},
      S("breakbeat_140.wav", boost=7, voices=1, lfo1_shape=TRI, lfo1_sync=TEMPO, m_lfo1_cutoff=50,
        lfo2_shape=SQUARE_LFO, lfo2_sync=TEMPO, m_lfo2_level=-30)),
 
     # voices
     ("voice_choir", "Voice Granular Choir",
      {"scan": 20, "size": 250, "density": 40, "pitch_spray": 7, "quantize": 100, "chaos": 50, "spread": 100,
-      "attack": 300, "release": 3000, "cutoff": 4000},
+      "attack": 300, "release": 3000, "cutoff": cut(4000)},
      S("spoken_word.wav", boost=3, scale=MINOR, key=9)),
     ("voice_robot", "Voice Robot",
-     {"scan": 100, "size": 30, "density": 60, "shape": SQUARE, "release": 300, "cutoff": 1500,
+     {"scan": 100, "size": 30, "density": 60, "shape": SQUARE, "release": 300, "cutoff": cut(1500),
       "resonance": 50, "ftype": BP},
      S("spoken_word.wav", boost=4)),
     ("whisper_texture", "Whisper Texture",
      {"scan": 5, "spray": 80, "size": 300, "density": 50, "chaos": 100, "reverse": 50, "spread": 100,
-      "attack": 1500, "release": 5000, "cutoff": 400, "ftype": HP},
+      "attack": 1500, "release": 5000, "cutoff": cut(400), "ftype": HP},
      S("whisper.wav", boost=12)),
     ("whisper_pulse", "Whisper Pulse",
      {"scan": 40, "size": 80, "density": 20, "shape": BELL, "spray": 20, "spread": 60, "release": 800,

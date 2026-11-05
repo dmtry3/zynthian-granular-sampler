@@ -413,7 +413,7 @@ static void read_params(Sampler* S) {
   p->pitch_spray = ctl(S, P_PSPRAY, 0.0f);
   p->reverse     = ctl(S, P_REVERSE, 0.0f) * 0.01f;
   p->quantize    = ctl(S, P_QUANTIZE, 0.0f) * 0.01f;
-  p->cutoff_hz   = ctl(S, P_CUTOFF, GC_CUTOFF_MAX);
+  p->cutoff_hz   = gc_cutoff_hz(ctl(S, P_CUTOFF, GC_CUTOFF_UNITS));   /* knob units -> Hz */
   p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
   p->ftype       = gc_ftype((int)lrintf(ctl(S, P_FTYPE, 0.0f)), S->ip[IP_FILTER_SLOPE]);
   p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;

@@ -37,6 +37,7 @@
 #define GC_NSCALES     12      /* see gc_scale_names in grain_core.c */
 #define GC_CUTOFF_MIN  20.0f   /* Hz */
 #define GC_CUTOFF_MAX  20000.0f
+#define GC_CUTOFF_UNITS 100.0f /* the Cutoff knob: 0..100, hz = 20 * 1000^(u / 100), a tenth of an octave per step */
 #define GC_FILTER_SMOOTH 0.01f /* s: cutoff glides to the knob (no zipper steps) */
 #define GC_VOWEL_AIR   0.5f    /* Vowel Highs default: -6 dB of the input above 6 kHz */
 #define GC_VOWEL_LOW   0.25f   /* Vowel Lows default: -12 dB below 200 Hz, cut more than the top (as in other formant filters) */
@@ -268,7 +269,9 @@ float gc_rate_hz(float units);
 int gc_rate_div(float units);
 float gc_hz_rate(float hz);                                      /* inverse of gc_rate_hz */
 int gc_ftype(int knob, int slope24);                             /* Type knob + slope -> GC_LP .. GC_BP24 */
-float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U, from the knob */
+float gc_cutoff_hz(float units);                                 /* Cutoff knob units -> Hz */
+float gc_hz_cutoff(float hz);                                    /* and back */
+float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U, evenly on the knob */
 float gc_comb_fb(float resonance);                               /* Comb filter feedback */
 void gc_set_env(GrainCore* g, int i, float shape);
 float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */

@@ -65,7 +65,7 @@ static void work_all(void) {
  * attack release spread level | cutoff resonance ftype keytrack | lfo1 lfo2 rates, env1 env2 times */
 #define NCTL 24
 enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15, C_CUTOFF = 16, C_FTYPE = 18 };
-static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 20000, 0, 0, 0,
+static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 100, 0, 0, 0,
                             61, 42, 1, 2 };
 static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8], detected, peak = 1;
 enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
@@ -401,7 +401,7 @@ int main(int argc, char** argv) {
   for (int k = 0; k < 20; k++) run_once();
   float open_peak = 0;
   for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) open_peak = fmaxf(open_peak, fabsf(out_l[i])); }
-  ctls[C_FTYPE] = 1; ctls[C_CUTOFF] = 20000;
+  ctls[C_FTYPE] = 1; ctls[C_CUTOFF] = 100;   /* HP at the top: 20 kHz */
   for (int k = 0; k < 20; k++) run_once();                        /* the cutoff glides there */
   float hp_peak = 0;
   for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) hp_peak = fmaxf(hp_peak, fabsf(out_l[i])); }

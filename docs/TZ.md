@@ -38,7 +38,7 @@ MIDI: ноты, Mod Wheel (CC 1), педаль сустейна (CC 64) и Pitch
 | 2. Зерно | Size | Density | Shape (форма окна) | Chaos |
 | 3. Высота | Pitch | Pitch Spray | Reverse (вероятность) | Quantize (притяжение к ладу) |
 | 4. Голос | Attack | Release | Stereo Spread | Level |
-| 5. Фильтр | Cutoff | Resonance | Type (LP, HP, BP, Notch, Comb, Vowel) | Key Track |
+| 5. Фильтр | Cutoff (0–100: 20 Гц · 1000^(u/100), герцы на вкладке Filter) | Resonance | Type (LP, HP, BP, Notch, Comb, Vowel) | Key Track |
 | 6. Модуляция | LFO 1 Rate | LFO 2 Rate | Env 1 Time | Env 2 Time |
 
 ## Виджет

@@ -125,7 +125,7 @@ class Processor:
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
-                                 "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
+                                 "cutoff": NumCtrl("cutoff", 100.0), "resonance": NumCtrl("resonance", 0.0),
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
                        ("lfo1_rate", 61), ("lfo2_rate", 42), ("lfo1_uni", 0), ("lfo2_uni", 0),
@@ -610,6 +610,10 @@ def main():
 
     # Filter tab
     import math
+    U = lambda hz: 100.0 * math.log(hz / 20.0) / math.log(1000.0)   # Hz -> Cutoff knob units
+    check("Cutoff knob: 0 = 20 Hz, 50 = 632 Hz, 100 = 20 kHz, one step a tenth of an octave",
+          abs(mod.cutoff_hz(0) - 20) < 0.01 and abs(mod.cutoff_hz(50) - 632.5) < 0.5 and
+          abs(mod.cutoff_hz(100) - 20000) < 0.5 and abs(mod.cutoff_hz(1) / mod.cutoff_hz(0) - 2 ** (math.log2(1000) / 100)) < 1e-6)
     x0, x1 = wdg.tab_boxes[3]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
     pump(lambda: False, 0.05)
@@ -629,7 +633,7 @@ def main():
         return wdg.DB_TOP - (y - fy0) / (fy1 - fy0) * (wdg.DB_TOP - wdg.DB_BOTTOM)
     check("Filter tab: open low-pass is a flat line at 0 dB", wdg.tab == 3 and abs(db_at(100)) < 0.5 and
           abs(db_at(10000)) < 0.5)
-    proc.controllers_dict["cutoff"].value = 1000.0
+    proc.controllers_dict["cutoff"].value = U(1000.0)
     pump(lambda: False, 0.05)
     check("LP 1 kHz: 0 dB at 100 Hz, -3 dB at 1 kHz, about -36 at 8 kHz",
           abs(db_at(100)) < 0.5 and abs(db_at(1000) + 3) < 1.0 and -40 < db_at(8000) < -33)
@@ -654,22 +658,21 @@ def main():
     check("python curve = engine: Notch 1k is a deep hole", gdb(1000, 1000, 0, 5) < -60 and abs(gdb(150, 1000, 0, 5)) < 1)
     check("python curve = engine: Comb 500 Hz res 100 %: +18.2 / -18.2 dB",
           abs(gdb(500, 500, 1, 6) - 18.2) < 0.5 and abs(gdb(750, 500, 1, 6) + 18.2) < 0.5)
-    knob_hz = lambda x: 20 + 19980 * (10 ** x - 1) / 9.0      # Zynthian's log knob
-    vow_i = knob_hz(0.5)
+    vow_i = mod.cutoff_hz(50)                                 # the middle of the knob
     check("python curve = engine: Vowel A +9.5 dB at 650 Hz, I +9.5 dB at 290 Hz",
           abs(gdb(650, 20, 0.5, 7) - 9.5) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 9.5) < 0.5)
     check("python curve = engine: Vowel keeps the top (-6 dB at 10 kHz)", -8 < gdb(10000, 20, 0.5, 7) < -4)
     check("python curve = engine: Vowel keeps the bottom, quieter (-12 dB at 60 Hz)", -14 < gdb(60, 20, 0.5, 7) < -10)
     texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
-    for t, fc, want in ((5, 20.0, "Vowel  A"), (5, vow_i, "Vowel  I"), (5, knob_hz(0.625), "Vowel  I-O"),
+    for t, fc, want in ((5, 20.0, "Vowel  A"), (5, vow_i, "Vowel  I"), (5, mod.cutoff_hz(62.5), "Vowel  I-O"),
                         (4, 220.0, "Comb  220 Hz"), (0, 1000.0, "LP 12  1.0 kHz"), (2, 1000.0, "BP 12  1.0 kHz")):
         proc.controllers_dict["ftype"].value = t
-        proc.controllers_dict["cutoff"].value = fc
+        proc.controllers_dict["cutoff"].value = U(fc)
         pump(lambda: False, 0.05)
         check("Filter info: %s" % want, any(x.startswith(want + " ") for x in texts()))
     # LP / HP / BP: 12 | 24 dB switch top left; none on Notch, Comb, Vowel
     proc.controllers_dict["ftype"].value = 0
-    proc.controllers_dict["cutoff"].value = 1000.0
+    proc.controllers_dict["cutoff"].value = U(1000.0)
     proc.controllers_dict["resonance"].value = 0.0
     pump(lambda: False, 0.05)
     fx0, fy0, fx1, fy1 = wdg._filter_layout()
@@ -711,7 +714,7 @@ def main():
     pump(lambda: False, 0.05)
     check("Mix: finger left half the bar = 50 %", abs(proc.v("filter_mix") - 50) <= 1 and "Mix 50 %" in texts())
     proc.controllers_dict["ftype"].value = 3                      # Notch
-    proc.controllers_dict["cutoff"].value = 1000.0
+    proc.controllers_dict["cutoff"].value = U(1000.0)
     proc.controllers_dict["resonance"].value = 0.0               # a wide hole: the nearest curve point is in it
     pump(lambda: False, 0.05)
     check("Mix 50 %: the notch hole is -6 dB on the curve", abs(db_at(1000) + 6.0) < 0.6)
@@ -731,7 +734,7 @@ def main():
     check("no Lows/Highs bars on a Notch", wdg.lows_box is None and wdg.highs_box is None and
           not any(x.startswith("Lows") or x.startswith("Highs") for x in texts()))
     proc.controllers_dict["ftype"].value = 5                      # Vowel
-    proc.controllers_dict["cutoff"].value = 20.0
+    proc.controllers_dict["cutoff"].value = U(20.0)
     pump(lambda: False, 0.05)
     lb, hb, mb = wdg.lows_box, wdg.highs_box, wdg.mix_box
     check("Vowel: Lows top left, Highs under Mix", lb and hb and lb[0] < fx0 + 10 and lb[1] == mb[1] and
@@ -760,7 +763,7 @@ def main():
     nudges0 = sample.nudges
     wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
     check("a tap on the Filter tab does not open the file selector", sample.nudges == nudges0)
-    proc.controllers_dict["cutoff"].value = 20000.0
+    proc.controllers_dict["cutoff"].value = U(20000.0)
     proc.controllers_dict["resonance"].value = 0.0
 
     # Mod tab

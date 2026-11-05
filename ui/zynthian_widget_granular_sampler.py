@@ -215,12 +215,16 @@ VOWEL_AIR_HZ, VOWEL_AIR = 6000.0, 0.5             # the input's top added back: 
 VOWEL_LOW_HZ, VOWEL_LOW = 200.0, 0.25             # and its bottom, quieter (-12 dB): the body
 
 
+def cutoff_hz(u):
+    """Cutoff knob units 0..100 -> Hz: 20 * 1000^(u / 100), a tenth of an octave per step (gc_cutoff_hz)"""
+    return 20.0 * 1000.0 ** (min(max(u, 0.0), 100.0) / 100.0)
+
+
 def vowel_pos(fc):
-    """Vowel filter: 0..4 = A E I O U, evenly over the Cutoff knob's travel in Zynthian
-    (hz = 20 + 19980 (10^x - 1) / 9; gc_vowel_pos)"""
+    """Vowel filter: 0..4 = A E I O U, evenly over the Cutoff knob (gc_vowel_pos)"""
     import math
     fc = min(max(fc, 20.0), 20000.0)
-    return 4.0 * math.log10(9.0 * (fc - 20.0) / 19980.0 + 1.0)
+    return 4.0 * math.log(fc / 20.0) / math.log(1000.0)
 
 
 def filter_gain(f, fc, res, ftype, sr=SR, mix=1.0, lows=None, highs=None):
@@ -1354,7 +1358,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
 
     def _draw_filter(self):
         import math
-        fc = self._zval("cutoff", 20000.0)
+        fc = cutoff_hz(self._zval("cutoff", 100.0))       # the knob is in units
         res = min(max(self._zval("resonance", 0.0) / 100.0, 0.0), 1.0)
         knob = min(max(int(round(self._zval("ftype", 0))), 0), len(FILTER_TYPES) - 1)
         slope = 1 if int(round(self._zval("filter_slope", 0))) else 0

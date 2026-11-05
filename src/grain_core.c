@@ -762,14 +762,16 @@ static const float vowel_bw[GC_NFORM] = { 80, 90, 120, 150, 200 };
 #define GC_VOWEL_LOW_HZ 200.0f    /* and below this (12 dB/oct low-pass): the body, under F1 */
 #define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
-/* Position 0..4 between the vowels A .. U from the Cutoff knob, evenly over its travel. Zynthian turns a
- * logarithmic knob along hz = min + range (10^x - 1) / 9, x = 0..1 in 100 steps (one decade of curve, so the
- * bottom steps are about 50 Hz): A to E in 25 steps, not in one or two as on a log2 scale. */
-float gc_vowel_pos(float fc) {
-  const float x = log10f(9.0f * (clampf(fc, GC_CUTOFF_MIN, GC_CUTOFF_MAX) - GC_CUTOFF_MIN) /
-                         (GC_CUTOFF_MAX - GC_CUTOFF_MIN) + 1.0f);
-  return 4.0f * x;
+/* The Cutoff knob in units 0..100: an even exponential, so every encoder step is a tenth of an octave (Zynthian's
+ * logarithmic Hz knob, hz = min + range (10^x - 1) / 9, steps about 50 Hz at the bottom). */
+float gc_cutoff_hz(float u) {
+  return GC_CUTOFF_MIN * powf(GC_CUTOFF_MAX / GC_CUTOFF_MIN, clampf(u, 0.0f, GC_CUTOFF_UNITS) / GC_CUTOFF_UNITS);
 }
+float gc_hz_cutoff(float hz) {
+  return GC_CUTOFF_UNITS * logf(clampf(hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX) / GC_CUTOFF_MIN) / logf(GC_CUTOFF_MAX / GC_CUTOFF_MIN);
+}
+/* Position 0..4 between the vowels A .. U, evenly over the Cutoff knob: 25 steps per vowel. */
+float gc_vowel_pos(float fc) { return 4.0f * gc_hz_cutoff(fc) / GC_CUTOFF_UNITS; }
 int gc_ftype(int knob, int slope24) {
   static const int t12[GC_NKNOB_TYPES] = { GC_LP, GC_HP, GC_BP, GC_NOTCH, GC_COMB, GC_VOWEL };
   static const int t24[GC_NKNOB_TYPES] = { GC_LP24, GC_HP24, GC_BP24, GC_NOTCH, GC_COMB, GC_VOWEL };
