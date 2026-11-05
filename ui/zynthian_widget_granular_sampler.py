@@ -65,6 +65,9 @@ DOUBLE_TAP = 0.35               # s
 DRAG_PX = 1.5                   # px of finger movement per step (1 %)
 GLIDE_PER_PX = 10               # ms of Glide per px of finger movement
 GLIDE_MAX = 2000
+BEND_PER_PX = 0.125            # semitones of Bend range per px of finger movement
+BEND_MAX = 24
+BEND_DEFAULT = 2
 FILTER_TYPES = ["LP", "HP", "BP"]
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -292,6 +295,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.mod_side = None
         self.drag = None
         self.glide_box = None
+        self.bend_box = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -410,7 +414,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     self._select_page(i)
                     self.refresh_gui()
             return
-        if self.tab == 1 and self._glide_press(event):
+        if self.tab in (1, 2) and self._slider_press(event):
             return
         if self.tab in (1, 2):
             self._button_press(event)
@@ -691,20 +695,26 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         if enabled:
             self.buttons.append((x0, y0, x1, y1, sym, value))
 
-    def _glide_press(self, event):
-        b = getattr(self, "glide_box", None)
-        if not b or not (b[0] <= event.x <= b[2] and b[1] <= event.y <= b[3]):
-            return False
-        now = time.monotonic()
-        if self.last_tap[0] == "glide" and now - self.last_tap[1] < DOUBLE_TAP:
-            self._zset("glide", 0)                        # double tap: off
-            self.last_tap = (None, 0.0)
-            self.drag = None
-            self.refresh_gui()
+    def _slider_press(self, event):
+        """Glide (Grain tab) and Bend range (Pitch tab): finger up/down, double tap back to the default."""
+        for box, sym, hi, per_px, dflt in ((self.glide_box if self.tab == 1 else None, "glide", GLIDE_MAX,
+                                            GLIDE_PER_PX, 0),
+                                           (self.bend_box if self.tab == 2 else None, "bend_range", BEND_MAX,
+                                            BEND_PER_PX, BEND_DEFAULT)):
+            if not box or not (box[0] <= event.x <= box[2] and box[1] <= event.y <= box[3]):
+                continue
+            now = time.monotonic()
+            if self.last_tap[0] == sym and now - self.last_tap[1] < DOUBLE_TAP:
+                self._zset(sym, dflt)
+                self.last_tap = (None, 0.0)
+                self.drag = None
+                self.pitch_view = None
+                self.refresh_gui()
+                return True
+            self.last_tap = (sym, now)
+            self.drag = (sym, int(round(self._zval(sym, dflt))), event.y, 0, hi, per_px)
             return True
-        self.last_tap = ("glide", now)
-        self.drag = ("glide", int(round(self._zval("glide", 0))), event.y, 0, GLIDE_MAX, GLIDE_PER_PX)
-        return True
+        return False
 
     def _button_press(self, event):
         for x0, y0, x1, y1, sym, value in self.buttons:
@@ -984,11 +994,16 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                       font=(fam, fs), tags="filter")
 
     # ---------- Pitch tab ----------
+    PITCH_ROWS = 4    # below the keys: 3 rows of scale buttons, then Bend range and the info
+
     def _pitch_layout(self):
+        """Keys on top; their height is what the button rows below leave (at most 38 %)."""
         w, h = max(self.width, 80), max(self.height, 60)
-        pad = 8
-        top = self._header_h() + 6
-        kb = (pad, top, w - pad, top + int((h - top) * 0.38))
+        pad = 4
+        top = self._header_h() + 4
+        rows_h = self.PITCH_ROWS * (self._button_h() + 4) + self._font_size() // 2
+        kh = min(int((h - top) * 0.38), h - pad - top - rows_h)
+        kb = (pad, top, w - pad, top + max(kh, 12))
         return w, h, pad, kb
 
     def _draw_pitch(self):
@@ -997,7 +1012,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         quant = self._zval("quantize", 0.0)
         pitch = self._zval("pitch", 0.0)
         spray = self._zval("pitch_spray", 0.0)
-        view = (scale, key, round(quant), round(pitch, 1), round(spray, 1), self.width, self.height)
+        bend = int(round(self._zval("bend_range", BEND_DEFAULT)))
+        view = (scale, key, round(quant), round(pitch, 1), round(spray, 1), bend, self.width, self.height)
         c = self.widget_canvas
         w, h, pad, (kx0, ky0, kx1, ky1) = self._pitch_layout()
         kw = (kx1 - kx0) / 12.0
@@ -1026,16 +1042,32 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self.buttons.append((x0 + 1, ky0, x0 + kw - 2, ky1, "key", pc))
             # scale buttons: 3 rows of 4
             bh = self._button_h()
-            y = ky1 + fs
+            y = ky1 + fs // 2 + 4
             cols = 4
             bw = (w - 2 * pad) / float(cols)
             for i, (name, _) in enumerate(SCALES):
                 bx = pad + (i % cols) * bw
                 by = y + (i // cols) * (bh + 4)
                 self._button(bx, by, bx + bw - 4, by + bh, name, i == scale, True, "scale", i, tag="pitch")
-            info = "%s %s   Quantize %d %%   Pitch %+.1f   Spray %.1f" % (
-                NOTE_NAMES[key], SCALES[scale][0], round(quant), pitch, spray)
-            c.create_text(pad, h - 3, anchor="sw", text=info, fill=zynthian_gui_config.color_tx_off,
+            # Pitch Bend range: finger up/down, double tap back to +-2
+            rows = (len(SCALES) + cols - 1) // cols
+            by = y + rows * (bh + 4)
+            bx0, bx1 = pad, pad + 2 * bw - 4
+            self.bend_box = (bx0, by, bx1, by + bh)
+            c.create_rectangle(bx0, by, bx1, by + bh, fill=BUTTON_OFF, outline="#505050", tags="pitch")
+            if bend > 0:
+                c.create_rectangle(bx0 + 1, by + 1, bx0 + 1 + bend / float(BEND_MAX) * (bx1 - bx0 - 2), by + bh - 1,
+                                   fill="#2d6c99", width=0, tags="pitch")
+            c.create_text(bx0 + 6, by + bh / 2, anchor="w", tags="pitch", font=(fam, fs),
+                          fill=zynthian_gui_config.color_tx,
+                          text=("Bend \u00b1%d" % bend) if bend else "Bend off")
+            info = "Quantize %d %%   Pitch %+.1f   Spray %.1f" % (round(quant), pitch, spray)
+            try:                                       # narrow screen: the short form
+                if tkinter.font.Font(family=fam, size=fs).measure(info) > w - pad - bx1 - 8:
+                    info = "Q %d%%  P %+.1f  S %.1f" % (round(quant), pitch, spray)
+            except Exception:
+                pass
+            c.create_text(bx1 + 8, by + bh / 2, anchor="w", text=info, fill=zynthian_gui_config.color_tx_off,
                           font=(fam, fs), tags="pitch")
         # sounding notes: dots on their keys, redrawn only when they change
         notes = set()

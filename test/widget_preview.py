@@ -116,6 +116,7 @@ class Processor:
                                  "shape": NumCtrl("shape", 67.0), "size": NumCtrl("size", 100.0),
                                  "density": NumCtrl("density", 20.0),
                                  "voices": NumCtrl("voices", 8), "glide": NumCtrl("glide", 0),
+                                 "bend_range": NumCtrl("bend_range", 2),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
@@ -476,6 +477,22 @@ def main():
     check("a note change redraws only the dots", c.find_withtag("pitch") == statics and
           len(c.find_withtag("pnotes")) == 1)
     proc.engine.notes = []
+    # Bend range: below the scale buttons, finger up = wider, double tap = back to 2
+    bb = wdg.bend_box
+    check("Pitch tab: Bend range box below the scale buttons", bb is not None and
+          bb[1] > max(b[3] for b in wdg.buttons if b[4] == "scale") and bb[3] < wdg.height)
+    wdg._on_press(Tap((bb[0] + bb[2]) // 2, (bb[1] + bb[3]) // 2))
+    wdg._on_motion(Tap((bb[0] + bb[2]) // 2, (bb[1] + bb[3]) // 2 - 80))
+    wdg._on_release(None)
+    check("drag up on Bend: range 12", proc.v("bend_range") == 12)
+    pump(lambda: False, 0.05)
+    check("Bend label shows the range", any(c.itemcget(i, "text") == "Bend \u00b112"
+                                           for i in c.find_withtag("pitch") if c.type(i) == "text"))
+    wdg.last_tap = (None, 0.0)
+    for _ in range(2):
+        wdg._on_press(Tap((bb[0] + bb[2]) // 2, (bb[1] + bb[3]) // 2))
+        wdg._on_release(None)
+    check("double tap on Bend: back to 2", proc.v("bend_range") == 2)
 
     # Filter tab
     import math
@@ -676,6 +693,17 @@ def main():
         first_cell = wdg.mod_items[(0, 0)][0]
         check("%s Mod: row labels clear of the grid" % geo,
               all(c.bbox(r)[2] <= c.bbox(first_cell)[0] + 1 for r in rows))
+        x0, x1 = wdg.tab_boxes[2]
+        wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+        pump(lambda: False, 0.05)
+        items = c.find_withtag("pitch")
+        bottom = max(c.bbox(i)[3] for i in items)
+        right = max(c.bbox(i)[2] for i in items)
+        check("%s Pitch: everything inside the widget (bottom %d of %d, right %d of %d)" %
+              (geo, bottom, wdg.height, right, wdg.width), bottom <= wdg.height and right <= wdg.width)
+        texts = [i for i in items if c.type(i) == "text"]
+        check("%s Pitch: no overlapping text" % geo,
+              not any(overlap(c.bbox(a_), c.bbox(b_)) for k, a_ in enumerate(texts) for b_ in texts[k + 1:]))
     root.geometry("480x300")
     pump(lambda: False, 0.2)
 

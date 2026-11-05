@@ -518,6 +518,89 @@ static void test_mono_retrigger(void) {
   free_src(&s);
 }
 
+/* Sustain pedal: released keys go on until the pedal is up; a key struck again restarts its voice */
+static void test_sustain(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 64, 100); run(&p, 0.05, NULL);
+  gc_set_sustain(&G, 1);
+  gc_note_off(&G, 60); gc_note_off(&G, 64);
+  run(&p, 0.5, NULL);
+  CHECK(gc_active_voices(&G) == 2 && G.voices[0].stage == GC_V_SUSTAIN && G.voices[1].stage == GC_V_SUSTAIN);
+  CHECK(!G.voices[0].gate && G.voices[0].sus);
+  gc_note_on(&G, &p, 60, 100);                      /* struck again under the pedal: its own voice, held */
+  CHECK(gc_active_voices(&G) == 2 && G.voices[0].gate && !G.voices[0].sus);
+  gc_note_on(&G, &p, 67, 100);                      /* a new key under the pedal: held as usual */
+  gc_set_sustain(&G, 0);                            /* pedal up: only the keys let go are released */
+  CHECK(G.voices[0].gate && G.voices[0].stage != GC_V_RELEASE && G.voices[1].stage == GC_V_RELEASE &&
+        G.voices[2].gate);
+  gc_note_off(&G, 60);
+  CHECK(G.voices[0].stage == GC_V_RELEASE);
+  gc_note_off(&G, 67);
+  run(&p, 1.0, NULL);
+  CHECK(gc_active_voices(&G) == 0);
+  /* a key let go before the pedal is pressed is not caught */
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  gc_note_off(&G, 60); gc_set_sustain(&G, 1);
+  CHECK(G.voices[0].stage == GC_V_RELEASE);
+  gc_set_sustain(&G, 0);
+  run(&p, 1.0, NULL);
+  /* stolen voice: the waiting note was let go under the pedal, it sustains when it starts */
+  gc_set_voices(&G, 1, 0);                          /* mono without legato */
+  gc_set_sustain(&G, 1);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.05, NULL);
+  gc_note_off(&G, 60);
+  run(&p, 0.3, NULL);
+  CHECK(G.voices[0].stage == GC_V_SUSTAIN && G.voices[0].sus);
+  gc_set_voices(&G, 1, 1);                          /* legato: a key under the pedal glides on */
+  const uint32_t age = G.voices[0].age;
+  gc_note_on(&G, &p, 64, 100);
+  CHECK(G.voices[0].age == age && G.voices[0].note == 64);
+  gc_note_off(&G, 64);
+  CHECK(G.voices[0].sus && G.voices[0].stage == GC_V_SUSTAIN);
+  gc_all_notes_off(&G);                             /* CC 123 releases them even with the pedal down */
+  CHECK(G.voices[0].stage == GC_V_RELEASE && !G.voices[0].sus);
+  free_src(&s);
+}
+
+/* Pitch Bend: new grains and the ones already sounding read faster or slower; back to 0, as before */
+static void test_bend(void) {
+  GcParams p = poly_params();
+  p.size_ms = 500; p.density = 20;
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 100); run(&p, 0.1, NULL);
+  const int n0 = G.nactive;
+  CHECK(n0 > 0);
+  gc_set_bend(&G, 2.0f);
+  int ok = 1;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active && fabsf(G.grains[i].inc - exp2f(2.0f / 12.0f)) > 1e-4f) ok = 0;
+  CHECK(ok);                                        /* the sounding grains follow at once */
+  run(&p, 0.2, NULL);
+  ok = 1;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active && fabsf(G.grains[i].inc - exp2f(2.0f / 12.0f)) > 1e-4f) ok = 0;
+  CHECK(ok);                                        /* and the new ones */
+  gc_set_bend(&G, -99.0f);
+  CHECK(G.bend == -GC_BEND_MAX);
+  gc_set_bend(&G, 0.0f);
+  ok = 1;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active && G.grains[i].inc != 1.0f) ok = 0;
+  CHECK(ok && G.bend_ratio == 1.0f);
+  gc_set_bend(&G, 12.0f);                           /* backwards grains bend the same way */
+  p.reverse = 1.0f; run(&p, 0.2, NULL);
+  int back = 0;
+  for (int i = 0; i < GC_POOL; i++)
+    if (G.grains[i].active && G.grains[i].inc < 0.0f) { back++; CHECK(fabsf(G.grains[i].inc + 2.0f) < 1e-4f); }
+  CHECK(back > 0);                                  /* one level only: an octave up reads 2x */
+  free_src(&s);
+}
+
 /* mono portamento: a new key glides from the sounding pitch in Glide ms */
 static void test_glide(void) {
   GcParams p = poly_params();
@@ -1058,6 +1141,8 @@ int main(void) {
   test_mono();
   test_mono_retrigger();
   test_glide();
+  test_sustain();
+  test_bend();
   test_spread();
   test_pitch();
   test_quantize();

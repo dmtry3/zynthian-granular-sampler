@@ -116,6 +116,8 @@ static void random_event(GcParams* p) {
   else if (r < 93) swap();
   else if (r < 94) gc_all_off(&G);
   else if (r < 95) gc_all_notes_off(&G);
+  else if (r < 97) gc_set_sustain(&G, (int)(rnd() % 2));
+  else if (r < 99) gc_set_bend(&G, edge(-GC_BEND_MAX, GC_BEND_MAX));
   /* else: nothing this time */
 }
 

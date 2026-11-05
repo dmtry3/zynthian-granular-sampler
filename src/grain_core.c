@@ -98,6 +98,7 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   g->rng = seed ? seed : 0x9E3779B9u;
   g->mod_depth = 1.0f;
   g->bpm = 120.0f;
+  g->bend_ratio = 1.0f;
   g->lfo_div[0] = g->lfo_div[1] = 4;       /* 1/4 */
   g->env_shape[0] = g->env_shape[1] = 0.1f;
   for (int i = 0; i < GC_VOICES; i++) {
@@ -318,6 +319,7 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
   voice_set_note(g, v, note);             /* before the stage changes: a fresh voice does not glide */
   v->stage = GC_V_ATTACK;
   v->gate = 1;
+  v->sus = 0;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
   v->playhead = g->src.frames[0] ? window_start(g, p) : 0.0;   /* every note starts reading at Position */
   v->next = 0.0f;                                              /* first grain right away */
@@ -327,7 +329,30 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
 
 static void voice_release(GcVoice* v) {
   v->gate = 0;
+  v->sus = 0;
   if (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN) v->stage = GC_V_RELEASE;
+}
+
+/* The key is let go: release, or with the sustain pedal down keep sounding until the pedal is up. */
+static void voice_key_up(GrainCore* g, GcVoice* v) {
+  if (g->sustain && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) { v->gate = 0; v->sus = 1; }
+  else voice_release(v);
+}
+
+void gc_set_sustain(GrainCore* g, int down) {
+  g->sustain = down != 0;
+  if (g->sustain) return;
+  for (int i = 0; i < GC_VOICES; i++)
+    if (g->voices[i].sus) voice_release(&g->voices[i]);
+}
+
+void gc_set_bend(GrainCore* g, float semis) {
+  g->bend = clampf(semis, -GC_BEND_MAX, GC_BEND_MAX);
+  const float r = exp2f(g->bend / 12.0f);
+  if (r == g->bend_ratio) return;
+  g->bend_ratio = r;
+  for (int i = 0; i < GC_POOL; i++)          /* sounding grains bend too, not only new ones */
+    if (g->grains[i].active) g->grains[i].inc = g->grains[i].inc0 * r;
 }
 
 /* Poly: the voice to steal: the quietest one in release, else the oldest. */
@@ -353,7 +378,7 @@ void gc_note_on(GrainCore* g, const GcParams* p, int note, int vel) {
     if (g->nheld == GC_HELD) { memmove(g->held, g->held + 1, sizeof(int) * (GC_HELD - 1)); g->nheld--; }
     g->held[g->nheld++] = note;
     GcVoice* v = &g->voices[0];
-    if (g->legato && v->gate && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
+    if (g->legato && (v->gate || v->sus) && (v->stage == GC_V_ATTACK || v->stage == GC_V_SUSTAIN)) {
       voice_set_note(g, v, note);         /* legato: new pitch for new grains, envelope and playhead go on */
       return;
     }
@@ -387,13 +412,13 @@ void gc_note_off(GrainCore* g, int note) {
     if (g->nheld > 0) {
       voice_set_note(g, v, g->held[g->nheld - 1]);   /* back to the key still held */
       if (!g->legato) v->restart = 1;     /* without legato it starts again (gc_process knows Position) */
-    } else voice_release(v);
+    } else voice_key_up(g, v);
     return;
   }
   for (int i = 0; i < GC_VOICES; i++) {
     GcVoice* v = &g->voices[i];
     if (v->stage == GC_V_STEAL && v->pending_note == note) v->pending_off = 1;
-    else if (v->note == note && v->gate) voice_release(v);
+    else if (v->note == note && v->gate) voice_key_up(g, v);
   }
 }
 
@@ -409,7 +434,7 @@ void gc_all_off(GrainCore* g) {
   g->nheld = 0;
   for (int i = 0; i < GC_VOICES; i++) {
     GcVoice* v = &g->voices[i];
-    v->stage = GC_V_IDLE; v->gate = 0; v->note = -1; v->env = 0.0f;
+    v->stage = GC_V_IDLE; v->gate = 0; v->sus = 0; v->note = -1; v->env = 0.0f;
   }
   for (int i = 0; i < GC_POOL; i++) g->grains[i].active = 0;
   g->nactive = 0;
@@ -498,7 +523,8 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   gr->frames = frames;
   gr->idx = (int64_t)start;
   gr->frac = (float)(start - (double)gr->idx);
-  gr->inc = inc;
+  gr->inc0 = inc;
+  gr->inc = inc * g->bend_ratio;
   gr->win = g->win[shape];
   gr->wph = 0.0f;
   gr->wstep = (float)GC_WIN / (float)len;
@@ -759,7 +785,7 @@ void gc_process(GrainCore* g, const GcParams* p, float* out_l, float* out_r, uin
       if (v->stage == GC_V_STEAL) {               /* stolen: the waiting note starts from silence */
         v->env = 0.0f;
         voice_start(g, p, vi, v->pending_note, v->pending_vel);
-        if (v->pending_off) voice_release(v);
+        if (v->pending_off) voice_key_up(g, v);
       } else {
         v->stage = GC_V_IDLE; v->note = -1; v->gate = 0; v->env = 0.0f;
       }

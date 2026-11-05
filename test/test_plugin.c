@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 77);                                      /* the path and the 76 integer parameters */
+  CHECK(last_reports == 78);                                      /* the path and the 77 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -304,6 +304,7 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#glide", -1) == 2000);       /* clamped */
   CHECK(reported_int("urn:granularsampler:sampler#lfo1_sync", -1) == 2);      /* Tempo */
   CHECK(reported_int("urn:granularsampler:sampler#lfo2_div", -1) == 10);      /* 1/32 at most */
+  CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 2);     /* default +-2 semitones */
   in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -316,7 +317,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 77);                                               /* sample + 76 integer parameters */
+  CHECK(nst == 78);                                               /* sample + 77 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
@@ -397,6 +398,24 @@ int main(int argc, char** argv) {
   in_midi(0, 0x80, 60, 0);
   for (int k = 0; k < 100; k++) run_once();                       /* 100 ms grains finish */
   CHECK(playhead == -1.0f && grains[0] == -1.0f);
+  /* sustain pedal: the key let go keeps sounding until the pedal is up */
+  in_midi(0, 0xB0, 64, 127); in_midi(0, 0x90, 62, 100); run_once(); run_once();
+  in_midi(0, 0x80, 62, 0);
+  for (int k = 0; k < 100; k++) run_once();
+  seen = 0;
+  for (int i = 0; i < 8; i++) if (notes[i] == 62.0f) seen++;
+  CHECK(seen == 1);
+  in_midi(0, 0xB0, 64, 0);
+  for (int k = 0; k < 200; k++) run_once();                       /* release 50 ms, grains 100 ms */
+  seen = 0;
+  for (int i = 0; i < 8; i++) if (notes[i] == 62.0f) seen++;
+  CHECK(seen == 0);
+  /* pitch bend: full up, full down, centre; and the range parameter */
+  in_midi(0, 0x90, 60, 100); in_midi(0, 0xE0, 0x7F, 0x7F); run_once(); run_once();
+  in_midi(0, 0xE0, 0, 0); in_set_float("urn:granularsampler:sampler#bend_range", 12.0f); run_once();
+  in_midi(0, 0xE0, 0, 0x40); in_get(); collect();
+  CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 12);
+  in_midi(0, 0x80, 60, 0); in_midi(0, 0xB0, 120, 0); run_once();
   /* a new sample while playing: no stale pointers (ASan) */
   in_midi(0, 0x90, 60, 127); run_once();
   in_set_path("mono.wav"); run_once(); work_all();

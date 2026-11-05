@@ -43,15 +43,16 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_LFO1_DIV, IP_LFO2_DIV, IP_BEND_RANGE, IP_CELL0, N_IPARAMS = IP_CELL0 + GC_NSRC * GC_NDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "lfo1_div", "lfo2_div", "bend_range" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
   { GC_SYNC_FREE, 0, GC_SYNC_TEMPO }, { GC_SYNC_FREE, 0, GC_SYNC_TEMPO },
-  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 } };
+  { 10, 0, 100 }, { 50, 0, 100 }, { 100, 0, 100 }, { 0, 0, 2000 }, { 4, 0, GC_NDIVS - 1 }, { 4, 0, GC_NDIVS - 1 },
+  { 2, 0, (int)GC_BEND_MAX } };
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const dst_names[GC_NDST] = { "position", "scan", "spray", "size", "density", "pitch",
   "pan", "level", "cutoff" };
@@ -103,6 +104,7 @@ typedef struct {
   LV2_URID ip_urid[N_IPARAMS];
   LV2_URID p_mode_legacy;      /* "mode" of older versions: Mono (1) is restored as legato (0) */
   int ip[N_IPARAMS];
+  float bend;                  /* Pitch Bend wheel -1..1 (the range is a parameter) */
   double sr;
   float level;                 /* last applied level, ramped to the port value over a block */
   GcParams params;
@@ -309,6 +311,7 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_GLIDE: gc_set_glide(&S->core, (float)ip[IP_GLIDE]); break;
     case IP_LFO1_DIV: gc_set_lfo_div(&S->core, 0, ip[IP_LFO1_DIV]); break;
     case IP_LFO2_DIV: gc_set_lfo_div(&S->core, 1, ip[IP_LFO2_DIV]); break;
+    case IP_BEND_RANGE: gc_set_bend(&S->core, S->bend * (float)ip[IP_BEND_RANGE]); break;
     default: {
       const int c = i - IP_CELL0;
       gc_set_mod_cell(&S->core, c / GC_NDST, c % GC_NDST, ip[i] * 0.01f);
@@ -419,6 +422,12 @@ static void handle_midi(Sampler* S, const LV2_Atom_Event* ev) {
   else if (type == 0xB0 && b[1] == 120) gc_all_off(&S->core);                       /* All Sound Off */
   else if (type == 0xB0 && b[1] == 1) gc_set_modwheel(&S->core, b[2] / 127.0f);      /* Mod Wheel */
   else if (type == 0xB0 && b[1] == 123) gc_all_notes_off(&S->core);               /* All Notes Off */
+  else if (type == 0xB0 && b[1] == 64) gc_set_sustain(&S->core, b[2] >= 64);       /* Sustain pedal */
+  else if (type == 0xE0) {                                                         /* Pitch Bend, 14 bit */
+    const int v = ((b[2] & 0x7F) << 7 | (b[1] & 0x7F)) - 8192;
+    S->bend = v < 0 ? (float)v / 8192.0f : (float)v / 8191.0f;
+    gc_set_bend(&S->core, S->bend * (float)S->ip[IP_BEND_RANGE]);
+  }
 }
 
 static void render(Sampler* S, uint32_t from, uint32_t to) {

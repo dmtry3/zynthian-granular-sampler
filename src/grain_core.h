@@ -33,6 +33,7 @@
 #define GC_RELEASE_MAX 20000.0f
 #define GC_PITCH_MAX   24.0f   /* semitones, both ways */
 #define GC_PSPRAY_MAX  24.0f   /* semitones */
+#define GC_BEND_MAX    24.0f   /* semitones, both ways (the bend range parameter: 0..24) */
 #define GC_NSCALES     12      /* see gc_scale_names in grain_core.c */
 #define GC_CUTOFF_MIN  20.0f   /* Hz */
 #define GC_CUTOFF_MAX  20000.0f
@@ -108,7 +109,8 @@ typedef struct {
   int64_t frames;
   int64_t idx;            /* read position in frames of its level, integer part */
   float frac;             /* and fraction */
-  float inc;              /* read step per output sample (pitch, file rate, level) */
+  float inc;              /* read step per output sample (pitch, file rate, level), times Pitch Bend */
+  float inc0;             /* the step without Pitch Bend: bend moves sounding grains too */
   float wph, wstep;       /* window phase in table samples */
   const float* win;       /* window table */
   float gl, gr;           /* left and right gain: loudness, velocity, pan */
@@ -122,6 +124,7 @@ typedef struct {
   int stage;              /* GC_V_*: grains are born in attack, sustain and release */
   int note;               /* -1 = idle */
   int gate;               /* key held */
+  int sus;                /* key let go while the sustain pedal is down: the voice goes on until it is up */
   float vel;              /* 0..1 */
   double playhead;        /* in frames of level 0; double: samples are longer than float can index exactly */
   float next;             /* samples until the next grain */
@@ -176,6 +179,9 @@ typedef struct {
   int mod_list[GC_NSRC * GC_NDST], nmod;   /* non-zero cells: empty ones cost nothing */
   float mod_depth;        /* 0..1: the whole grid */
   float modwheel;         /* CC 1, 0..1 */
+  int sustain;            /* CC 64 pedal down */
+  float bend;             /* Pitch Bend in semitones (the plugin applies the range) */
+  float bend_ratio;       /* 2^(bend/12): read step factor of every grain */
   int lfo_shape[2], lfo_sync[2];           /* GC_SYNC_*: free (voices differ), key (phase 0 per note), tempo */
   int lfo_div[2];                          /* tempo: cycle length, index into gc_div_beats */
   double beat;                             /* tempo clock in beats (song position when the transport rolls) */
@@ -210,6 +216,10 @@ float gc_snap(const GrainCore* g, float semis);
 void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount);   /* -1..1 */
 void gc_set_mod_depth(GrainCore* g, float depth);                     /* 0..1 */
 void gc_set_modwheel(GrainCore* g, float value);                      /* 0..1 */
+/* Sustain pedal (CC 64): while down, released keys keep sounding; up, they go to release. */
+void gc_set_sustain(GrainCore* g, int down);
+/* Pitch Bend in semitones (-GC_BEND_MAX..GC_BEND_MAX): sounding grains follow it at once. */
+void gc_set_bend(GrainCore* g, float semis);
 void gc_set_lfo(GrainCore* g, int i, int shape, int sync);       /* sync: GC_SYNC_* */
 void gc_set_lfo_div(GrainCore* g, int i, int div);               /* 0..GC_NDIVS-1 */
 /* Tempo for synced LFOs; beat >= 0 sets the position (transport rolling), < 0 keeps the clock running. */
