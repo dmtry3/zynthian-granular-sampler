@@ -940,7 +940,8 @@ static void test_filter(void) {
   const double a650 = filter_gain(650, GC_VOWEL, GC_CUTOFF_MIN, 0.5f);
   CHECK(a650 > 4.0 * filter_gain(290, GC_VOWEL, GC_CUTOFF_MIN, 0.5f) &&
         a650 > 4.0 * filter_gain(1500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));
-  CHECK(fabs(db(a650)) < 7.0);                                      /* near unity at a formant (+6 make-up) */
+  CHECK(db(a650) > 6.0 && db(a650) < 10.5);                         /* the formant peak: make-up x3 */
+  CHECK(a650 > 10.0 * filter_gain(850, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));   /* a deep dip between F1 and F2 */
   const double i290 = filter_gain(290, GC_VOWEL, vow_i, 0.5f);
   CHECK(i290 > 4.0 * filter_gain(650, GC_VOWEL, vow_i, 0.5f));
   CHECK(filter_gain(1870, GC_VOWEL, vow_i, 0.5f) > 1.5 * filter_gain(1300, GC_VOWEL, vow_i, 0.5f));   /* 2nd formant */

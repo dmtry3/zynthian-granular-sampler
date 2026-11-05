@@ -749,9 +749,10 @@ static inline float svf_tick(const Svf* c, float* s, float x, float* bp) {
 /* Formants of the vowels A E I O U (Hz) and their levels; bandwidths at Resonance 0.5 */
 static const float vowel_f[5][3] = { { 650, 1080, 2650 }, { 400, 1700, 2600 }, { 290, 1870, 2800 },
                                      { 400, 800, 2600 }, { 350, 600, 2700 } };
-static const float vowel_a[5][3] = { { 1, 0.50f, 0.45f }, { 1, 0.20f, 0.25f }, { 1, 0.18f, 0.13f },
-                                     { 1, 0.32f, 0.25f }, { 1, 0.10f, 0.14f } };
+static const float vowel_a[5][3] = { { 1, 0.70f, 0.50f }, { 1, 0.55f, 0.45f }, { 1, 0.50f, 0.35f },
+                                     { 1, 0.60f, 0.30f }, { 1, 0.40f, 0.25f } };
 static const float vowel_bw[3] = { 80, 90, 120 };
+#define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
 /* Position 0..4 between the vowels A .. U from the cutoff (log, over the whole knob). */
 float gc_vowel_pos(float fc) {
@@ -816,28 +817,33 @@ static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl,
   }
 
   if (type == GC_VOWEL) {
-    /* three band-passes, each normalized to its level at the peak; between two vowels the formants glide */
+    /* three formants, each two equal band-passes in series (24 dB/oct skirts: the dips between the formants
+     * are deep, so the vowel is heard clearly), normalized to the formant level at the peak (1/k each stage);
+     * between two vowels the formants glide */
     const float pos = gc_vowel_pos(fc);
     const int i0 = pos >= 4.0f ? 3 : (int)pos;
     const float t = pos - (float)i0;
-    const float bw = 2.5f - 2.0f * res;        /* x the bandwidths: wide and soft .. narrow and sharp */
+    const float bw = 1.6f - 1.2f * res;        /* x the bandwidths: wide and soft .. narrow and sharp */
     Svf c[3];
     float amp[3];
     for (int f = 0; f < 3; f++) {
       const float ff = fminf(vowel_f[i0][f] + t * (vowel_f[i0 + 1][f] - vowel_f[i0][f]), top);
       const float k = clampf(vowel_bw[f] * bw / ff, 0.02f, 2.0f);
       c[f] = svf_coef(ff, g->sr, k);
-      amp[f] = 2.0f * k * (vowel_a[i0][f] + t * (vowel_a[i0 + 1][f] - vowel_a[i0][f]));   /* x2: make-up */
+      amp[f] = GC_VOWEL_GAIN * k * k * (vowel_a[i0][f] + t * (vowel_a[i0 + 1][f] - vowel_a[i0][f]));
     }
     for (int ch = 0; ch < 2; ch++) {
       float* x = xs[ch];
       float* s = v->fs[ch];
       for (int i = 0; i < m; i++) {
-        float b0, b1, b2;
-        svf_tick(&c[0], s, x[i], &b0);
-        svf_tick(&c[1], s + 2, x[i], &b1);
-        svf_tick(&c[2], s + 4, x[i], &b2);
-        x[i] = amp[0] * b0 + amp[1] * b1 + amp[2] * b2;
+        float y = 0.0f;
+        for (int f = 0; f < 3; f++) {
+          float b1, b2;
+          svf_tick(&c[f], s + 4 * f, x[i], &b1);
+          svf_tick(&c[f], s + 4 * f + 2, b1, &b2);
+          y += amp[f] * b2;
+        }
+        x[i] = y;
       }
     }
     return;

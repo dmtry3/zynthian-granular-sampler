@@ -197,7 +197,8 @@ def mix(rgb, f, bg=(42, 42, 42)):
 
 
 VOWEL_F = [(650, 1080, 2650), (400, 1700, 2600), (290, 1870, 2800), (400, 800, 2600), (350, 600, 2700)]
-VOWEL_A = [(1, 0.50, 0.45), (1, 0.20, 0.25), (1, 0.18, 0.13), (1, 0.32, 0.25), (1, 0.10, 0.14)]
+VOWEL_A = [(1, 0.70, 0.50), (1, 0.55, 0.45), (1, 0.50, 0.35), (1, 0.60, 0.30), (1, 0.40, 0.25)]
+VOWEL_GAIN = 3.0
 VOWEL_BW = (80, 90, 120)
 
 
@@ -229,17 +230,17 @@ def filter_gain(f, fc, res, ftype, sr=SR):
     if ftype == 6:                                # comb: y = x + fb y[n - sr/fc], scaled by sqrt(1 - fb^2)
         fb = 0.3 + 0.67 * res
         return math.sqrt(1.0 - fb * fb) / abs(1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
-    if ftype == 7:                                # three formant band-passes, gliding between the vowels
+    if ftype == 7:                                # three formants, two band-passes each, gliding between the vowels
         pos = vowel_pos(fc)
         i0 = min(int(pos), 3)
         t = pos - i0
-        bw = 2.5 - 2.0 * res
+        bw = 1.6 - 1.2 * res
         h = 0j
         for n in range(3):
             ff = min(VOWEL_F[i0][n] + t * (VOWEL_F[i0 + 1][n] - VOWEL_F[i0][n]), top)
             kk = min(max(VOWEL_BW[n] * bw / ff, 0.02), 2.0)
-            amp = 2.0 * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
-            h += amp * svf(ff, kk)[1]
+            amp = VOWEL_GAIN * kk * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
+            h += amp * svf(ff, kk)[1] ** 2
         return abs(h)
     lo, band, hi = svf(fc, k)
     if ftype == 1:

@@ -654,8 +654,8 @@ def main():
     check("python curve = engine: Comb 500 Hz res 100 %: +18.2 / -18.2 dB",
           abs(gdb(500, 500, 1, 6) - 18.2) < 0.5 and abs(gdb(750, 500, 1, 6) + 18.2) < 0.5)
     vow_i = 20 * 1000 ** 0.5
-    check("python curve = engine: Vowel A +6.1 dB at 650 Hz, I +6.0 dB at 290 Hz",
-          abs(gdb(650, 20, 0.5, 7) - 6.1) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 6.0) < 0.5)
+    check("python curve = engine: Vowel A +9.5 dB at 650 Hz, I +9.5 dB at 290 Hz",
+          abs(gdb(650, 20, 0.5, 7) - 9.5) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 9.5) < 0.5)
     texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
     for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, 20 * 1000 ** 0.625, "Vowel  I-O"),
                         (6, 220.0, "Comb  220 Hz"), (3, 1000.0, "LP24  1.0 kHz")):

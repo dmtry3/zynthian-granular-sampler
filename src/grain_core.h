@@ -154,7 +154,7 @@ typedef struct {
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
   int ftype;              /* the type the state below belongs to; -1 = state to clear first */
-  float fs[2][6];         /* SVF states, left and right: up to three SVFs (Vowel) */
+  float fs[2][12];        /* SVF states, left and right: up to six SVFs (Vowel) */
   float comb_d;           /* comb delay in samples in the last block (0 = none yet) */
   int comb_w;             /* comb write position */
   float comb[2][GC_COMB_LEN];
