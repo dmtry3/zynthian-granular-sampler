@@ -59,12 +59,14 @@ static void measure(int grains, int interp) {
 }
 
 /* 8 voices, a chord, each wanting pool/8 grains: the stage 3 case (8 voices, all grains busy). */
-static void measure_poly(int interp, int filter, int mod) {   /* mod: 0 none, 1 busy grid, 2 full grid */
+static const char* const ftype_names[GC_NFTYPES] = { "LP12", "HP12", "BP", "LP24", "HP24", "Notch", "Comb", "Vowel" };
+/* filter: 0 off, else filter type + 1; mod: 0 none, 1 busy grid, 2 full grid */
+static void measure_poly(int interp, int filter, int mod) {
   static float l[PERIOD], r[PERIOD];
   GcParams p;
   setup(&p, GC_POOL / GC_VOICES);
   p.attack_ms = 5; p.release_ms = 500; p.spread = 0.5f;
-  if (filter) { p.cutoff_hz = 2000.0f; p.resonance = 0.3f; p.keytrack = 0.5f; }   /* filter on in every voice */
+  if (filter) { p.cutoff_hz = 2000.0f; p.resonance = 0.3f; p.keytrack = 0.5f; p.ftype = filter - 1; }   /* in every voice */
   if (mod) {                                /* a busy grid: 8 cells, both kinds of destinations */
     gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_CUTOFF, 0.4f);
     gc_set_mod_cell(&G, GC_SRC_LFO2, GC_DST_PAN, 0.8f);
@@ -98,8 +100,10 @@ static void measure_poly(int interp, int filter, int mod) {   /* mod: 0 none, 1 
     sink += l[k & (PERIOD - 1)];
   }
   const double cpu = cpu_now() - t0;
+  char ft[32] = "";
+  if (filter) snprintf(ft, sizeof ft, " + %s", ftype_names[filter - 1]);
   printf("%-8s %d voices%s%s, pool %d: %5.1f active, %6.2f %% of one core, %6.2f us per period%s\n",
-         interp ? "hermite" : "linear", gc_active_voices(&G), filter ? " + filter" : "", mod == 2 ? " + full grid" : mod ? " + mod" : "", GC_POOL, active / periods, 100.0 * cpu / SECONDS,
+         interp ? "hermite" : "linear", gc_active_voices(&G), ft, mod == 2 ? " + full grid" : mod ? " + mod" : "", GC_POOL, active / periods, 100.0 * cpu / SECONDS,
          1e6 * cpu / periods, sink == 12345.0 ? "!" : "");
   gc_all_off(&G);
   for (int s = 0; s < GC_NSRC; s++) for (int d = 0; d < GC_NDST; d++) gc_set_mod_cell(&G, s, d, 0.0f);
@@ -179,6 +183,7 @@ int main(int argc, char** argv) {
   measure_poly(GC_INTERP_LINEAR, 1, 2);
   measure_poly(GC_INTERP_HERMITE, 1, 1);
   measure_poly(GC_INTERP_HERMITE, 1, 2);
+  for (int t = GC_LP24; t < GC_NFTYPES; t++) measure_poly(GC_INTERP_LINEAR, t + 1, 1);   /* the heavier types */
   if (wav) {
     render(wav, "linear", GC_INTERP_LINEAR, 1);
     render(wav, "hermite", GC_INTERP_HERMITE, 1);

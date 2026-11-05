@@ -99,7 +99,7 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   g->mod_depth = 1.0f;
   g->bpm = 120.0f;
   g->bend_ratio = 1.0f;
-  g->lfo_div[0] = g->lfo_div[1] = 4;       /* 1/4 */
+  g->lfo_div[0] = g->lfo_div[1] = 5;       /* 1/4 */
   g->env_shape[0] = g->env_shape[1] = 0.1f;
   for (int i = 0; i < GC_VOICES; i++) {
     GcVoice* v = &g->voices[i];
@@ -160,19 +160,19 @@ void gc_set_lfo(GrainCore* g, int i, int shape, int sync) {
   g->lfo_sync[i] = sync < GC_SYNC_FREE || sync > GC_SYNC_TEMPO ? GC_SYNC_FREE : sync;
 }
 
-/* Tempo LFO cycle lengths in beats (quarter notes): 4 bars .. 1/32, with triplets */
-const float gc_div_beats[GC_NDIVS] = { 16.0f, 8.0f, 4.0f, 2.0f, 1.0f, 2.0f / 3.0f, 0.5f, 1.0f / 3.0f, 0.25f,
+/* Tempo LFO cycle lengths in beats (quarter notes): 8 bars .. 1/32, with triplets */
+const float gc_div_beats[GC_NDIVS] = { 32.0f, 16.0f, 8.0f, 4.0f, 2.0f, 1.0f, 2.0f / 3.0f, 0.5f, 1.0f / 3.0f, 0.25f,
                                        1.0f / 6.0f, 0.125f };
-const char* const gc_div_names[GC_NDIVS] = { "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T",
+const char* const gc_div_names[GC_NDIVS] = { "8 bars", "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T",
                                              "1/16", "1/16T", "1/32" };
 void gc_set_lfo_div(GrainCore* g, int i, int div) {
-  if (i >= 0 && i <= 1) g->lfo_div[i] = div < 0 || div >= GC_NDIVS ? 4 : div;
+  if (i >= 0 && i <= 1) g->lfo_div[i] = div < 0 || div >= GC_NDIVS ? 5 : div;
 }
 float gc_rate_hz(float u) {
   const float x = (u < 0.0f ? 0.0f : u > GC_RATE_MAX ? GC_RATE_MAX : u) / GC_RATE_MAX;
   return GC_LFO_MIN * powf(GC_LFO_MAX / GC_LFO_MIN, x);
 }
-int gc_rate_div(float u) {                        /* u * 10 / 100: halves exact, rounded to even as in the widget */
+int gc_rate_div(float u) {                        /* u * 11 / 100, rounded as in the widget */
   const float x = u < 0.0f ? 0.0f : u > GC_RATE_MAX ? GC_RATE_MAX : u;
   return (int)lrintf(x * (float)(GC_NDIVS - 1) / GC_RATE_MAX);
 }
@@ -336,7 +336,7 @@ void gc_set_glide(GrainCore* g, float ms) { g->glide_ms = clampf(ms, 0.0f, 10000
 static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int vel) {
   GcVoice* v = &g->voices[vi];
   if (v->stage == GC_V_IDLE) {             /* a fresh voice: filter state empty, cutoff right at the knob */
-    v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
+    v->ftype = -1;
     v->fc_log = filter_target_log(p, (float)note, 0.0f);
     v->filter_on = 0;
     v->level = v->level_prev = 1.0f;
@@ -696,8 +696,45 @@ static void render_grain(GrainCore* g, GcGrain* gr, float* restrict ol, float* r
   if (gr->remain <= 0) { gr->active = 0; g->nactive--; }
 }
 
-/* Voice filter on the sum of its grains: TPT state variable filter (Zavalishin; Simper's form),
- * stable when the cutoff moves. Coefficients once per block, cutoff smoothed in log2 Hz.
+/* One TPT state variable filter (Zavalishin; Simper's form), stable when the cutoff moves. */
+typedef struct { float a1, a2, a3, k; } Svf;
+static Svf svf_coef(float fc, float sr, float k) {
+  const float gg = tanf((float)M_PI * fc / sr);
+  Svf c;
+  c.k = k;
+  c.a1 = 1.0f / (1.0f + gg * (gg + k));
+  c.a2 = gg * c.a1;
+  c.a3 = gg * c.a2;
+  return c;
+}
+/* one sample: returns the low-pass, *bp the band-pass (peak gain 1/k); high = x - k bp - low */
+static inline float svf_tick(const Svf* c, float* s, float x, float* bp) {
+  const float v3 = x - s[1];
+  const float v1 = c->a1 * s[0] + c->a2 * v3;
+  const float v2 = s[1] + c->a2 * s[0] + c->a3 * v3;
+  s[0] = 2.0f * v1 - s[0];
+  s[1] = 2.0f * v2 - s[1];
+  *bp = v1;
+  return v2;
+}
+
+/* Formants of the vowels A E I O U (Hz) and their levels; bandwidths at Resonance 0.5 */
+static const float vowel_f[5][3] = { { 650, 1080, 2650 }, { 400, 1700, 2600 }, { 290, 1870, 2800 },
+                                     { 400, 800, 2600 }, { 350, 600, 2700 } };
+static const float vowel_a[5][3] = { { 1, 0.50f, 0.45f }, { 1, 0.20f, 0.25f }, { 1, 0.18f, 0.13f },
+                                     { 1, 0.32f, 0.25f }, { 1, 0.10f, 0.14f } };
+static const float vowel_bw[3] = { 80, 90, 120 };
+
+/* Position 0..4 between the vowels A .. U from the cutoff (log, over the whole knob). */
+float gc_vowel_pos(float fc) {
+  const float x = (log2f(clampf(fc, GC_CUTOFF_MIN, GC_CUTOFF_MAX)) - log2f(GC_CUTOFF_MIN)) /
+                  (log2f(GC_CUTOFF_MAX) - log2f(GC_CUTOFF_MIN));
+  return 4.0f * x;
+}
+/* Comb feedback from Resonance; the output is scaled by sqrt(1 - fb^2) (noise keeps its loudness) */
+float gc_comb_fb(float res) { return 0.3f + 0.67f * clampf(res, 0.0f, 1.0f); }
+
+/* Voice filter on the sum of its grains. Coefficients once per block, cutoff smoothed in log2 Hz.
  * A low-pass fully open or a high-pass fully closed is bypassed (no cost). */
 static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
   const float target = filter_target_log(p, v->pitch, v->mod[GC_DST_CUTOFF]);
@@ -707,31 +744,109 @@ static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl,
   const float top = 0.45f * g->sr;
   fc = clampf(fc, GC_CUTOFF_MIN, top);
   v->fc_hz = fc;
-  const int type = p->ftype;
+  const int type = p->ftype < 0 || p->ftype >= GC_NFTYPES ? GC_LP : p->ftype;
   const float res = clampf(p->resonance, 0.0f, 1.0f);
-  const int open = (type == GC_LP && fc >= fminf(GC_CUTOFF_MAX * 0.97f, top) && res < 0.01f) ||
-                   (type == GC_HP && fc <= GC_CUTOFF_MIN * 1.05f && res < 0.01f);
-  if (open) { v->filter_on = 0; return; }
-  if (!v->filter_on) {                      /* switching on: start from an empty state */
-    v->ic1[0] = v->ic1[1] = v->ic2[0] = v->ic2[1] = 0.0f;
+  const int lp = type == GC_LP || type == GC_LP24, hp = type == GC_HP || type == GC_HP24;
+  const int open = (lp && fc >= fminf(GC_CUTOFF_MAX * 0.97f, top) && res < 0.01f) ||
+                   (hp && fc <= GC_CUTOFF_MIN * 1.05f && res < 0.01f);
+  if (open) { v->filter_on = 0; v->ftype = -1; return; }
+  if (!v->filter_on || v->ftype != type) {   /* switching on or to another type: start from an empty state */
+    memset(v->fs, 0, sizeof v->fs);
+    if (type == GC_COMB) memset(v->comb, 0, sizeof v->comb);
+    v->comb_d = 0.0f;
+    v->comb_w = 0;
     v->filter_on = 1;
+    v->ftype = type;
   }
-  const float gg = tanf((float)M_PI * fc / g->sr);
-  const float k = 1.4142136f * (1.0f - res) + 0.05f * res;   /* 1/Q: Butterworth .. Q 20 */
-  const float a1 = 1.0f / (1.0f + gg * (gg + k)), a2 = gg * a1, a3 = gg * a2;
-  for (int ch = 0; ch < 2; ch++) {
-    float* x = ch ? br : bl;
-    float s1 = v->ic1[ch], s2 = v->ic2[ch];
-    for (int i = 0; i < m; i++) {
-      const float v0 = x[i];
-      const float v3 = v0 - s2;
-      const float v1 = a1 * s1 + a2 * v3;
-      const float v2 = s2 + a2 * s1 + a3 * v3;
-      s1 = 2.0f * v1 - s1;
-      s2 = 2.0f * v2 - s2;
-      x[i] = type == GC_LP ? v2 : type == GC_HP ? v0 - k * v1 - v2 : v1;
+  const float kr = 1.4142136f * (1.0f - res) + 0.05f * res;   /* 1/Q: Butterworth .. Q 20 */
+  float* const xs[2] = { bl, br };
+
+  if (type == GC_COMB) {
+    /* y = x + fb y[n - D], D = sr / fc, D ramped over the block (no zipper when the cutoff moves) */
+    const float fb = gc_comb_fb(res), norm = sqrtf(1.0f - fb * fb);
+    const float dt = clampf(g->sr / fc, 2.0f, (float)(GC_COMB_LEN - 3));
+    const float d0 = v->comb_d > 0.0f ? v->comb_d : dt, dstep = (dt - d0) / (float)m;
+    const int mask = GC_COMB_LEN - 1;
+    for (int ch = 0; ch < 2; ch++) {
+      float* x = xs[ch];
+      float* buf = v->comb[ch];
+      int w = v->comb_w;
+      for (int i = 0; i < m; i++) {
+        const float d = d0 + dstep * (float)(i + 1);
+        const int di = (int)d;
+        const float fr = d - (float)di;
+        const float y0 = buf[(w - di) & mask], y1 = buf[(w - di - 1) & mask];
+        const float y = x[i] + fb * (y0 + fr * (y1 - y0));
+        buf[w] = y;
+        x[i] = y * norm;
+        w = (w + 1) & mask;
+      }
     }
-    v->ic1[ch] = s1; v->ic2[ch] = s2;
+    v->comb_w = (v->comb_w + m) & mask;
+    v->comb_d = dt;
+    return;
+  }
+
+  if (type == GC_VOWEL) {
+    /* three band-passes, each normalized to its level at the peak; between two vowels the formants glide */
+    const float pos = gc_vowel_pos(fc);
+    const int i0 = pos >= 4.0f ? 3 : (int)pos;
+    const float t = pos - (float)i0;
+    const float bw = 2.5f - 2.0f * res;        /* x the bandwidths: wide and soft .. narrow and sharp */
+    Svf c[3];
+    float amp[3];
+    for (int f = 0; f < 3; f++) {
+      const float ff = fminf(vowel_f[i0][f] + t * (vowel_f[i0 + 1][f] - vowel_f[i0][f]), top);
+      const float k = clampf(vowel_bw[f] * bw / ff, 0.02f, 2.0f);
+      c[f] = svf_coef(ff, g->sr, k);
+      amp[f] = 2.0f * k * (vowel_a[i0][f] + t * (vowel_a[i0 + 1][f] - vowel_a[i0][f]));   /* x2: make-up */
+    }
+    for (int ch = 0; ch < 2; ch++) {
+      float* x = xs[ch];
+      float* s = v->fs[ch];
+      for (int i = 0; i < m; i++) {
+        float b0, b1, b2;
+        svf_tick(&c[0], s, x[i], &b0);
+        svf_tick(&c[1], s + 2, x[i], &b1);
+        svf_tick(&c[2], s + 4, x[i], &b2);
+        x[i] = amp[0] * b0 + amp[1] * b1 + amp[2] * b2;
+      }
+    }
+    return;
+  }
+
+  if (type == GC_LP24 || type == GC_HP24) {
+    /* two Butterworth stages (Q 0.54 and 1.31); Resonance sharpens the second one */
+    const Svf c1 = svf_coef(fc, g->sr, 1.847759f);
+    const Svf c2 = svf_coef(fc, g->sr, 0.765367f * (1.0f - res) + 0.05f * res);
+    for (int ch = 0; ch < 2; ch++) {
+      float* x = xs[ch];
+      float* s = v->fs[ch];
+      for (int i = 0; i < m; i++) {
+        float b;
+        if (type == GC_LP24) {
+          const float l1 = svf_tick(&c1, s, x[i], &b);
+          x[i] = svf_tick(&c2, s + 2, l1, &b);
+        } else {
+          const float l1 = svf_tick(&c1, s, x[i], &b);
+          const float h1 = x[i] - c1.k * b - l1;
+          const float l2 = svf_tick(&c2, s + 2, h1, &b);
+          x[i] = h1 - c2.k * b - l2;
+        }
+      }
+    }
+    return;
+  }
+
+  const Svf c = svf_coef(fc, g->sr, kr);
+  for (int ch = 0; ch < 2; ch++) {
+    float* x = xs[ch];
+    float* s = v->fs[ch];
+    for (int i = 0; i < m; i++) {
+      float b;
+      const float l = svf_tick(&c, s, x[i], &b);
+      x[i] = type == GC_LP ? l : type == GC_HP ? x[i] - kr * b - l : type == GC_BP ? b : x[i] - kr * b;  /* notch */
+    }
   }
 }
 

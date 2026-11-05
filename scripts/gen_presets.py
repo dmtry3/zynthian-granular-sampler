@@ -46,7 +46,7 @@ SAMPLE = {
 # breakbeat_140: 4 bars at 140 BPM; a 1/16 note is 107 ms, 9.33 of them per second
 SIXTEENTH_MS, SIXTEENTHS = 60000.0 / 140 / 4, 140 * 4 / 60.0
 TEMPO = 2
-DIVS = ["4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
+DIVS = ["8 bars", "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
 
 
 def hz(f):
@@ -56,7 +56,7 @@ def hz(f):
 
 def div(name):
     """LFO Rate knob (0..100) for a cycle length in Tempo: gc_rate_div"""
-    return DIVS.index(name) * 10
+    return int(round(DIVS.index(name) * 100.0 / (len(DIVS) - 1)))
 
 
 def S(name, boost=0.0, **params):

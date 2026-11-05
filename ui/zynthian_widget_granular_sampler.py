@@ -25,7 +25,7 @@
 # - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
 #   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
 # - LFO 1/2: a tap changes the shape; the sync button: a tap = Free / Key / Tempo. It shows what the LFO Rate
-#   knob (0..100) means in that mode: Hz in Free/Key, a cycle length (4 bars .. 1/32) in Tempo.
+#   knob (0..100) means in that mode: Hz in Free/Key, a cycle length (8 bars .. 1/32) in Tempo.
 #   Env 1/2 shape and Mod Depth: finger up/down.
 # Tabs and knob pages go together: a tap on a tab selects its knob page (Wave -> Position, Grain, Pitch,
 # Filter, Mod) through Zynthian's control screen; turning to such a page shows its tab.
@@ -64,7 +64,7 @@ MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", 
             ("pitch", "Pitch"), ("pan", "Pan"), ("level", "Lvl"), ("cutoff", "Cut")]
 LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
 LFO_SYNCS = ["Free", "Key", "Tempo"]
-LFO_DIVS = ["4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
+LFO_DIVS = ["8 bars", "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
 LFO_MIN, LFO_MAX = 0.01, 20.0   # Hz at Rate 0 and 100 (GC_LFO_MIN/MAX, gc_rate_hz)
 TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod"]   # knob page (port group) of each tab
 MOD_DSTS_SHORT = ["Pos", "Scn", "Spr", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
@@ -77,7 +77,7 @@ BEND_MAX = 24
 BEND_DEFAULT = 2
 ROOT_PER_PX = 0.125            # semitones of Root per px
 TUNE_PER_PX = 0.5              # cents of Tune per px
-FILTER_TYPES = ["LP", "HP", "BP"]
+FILTER_TYPES = ["LP12", "HP12", "BP", "LP24", "HP24", "Notch", "Comb", "Vowel"]   # 0..2 kept (snapshots)
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -188,19 +188,59 @@ def mix(rgb, f, bg=(42, 42, 42)):
     return "#%02x%02x%02x" % tuple(int(bg[k] + (rgb[k] - bg[k]) * f) for k in range(3))
 
 
+VOWEL_F = [(650, 1080, 2650), (400, 1700, 2600), (290, 1870, 2800), (400, 800, 2600), (350, 600, 2700)]
+VOWEL_A = [(1, 0.50, 0.45), (1, 0.20, 0.25), (1, 0.18, 0.13), (1, 0.32, 0.25), (1, 0.10, 0.14)]
+VOWEL_BW = (80, 90, 120)
+
+
+def vowel_pos(fc):
+    """Vowel filter: 0..4 = A E I O U from the cutoff (gc_vowel_pos)"""
+    import math
+    fc = min(max(fc, 20.0), 20000.0)
+    return 4.0 * math.log(fc / 20.0) / math.log(1000.0)
+
+
 def filter_gain(f, fc, res, ftype, sr=SR):
-    """|H| of the voice filter at f Hz (same k as grain_core.c: 1/Q from Butterworth to Q 20)."""
+    """|H| of the voice filter at f Hz, as grain_core.c computes it: the TPT SVF is the bilinear transform of
+    the analog prototype, so H is the analog formula at w = tan(pi f / sr) / tan(pi fc / sr)."""
+    import cmath
     import math
     top = 0.45 * sr
     fc = min(max(fc, 20.0), top)
+    fw = math.tan(math.pi * min(f, 0.499 * sr) / sr)
+
+    def svf(fcut, k):
+        s = 1j * fw / math.tan(math.pi * fcut / sr)
+        d = s * s + k * s + 1.0
+        return 1.0 / d, s / d, s * s / d          # low, band, high
+
     k = 1.4142136 * (1.0 - res) + 0.05 * res
-    w = math.tan(math.pi * min(f, 0.499 * sr) / sr) / math.tan(math.pi * fc / sr)
-    den = math.sqrt((1.0 - w * w) ** 2 + (k * w) ** 2)
+    if ftype in (3, 4):                           # 24 dB: two Butterworth stages, Resonance on the second
+        a, b = svf(fc, 1.847759), svf(fc, 0.765367 * (1.0 - res) + 0.05 * res)
+        return abs(a[0] * b[0]) if ftype == 3 else abs(a[2] * b[2])
+    if ftype == 6:                                # comb: y = x + fb y[n - sr/fc], scaled by sqrt(1 - fb^2)
+        fb = 0.3 + 0.67 * res
+        return math.sqrt(1.0 - fb * fb) / abs(1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
+    if ftype == 7:                                # three formant band-passes, gliding between the vowels
+        pos = vowel_pos(fc)
+        i0 = min(int(pos), 3)
+        t = pos - i0
+        bw = 2.5 - 2.0 * res
+        h = 0j
+        for n in range(3):
+            ff = min(VOWEL_F[i0][n] + t * (VOWEL_F[i0 + 1][n] - VOWEL_F[i0][n]), top)
+            kk = min(max(VOWEL_BW[n] * bw / ff, 0.02), 2.0)
+            amp = 2.0 * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
+            h += amp * svf(ff, kk)[1]
+        return abs(h)
+    lo, band, hi = svf(fc, k)
     if ftype == 1:
-        return w * w / den
+        return abs(hi)
     if ftype == 2:
-        return w / den
-    return 1.0 / den
+        return abs(band)
+    if ftype == 5:
+        return abs(lo + hi)                       # notch = low + high
+    return abs(lo)
 
 
 def read_peaks(path, npeaks=NPEAKS):
@@ -1204,7 +1244,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         import math
         fc = self._zval("cutoff", 20000.0)
         res = min(max(self._zval("resonance", 0.0) / 100.0, 0.0), 1.0)
-        ftype = min(max(int(round(self._zval("ftype", 0))), 0), 2)
+        ftype = min(max(int(round(self._zval("ftype", 0))), 0), len(FILTER_TYPES) - 1)
         kt = self._zval("keytrack", 0.0)
         view = (round(fc), round(res * 100), ftype, round(kt), self.width, self.height)
         if view == self.filter_view:
@@ -1226,8 +1266,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             c.create_line(x0, y, x1, y, fill=("#404040" if db == 0 else "#262626"), tags="filter")
             c.create_text(x0 - 3, y, anchor="e", text="%+d" % db if db else "0", fill=tx_off,
                           font=(fam, max(7, fs - 2)), tags="filter")
-        open_lp = ftype == 0 and fc >= 20000 * 0.97 and res < 0.01
-        open_hp = ftype == 1 and fc <= 21.0 and res < 0.01
+        open_lp = ftype in (0, 3) and fc >= 20000 * 0.97 and res < 0.01
+        open_hp = ftype in (1, 4) and fc <= 21.0 and res < 0.01
         pts = []
         n = max(64, int(x1 - x0) // 3)
         for i in range(n + 1):
@@ -1235,9 +1275,15 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             g = 1.0 if (open_lp or open_hp) else filter_gain(f, fc, res, ftype)
             pts.extend((self._fx(f, x0, x1), self._dby(20 * math.log10(max(g, 1e-9)), y0, y1)))
         c.create_line(pts, fill=WAVE_COLOR, width=2, tags="filter")
-        xc = self._fx(min(max(fc, 20.0), 20000.0), x0, x1)
-        c.create_line(xc, y0, xc, y1, fill="#5c7a99", dash=(3, 3), tags="filter")
         fct = ("%.1f kHz" % (fc / 1000.0)) if fc >= 1000 else ("%d Hz" % round(fc))
+        if ftype == 7:                                    # Vowel: the cutoff picks the vowel, not a frequency
+            pos = vowel_pos(fc)
+            a = int(min(pos, 3.999))
+            t = pos - a
+            fct = "AEIOU"[a + (t >= 0.5)] if abs(t - 0.5) > 0.2 else "%s-%s" % ("AEIOU"[a], "AEIOU"[a + 1])
+        else:
+            xc = self._fx(min(max(fc, 20.0), 20000.0), x0, x1)
+            c.create_line(xc, y0, xc, y1, fill="#5c7a99", dash=(3, 3), tags="filter")
         info = "%s  %s  Res %d %%  Key %d %%%s" % (FILTER_TYPES[ftype], fct, round(res * 100), round(kt),
                                                  "  (off)" if (open_lp or open_hp) else "")
         c.create_text(x0, max(self.height, 60) - 1, anchor="sw", text=info, fill=tx_off,

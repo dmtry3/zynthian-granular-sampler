@@ -396,7 +396,7 @@ static void read_params(Sampler* S) {
   p->quantize    = ctl(S, P_QUANTIZE, 0.0f) * 0.01f;
   p->cutoff_hz   = ctl(S, P_CUTOFF, GC_CUTOFF_MAX);
   p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
-  p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_BP);
+  p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_NFTYPES - 1);
   p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;
   for (int k = 0; k < 2; k++) {                 /* Rate: Hz in Free/Key, a cycle length in Tempo */
     const float u = ctl(S, P_LFO1_RATE + k, k ? 42.0f : 61.0f);

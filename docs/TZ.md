@@ -26,7 +26,7 @@
 MIDI: ноты, Mod Wheel (CC 1), педаль сустейна (CC 64) и Pitch Bend. Bend меняет высоту и у уже звучащих зёрен,
 иначе на длинных зёрнах он запаздывает. Диапазон Bend: от 0 до ±24 полутонов, по умолчанию ±2.
 
-После смеси зёрен у каждого голоса стоит свой стереофильтр (Low-pass, High-pass, Band-pass) и громкостная огибающая Attack/Release. Громкостная огибающая всегда подключена и в сетку не входит.
+После смеси зёрен у каждого голоса стоит свой стереофильтр (LP и HP 12 и 24 дБ/окт, BP, Notch, Comb, Vowel) и громкостная огибающая Attack/Release. Громкостная огибающая всегда подключена и в сетку не входит.
 
 ## Страницы и крутилки
 
@@ -38,7 +38,7 @@ MIDI: ноты, Mod Wheel (CC 1), педаль сустейна (CC 64) и Pitch
 | 2. Зерно | Size | Density | Shape (форма окна) | Chaos |
 | 3. Высота | Pitch | Pitch Spray | Reverse (вероятность) | Quantize (притяжение к ладу) |
 | 4. Голос | Attack | Release | Stereo Spread | Level |
-| 5. Фильтр | Cutoff | Resonance | Type (LP, HP, BP) | Key Track |
+| 5. Фильтр | Cutoff | Resonance | Type (LP12, HP12, BP, LP24, HP24, Notch, Comb, Vowel) | Key Track |
 | 6. Модуляция | LFO 1 Rate | LFO 2 Rate | Env 1 Time | Env 2 Time |
 
 ## Виджет

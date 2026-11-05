@@ -917,6 +917,36 @@ static void test_filter(void) {
   /* resonance: a peak at the cutoff (Q 20 at 100 %) */
   CHECK(filter_gain(1000, GC_LP, 1000, 1.0f) > 10.0);
   CHECK(filter_gain(1000, GC_LP, 1000, 0.5f) > 1.2);
+  /* 24 dB/octave: -3 dB at the cutoff, about -24 dB an octave past it (12 dB: -12) */
+  CHECK(fabs(db(filter_gain(250, GC_LP24, 1000, 0))) < 0.5);
+  CHECK(fabs(db(filter_gain(1000, GC_LP24, 1000, 0)) + 3.0) < 0.6);
+  CHECK(db(filter_gain(2000, GC_LP24, 1000, 0)) < -21.0 && db(filter_gain(2000, GC_LP, 1000, 0)) > -14.0);
+  CHECK(db(filter_gain(500, GC_HP24, 1000, 0)) < -21.0 && fabs(db(filter_gain(5000, GC_HP24, 1000, 0))) < 0.5);
+  CHECK(filter_gain(1000, GC_LP24, 1000, 1.0f) > 8.0);              /* resonance on the 24 dB too */
+  /* notch: a hole at the cutoff, flat away from it, narrower with Resonance */
+  CHECK(db(filter_gain(1000, GC_NOTCH, 1000, 0)) < -25.0);
+  CHECK(fabs(db(filter_gain(150, GC_NOTCH, 1000, 0))) < 1.0 && fabs(db(filter_gain(7000, GC_NOTCH, 1000, 0))) < 1.0);
+  CHECK(filter_gain(800, GC_NOTCH, 1000, 0.9f) > 2.0 * filter_gain(800, GC_NOTCH, 1000, 0));
+  /* comb at 500 Hz: peaks on its harmonics, dips between them; deeper with Resonance */
+  const double c1 = filter_gain(500, GC_COMB, 500, 1.0f), c2 = filter_gain(1000, GC_COMB, 500, 1.0f);
+  const double cd = filter_gain(750, GC_COMB, 500, 1.0f);
+  CHECK(c1 > 20.0 * cd && c2 > 20.0 * cd);
+  CHECK(filter_gain(500, GC_COMB, 500, 0) < 3.0 * filter_gain(750, GC_COMB, 500, 0));   /* gentle at 0 */
+  CHECK(c1 < 10.0);                                                 /* +20 dB at most */
+  /* vowels: A (cutoff at the bottom) has its first formant at 650 Hz, I (the middle) at 290 Hz */
+  CHECK(fabsf(gc_vowel_pos(GC_CUTOFF_MIN)) < 1e-4f && fabsf(gc_vowel_pos(GC_CUTOFF_MAX) - 4.0f) < 1e-3f);
+  const float vow_i = GC_CUTOFF_MIN * sqrtf(GC_CUTOFF_MAX / GC_CUTOFF_MIN);
+  CHECK(fabsf(gc_vowel_pos(vow_i) - 2.0f) < 1e-3f);
+  const double a650 = filter_gain(650, GC_VOWEL, GC_CUTOFF_MIN, 0.5f);
+  CHECK(a650 > 4.0 * filter_gain(290, GC_VOWEL, GC_CUTOFF_MIN, 0.5f) &&
+        a650 > 4.0 * filter_gain(1500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));
+  CHECK(fabs(db(a650)) < 7.0);                                      /* near unity at a formant (+6 make-up) */
+  const double i290 = filter_gain(290, GC_VOWEL, vow_i, 0.5f);
+  CHECK(i290 > 4.0 * filter_gain(650, GC_VOWEL, vow_i, 0.5f));
+  CHECK(filter_gain(1870, GC_VOWEL, vow_i, 0.5f) > 1.5 * filter_gain(1300, GC_VOWEL, vow_i, 0.5f));   /* 2nd formant */
+  printf("filters: lp24 2k %.1f dB, notch %.1f dB, comb %.1f/%.1f dB peak/dip, vowel A %.1f dB, I %.1f dB\n",
+         db(filter_gain(2000, GC_LP24, 1000, 0)), db(filter_gain(1000, GC_NOTCH, 1000, 0)), db(c1), db(cd),
+         db(a650), db(i290));
 
   /* fully open low-pass: bypassed, the output is exactly the unfiltered one */
   GcParams p = poly_params();
@@ -964,7 +994,7 @@ static void test_filter(void) {
   for (int k = 0; k < 2000; k++) {
     x = x * 1664525u + 1013904223u;
     p.cutoff_hz = GC_CUTOFF_MIN * powf(1000.0f, (float)(x >> 8) / 16777216.0f);
-    p.ftype = (int)(x % 3);
+    p.ftype = (int)(x % GC_NFTYPES);
     gc_process(&G, &p, L, R, GC_BLOCK);
     for (int i = 0; i < GC_BLOCK; i++) {
       if (!isfinite(L[i])) bad++;
@@ -1166,8 +1196,8 @@ static void test_lfo_tempo(void) {
   gc_set_source(&G, &s.src);
   gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PAN, 0.5f);
   gc_set_lfo(&G, 0, GC_LFO_SAW_UP, GC_SYNC_TEMPO);
-  gc_set_lfo_div(&G, 0, 4);                         /* 1/4: one cycle per beat */
-  CHECK(!strcmp(gc_div_names[4], "1/4") && gc_div_beats[2] == 4.0f);
+  gc_set_lfo_div(&G, 0, 5);                         /* 1/4: one cycle per beat */
+  CHECK(!strcmp(gc_div_names[5], "1/4") && gc_div_beats[3] == 4.0f && gc_div_beats[0] == 32.0f);
   gc_set_tempo(&G, 120.0f, 10.25);                  /* transport: beat 10.25 */
   gc_note_on(&G, &p, 60, 100); gc_note_on(&G, &p, 67, 100);
   gc_process(&G, &p, L, R, GC_BLOCK);
@@ -1183,7 +1213,7 @@ static void test_lfo_tempo(void) {
   CHECK(fabs(G.beat - b0 - 1.0) < 1e-2);
   /* S&H on 1/8: one new value per eighth = 4 per second at 120 BPM */
   gc_set_lfo(&G, 0, GC_LFO_SH, GC_SYNC_TEMPO);
-  gc_set_lfo_div(&G, 0, 6);
+  gc_set_lfo_div(&G, 0, 7);                         /* 1/8 */
   gc_set_tempo(&G, 120.0f, 0.01);
   gc_note_on(&G, &p, 60, 100);
   float prev = 9.0f;
@@ -1210,8 +1240,8 @@ static void test_rate_units(void) {
   CHECK(fabsf(gc_rate_hz(61) - 1.0f) < 0.05f && fabsf(gc_rate_hz(42) - 0.25f) < 0.01f);
   for (float hz = 0.02f; hz < 20.0f; hz *= 1.7f) CHECK(fabsf(gc_rate_hz(gc_hz_rate(hz)) / hz - 1.0f) < 1e-3f);
   CHECK(gc_rate_div(0) == 0 && gc_rate_div(GC_RATE_MAX) == GC_NDIVS - 1 && gc_rate_div(200) == GC_NDIVS - 1);
-  for (int d = 0; d < GC_NDIVS; d++) CHECK(gc_rate_div(d * 10.0f) == d);
-  CHECK(gc_rate_div(42) == 4 && !strcmp(gc_div_names[gc_rate_div(61)], "1/8"));
+  for (int d = 0; d < GC_NDIVS; d++) CHECK(gc_rate_div(roundf(d * 100.0f / (GC_NDIVS - 1))) == d);
+  CHECK(!strcmp(gc_div_names[gc_rate_div(0)], "8 bars") && !strcmp(gc_div_names[gc_rate_div(42)], "1/4") && !strcmp(gc_div_names[gc_rate_div(61)], "1/8"));
   float prev = 0;                                    /* right = faster in both modes */
   for (int u = 0; u <= 100; u++) { CHECK(gc_rate_hz((float)u) > prev); prev = gc_rate_hz((float)u); }
 }

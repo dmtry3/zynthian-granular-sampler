@@ -641,6 +641,26 @@ def main():
     check("Filter tab not redrawn when the knobs stay", c.find_withtag("filter") == items)
     check("python curve = engine formula (LP 1k, BP 50 %: +2.7 dB at the centre)",
           abs(20 * math.log10(mod.filter_gain(1000, 1000, 0.5, 2)) - 2.7) < 0.1)
+
+    def gdb(f, fc, res, t):
+        return 20 * math.log10(max(mod.filter_gain(f, fc, res, t), 1e-9))
+    # the same points test_grain measures on the engine (printed there as "filters: ...")
+    check("python curve = engine: LP24 1k is -24.2 dB at 2 kHz", abs(gdb(2000, 1000, 0, 3) + 24.2) < 0.3)
+    check("python curve = engine: HP24 1k is -3 dB at 1 kHz", abs(gdb(1000, 1000, 0, 4) + 3.0) < 0.3)
+    check("python curve = engine: Notch 1k is a deep hole", gdb(1000, 1000, 0, 5) < -60 and abs(gdb(150, 1000, 0, 5)) < 1)
+    check("python curve = engine: Comb 500 Hz res 100 %: +18.2 / -18.2 dB",
+          abs(gdb(500, 500, 1, 6) - 18.2) < 0.5 and abs(gdb(750, 500, 1, 6) + 18.2) < 0.5)
+    vow_i = 20 * 1000 ** 0.5
+    check("python curve = engine: Vowel A +6.1 dB at 650 Hz, I +6.0 dB at 290 Hz",
+          abs(gdb(650, 20, 0.5, 7) - 6.1) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 6.0) < 0.5)
+    texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
+    for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, 20 * 1000 ** 0.625, "Vowel  I-O"),
+                        (6, 220.0, "Comb  220 Hz"), (3, 1000.0, "LP24  1.0 kHz")):
+        proc.controllers_dict["ftype"].value = t
+        proc.controllers_dict["cutoff"].value = fc
+        pump(lambda: False, 0.05)
+        check("Filter info: %s" % want, any(x.startswith(want + " ") for x in texts()))
+    proc.controllers_dict["ftype"].value = 0
     nudges0 = sample.nudges
     wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
     check("a tap on the Filter tab does not open the file selector", sample.nudges == nudges0)
@@ -711,7 +731,7 @@ def main():
     proc.controllers_dict["lfo2_rate"].value = 61                # the knob turned
     wdg.refresh_gui()
     check("Rate 61 in Tempo: 1/8", sync_label("lfo2_sync").endswith("1/8"))
-    for u, want in ((0, "4 bars"), (100, "1/32"), (20, "1 bar")):
+    for u, want in ((0, "8 bars"), (100, "1/32"), (27, "1 bar"), (9, "4 bars")):
         proc.controllers_dict["lfo2_rate"].value = u
         wdg.refresh_gui()
         check("Rate %d in Tempo: %s" % (u, want), sync_label("lfo2_sync").endswith(" " + want))

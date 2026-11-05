@@ -58,7 +58,7 @@ enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SPRAY, GC_DST_SIZE, GC_DST_DENSI
 #define GC_MOD_CUTOFF   5.0f   /* octaves */
                                /* Level: gain 1 + m, 0..2 */
 enum { GC_SYNC_FREE = 0, GC_SYNC_KEY, GC_SYNC_TEMPO };   /* LFO: own phase per voice / reset per note / beats */
-#define GC_NDIVS 11   /* tempo LFO cycle lengths, see gc_div_beats */
+#define GC_NDIVS 12   /* tempo LFO cycle lengths, see gc_div_beats */
 enum { GC_LFO_SINE = 0, GC_LFO_TRI, GC_LFO_SAW_UP, GC_LFO_SAW_DOWN, GC_LFO_SQUARE, GC_LFO_SH, GC_LFO_SMOOTH,
        GC_NLFO_SHAPES };
 
@@ -83,7 +83,7 @@ typedef struct {
   float quantize;   /* 0..1: pull of the grain pitch to the nearest note of the scale */
   float cutoff_hz;  /* voice filter after the grains, before the envelope */
   float resonance;  /* 0..1: Q 0.707 .. 20 */
-  int ftype;        /* GC_LP, GC_HP, GC_BP */
+  int ftype;        /* GC_LP .. GC_VOWEL */
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
   float lfo_rate[2];/* Hz */
   float env_time[2];/* s: attack + decay of Env 1 / Env 2 */
@@ -91,7 +91,11 @@ typedef struct {
                        playhead live inside it, grains do not read past it */
 } GcParams;
 
-enum { GC_LP = 0, GC_HP, GC_BP };
+/* Filter types. 0..2 keep their numbers (snapshots). LP/HP 12 dB/oct, 24 dB/oct; Comb: a feedback comb tuned
+ * to the cutoff (with Key Track 100 % to the note); Vowel: three formant band-passes, the cutoff moves
+ * through A E I O U. */
+enum { GC_LP = 0, GC_HP, GC_BP, GC_LP24, GC_HP24, GC_NOTCH, GC_COMB, GC_VOWEL, GC_NFTYPES };
+#define GC_COMB_LEN 4096  /* comb delay per voice and channel (power of 2): down to 12 Hz at 48 kHz */
 
 /* The sample as the engine reads it: interleaved stereo, GC_LEVELS rates, each level followed by
  * at least 2 guard frames that repeat its start (see sample.h). */
@@ -143,7 +147,11 @@ typedef struct {
   float fc_log;           /* filter cutoff, log2 Hz, smoothed toward the knob */
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
-  float ic1[2], ic2[2];   /* SVF state, left and right */
+  int ftype;              /* the type the state below belongs to; -1 = state to clear first */
+  float fs[2][6];         /* SVF states, left and right: up to three SVFs (Vowel) */
+  float comb_d;           /* comb delay in samples in the last block (0 = none yet) */
+  int comb_w;             /* comb write position */
+  float comb[2][GC_COMB_LEN];
   /* modulation sources of this voice: every voice has its own LFOs and envelopes */
   float lfo_ph[2];        /* 0..1 */
   float lfo_a[2], lfo_b[2];  /* random LFO shapes: from, to (one step per cycle) */
@@ -234,11 +242,13 @@ void gc_set_tempo(GrainCore* g, float bpm, double beat);
 extern const float gc_div_beats[GC_NDIVS];
 extern const char* const gc_div_names[GC_NDIVS];
 /* LFO Rate knob, 0..GC_RATE_MAX units: Free/Key read it as Hz (GC_LFO_MIN..GC_LFO_MAX, logarithmic),
- * Tempo as a cycle length (4 bars .. 1/32, faster to the right). The widget shows which. */
+ * Tempo as a cycle length (8 bars .. 1/32, faster to the right). The widget shows which. */
 #define GC_RATE_MAX 100.0f
 float gc_rate_hz(float units);
 int gc_rate_div(float units);
 float gc_hz_rate(float hz);                                      /* inverse of gc_rate_hz */
+float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U */
+float gc_comb_fb(float resonance);                               /* Comb filter feedback */
 void gc_set_env(GrainCore* g, int i, float shape);
 float gc_lfo_value(int shape, float ph, float a, float b);            /* -1..1 (widget, tests) */
 float gc_env_value(float shape, float t, float time);                 /* 0..1 */

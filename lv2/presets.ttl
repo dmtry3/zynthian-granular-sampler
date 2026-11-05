@@ -1512,8 +1512,8 @@
         [ lv2:symbol "resonance" ; pset:value 50.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 20.0 ] ,
-        [ lv2:symbol "lfo2_rate" ; pset:value 60.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 27.0 ] ,
+        [ lv2:symbol "lfo2_rate" ; pset:value 64.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;
     state:state [
@@ -1968,7 +1968,7 @@
         [ lv2:symbol "resonance" ; pset:value 0.0 ] ,
         [ lv2:symbol "ftype" ; pset:value 0.0 ] ,
         [ lv2:symbol "keytrack" ; pset:value 0.0 ] ,
-        [ lv2:symbol "lfo1_rate" ; pset:value 60.0 ] ,
+        [ lv2:symbol "lfo1_rate" ; pset:value 64.0 ] ,
         [ lv2:symbol "lfo2_rate" ; pset:value 42.0 ] ,
         [ lv2:symbol "env1_time" ; pset:value 1.0 ] ,
         [ lv2:symbol "env2_time" ; pset:value 2.0 ] ;

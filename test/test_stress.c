@@ -93,7 +93,7 @@ static void random_params(GcParams* p) {
   p->pitch = edge(-GC_PITCH_MAX, GC_PITCH_MAX); p->pitch_spray = edge(0, GC_PSPRAY_MAX);
   p->reverse = edge(0, 1); p->quantize = edge(0, 1);
   p->cutoff_hz = edge(GC_CUTOFF_MIN, GC_CUTOFF_MAX); p->resonance = edge(0, 1);
-  p->ftype = (int)(rnd() % 3); p->keytrack = edge(0, 1);
+  p->ftype = (int)(rnd() % GC_NFTYPES); p->keytrack = edge(0, 1);
   p->mark_start = rnd() % 3 ? edge(0, 1) : 0.0f; p->mark_end = rnd() % 3 ? edge(0, 1) : 1.0f;
   for (int i = 0; i < 2; i++) { p->lfo_rate[i] = edge(GC_LFO_MIN, GC_LFO_MAX); p->env_time[i] = edge(GC_ENV_MIN, 2); }
 }

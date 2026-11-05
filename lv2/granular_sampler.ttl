@@ -893,9 +893,11 @@
     [
         a lv2:InputPort , lv2:ControlPort ;
         lv2:index 18 ; lv2:symbol "ftype" ; lv2:name "Type" ;
-        lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 2 ;
+        lv2:default 0 ; lv2:minimum 0 ; lv2:maximum 7 ;
         lv2:portProperty lv2:integer , lv2:enumeration ;
-        lv2:scalePoint [ rdfs:label "LP" ; rdf:value 0 ] , [ rdfs:label "HP" ; rdf:value 1 ] , [ rdfs:label "BP" ; rdf:value 2 ] ;
+        lv2:scalePoint [ rdfs:label "LP12" ; rdf:value 0 ] , [ rdfs:label "HP12" ; rdf:value 1 ] , [ rdfs:label "BP" ; rdf:value 2 ] ,
+            [ rdfs:label "LP24" ; rdf:value 3 ] , [ rdfs:label "HP24" ; rdf:value 4 ] , [ rdfs:label "Notch" ; rdf:value 5 ] ,
+            [ rdfs:label "Comb" ; rdf:value 6 ] , [ rdfs:label "Vowel" ; rdf:value 7 ] ;
         lv2:displayPriority 20 ; pg:group <urn:granularsampler:sampler#g_filter> ;
     ] ,
     [
