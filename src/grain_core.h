@@ -22,7 +22,7 @@
 
 /* Parameter ranges; the LV2 ports use the same ones. */
 #define GC_SIZE_MIN    5.0f    /* ms */
-#define GC_SIZE_MAX    5000.0f
+#define GC_SIZE_MAX    10000.0f
 #define GC_DENS_MIN    0.5f    /* grains per second */
 #define GC_DENS_MAX    200.0f
 #define GC_SCAN_MAX    2.0f    /* x realtime, both directions */
