@@ -156,7 +156,7 @@ typedef struct {
   int filter_on;          /* 0: bypassed (LP fully open / HP fully closed / Mix 0) */
   float fmix;             /* the dry/wet mix of the last block (ramped to the knob); -1 = take the knob */
   int ftype;              /* the type the state below belongs to; -1 = state to clear first */
-  float fs[2][12];        /* SVF states, left and right: up to six SVFs (Vowel) */
+  float fs[2][22];        /* SVF states, left and right: up to eleven SVFs (Vowel) */
   float comb_d;           /* comb delay in samples in the last block (0 = none yet) */
   int comb_w;             /* comb write position */
   float comb[2][GC_COMB_LEN];

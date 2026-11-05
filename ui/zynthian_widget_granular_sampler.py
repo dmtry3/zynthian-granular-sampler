@@ -196,10 +196,13 @@ def mix(rgb, f, bg=(42, 42, 42)):
     return "#%02x%02x%02x" % tuple(int(bg[k] + (rgb[k] - bg[k]) * f) for k in range(3))
 
 
-VOWEL_F = [(650, 1080, 2650), (400, 1700, 2600), (290, 1870, 2800), (400, 800, 2600), (350, 600, 2700)]
-VOWEL_A = [(1, 0.70, 0.50), (1, 0.55, 0.45), (1, 0.50, 0.35), (1, 0.60, 0.30), (1, 0.40, 0.25)]
+VOWEL_F = [(650, 1080, 2650, 3500, 4500), (400, 1700, 2600, 3500, 4500), (290, 1870, 2800, 3600, 4600),
+           (400, 800, 2600, 3300, 4300), (350, 600, 2700, 3300, 4300)]
+VOWEL_A = [(1, 0.70, 0.50, 0.35, 0.25), (1, 0.55, 0.45, 0.35, 0.25), (1, 0.50, 0.35, 0.35, 0.25),
+           (1, 0.60, 0.30, 0.30, 0.20), (1, 0.40, 0.25, 0.25, 0.20)]
 VOWEL_GAIN = 3.0
-VOWEL_BW = (80, 90, 120)
+VOWEL_BW = (80, 90, 120, 150, 200)
+VOWEL_AIR_HZ, VOWEL_AIR = 6000.0, 0.5             # the input's top added back: the voice is not dull
 
 
 def vowel_pos(fc):
@@ -236,18 +239,18 @@ def filter_resp(f, fc, res, ftype, sr=SR):
     if ftype == 6:                                # comb: y = x + fb y[n - sr/fc], scaled by sqrt(1 - fb^2)
         fb = 0.3 + 0.67 * res
         return math.sqrt(1.0 - fb * fb) / (1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
-    if ftype == 7:                                # three formants, two band-passes each, gliding between the vowels
+    if ftype == 7:                                # five formants, two band-passes each, gliding; plus the air
         pos = vowel_pos(fc)
         i0 = min(int(pos), 3)
         t = pos - i0
         bw = 1.6 - 1.2 * res
         h = 0j
-        for n in range(3):
+        for n in range(5):
             ff = min(VOWEL_F[i0][n] + t * (VOWEL_F[i0 + 1][n] - VOWEL_F[i0][n]), top)
             kk = min(max(VOWEL_BW[n] * bw / ff, 0.02), 2.0)
             amp = VOWEL_GAIN * kk * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
             h += amp * svf(ff, kk)[1] ** 2
-        return h
+        return h + VOWEL_AIR * svf(min(VOWEL_AIR_HZ, top), 1.4142136)[2]
     lo, band, hi = svf(fc, k)
     if ftype == 1:
         return hi

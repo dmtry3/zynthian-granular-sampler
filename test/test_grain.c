@@ -944,6 +944,9 @@ static void test_filter(void) {
         a650 > 4.0 * filter_gain(1500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));
   CHECK(db(a650) > 6.0 && db(a650) < 10.5);                         /* the formant peak: make-up x3 */
   CHECK(a650 > 10.0 * filter_gain(850, GC_VOWEL, GC_CUTOFF_MIN, 0.5f));   /* a deep dip between F1 and F2 */
+  const double air = filter_gain(10000, GC_VOWEL, GC_CUTOFF_MIN, 0.5f);
+  CHECK(db(air) > -8.0 && db(air) < -4.0);                          /* the top stays: not dull */
+  CHECK(filter_gain(3500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f) > 0.5);    /* F4 */
   const double i290 = filter_gain(290, GC_VOWEL, vow_i, 0.5f);
   CHECK(i290 > 4.0 * filter_gain(650, GC_VOWEL, vow_i, 0.5f));
   CHECK(filter_gain(1870, GC_VOWEL, vow_i, 0.5f) > 1.5 * filter_gain(1300, GC_VOWEL, vow_i, 0.5f));   /* 2nd formant */
@@ -954,9 +957,9 @@ static void test_filter(void) {
   CHECK(fabs(db(filter_gain(1000, GC_NOTCH, 1000, 0)) + 6.02) < 0.1);
   CHECK(fabs(db(filter_gain(8000, GC_LP24, 500, 0)) + 6.02) < 0.2);   /* far in the stop band */
   fmix = 1.0f;
-  printf("filters: lp24 2k %.1f dB, notch %.1f dB, comb %.1f/%.1f dB peak/dip, vowel A %.1f dB, I %.1f dB\n",
+  printf("filters: lp24 2k %.1f dB, notch %.1f dB, comb %.1f/%.1f dB peak/dip, vowel A %.1f dB, I %.1f dB, air 10k %.1f dB\n",
          db(filter_gain(2000, GC_LP24, 1000, 0)), db(filter_gain(1000, GC_NOTCH, 1000, 0)), db(c1), db(cd),
-         db(a650), db(i290));
+         db(a650), db(i290), db(air));
 
   /* fully open low-pass: bypassed, the output is exactly the unfiltered one */
   GcParams p = poly_params();

@@ -747,12 +747,18 @@ static inline float svf_tick(const Svf* c, float* s, float x, float* bp) {
   return v2;
 }
 
-/* Formants of the vowels A E I O U (Hz) and their levels; bandwidths at Resonance 0.5 */
-static const float vowel_f[5][3] = { { 650, 1080, 2650 }, { 400, 1700, 2600 }, { 290, 1870, 2800 },
-                                     { 400, 800, 2600 }, { 350, 600, 2700 } };
-static const float vowel_a[5][3] = { { 1, 0.70f, 0.50f }, { 1, 0.55f, 0.45f }, { 1, 0.50f, 0.35f },
-                                     { 1, 0.60f, 0.30f }, { 1, 0.40f, 0.25f } };
-static const float vowel_bw[3] = { 80, 90, 120 };
+/* Formants of the vowels A E I O U (Hz) and their levels; bandwidths at Resonance 0.5. F4 and F5 are about the
+ * same for all vowels: they keep the voice from sounding dull, and above them the "air" path keeps the top. */
+#define GC_NFORM 5
+static const float vowel_f[5][GC_NFORM] = { { 650, 1080, 2650, 3500, 4500 }, { 400, 1700, 2600, 3500, 4500 },
+                                            { 290, 1870, 2800, 3600, 4600 }, { 400, 800, 2600, 3300, 4300 },
+                                            { 350, 600, 2700, 3300, 4300 } };
+static const float vowel_a[5][GC_NFORM] = { { 1, 0.70f, 0.50f, 0.35f, 0.25f }, { 1, 0.55f, 0.45f, 0.35f, 0.25f },
+                                            { 1, 0.50f, 0.35f, 0.35f, 0.25f }, { 1, 0.60f, 0.30f, 0.30f, 0.20f },
+                                            { 1, 0.40f, 0.25f, 0.25f, 0.20f } };
+static const float vowel_bw[GC_NFORM] = { 80, 90, 120, 150, 200 };
+#define GC_VOWEL_AIR_HZ 6000.0f   /* the input above this (12 dB/oct high-pass) is added back: the "air" */
+#define GC_VOWEL_AIR 0.5f
 #define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
 /* Position 0..4 between the vowels A .. U from the cutoff (log, over the whole knob). */
@@ -818,33 +824,36 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
   }
 
   if (type == GC_VOWEL) {
-    /* three formants, each two equal band-passes in series (24 dB/oct skirts: the dips between the formants
+    /* five formants, each two equal band-passes in series (24 dB/oct skirts: the dips between the formants
      * are deep, so the vowel is heard clearly), normalized to the formant level at the peak (1/k each stage);
-     * between two vowels the formants glide */
+     * between two vowels the formants glide. Plus the air: the input's top, so the sound is not dull. */
     const float pos = gc_vowel_pos(fc);
     const int i0 = pos >= 4.0f ? 3 : (int)pos;
     const float t = pos - (float)i0;
     const float bw = 1.6f - 1.2f * res;        /* x the bandwidths: wide and soft .. narrow and sharp */
-    Svf c[3];
-    float amp[3];
-    for (int f = 0; f < 3; f++) {
+    Svf c[GC_NFORM];
+    float amp[GC_NFORM];
+    for (int f = 0; f < GC_NFORM; f++) {
       const float ff = fminf(vowel_f[i0][f] + t * (vowel_f[i0 + 1][f] - vowel_f[i0][f]), top);
       const float k = clampf(vowel_bw[f] * bw / ff, 0.02f, 2.0f);
       c[f] = svf_coef(ff, g->sr, k);
       amp[f] = GC_VOWEL_GAIN * k * k * (vowel_a[i0][f] + t * (vowel_a[i0 + 1][f] - vowel_a[i0][f]));
     }
+    const Svf air = svf_coef(fminf(GC_VOWEL_AIR_HZ, top), g->sr, 1.4142136f);
     for (int ch = 0; ch < 2; ch++) {
       float* x = xs[ch];
       float* s = v->fs[ch];
       for (int i = 0; i < m; i++) {
         float y = 0.0f;
-        for (int f = 0; f < 3; f++) {
+        for (int f = 0; f < GC_NFORM; f++) {
           float b1, b2;
           svf_tick(&c[f], s + 4 * f, x[i], &b1);
           svf_tick(&c[f], s + 4 * f + 2, b1, &b2);
           y += amp[f] * b2;
         }
-        x[i] = y;
+        float ab;
+        const float al = svf_tick(&air, s + 4 * GC_NFORM, x[i], &ab);
+        x[i] = y + GC_VOWEL_AIR * (x[i] - air.k * ab - al);
       }
     }
     return;
