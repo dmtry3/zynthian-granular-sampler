@@ -54,6 +54,7 @@ static Src* make_src(int64_t n, float rate) {
     guard(s->lv[k], m);
     s->src.data[k] = s->lv[k]; s->src.frames[k] = m; s->src.nlevels = k + 1;
   }
+  s->src.period = rnd() % 2 ? 2.0f + frand() * 2000.0f : 0.0f;   /* a pitch (in phase grains) or none */
   s->live = 1;
   return s;
 }

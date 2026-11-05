@@ -125,6 +125,8 @@ static uint32_t use_sample(Sampler* S) {
     src.nlevels = k + 1;
   }
   src.rate = (float)s->rate;
+  if (s->pitch > 0.0f)                               /* its period: grains are placed in phase */
+    src.period = (float)(s->rate / (440.0 * pow(2.0, (s->pitch - 69.0) / 12.0)));
   return gc_set_source(&S->core, &src);
 }
 

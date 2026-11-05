@@ -98,6 +98,8 @@ typedef struct {
   int64_t frames[GC_LEVELS];
   int nlevels;
   float rate;             /* sample rate of the file */
+  float period;           /* period of its pitch in frames of level 0 (0 = no single pitch): grains are
+                            placed in phase with the sounding one, so transposed notes do not phase */
 } GcSource;
 
 typedef struct {
@@ -116,6 +118,7 @@ typedef struct {
   float gl, gr;           /* left and right gain: loudness, velocity, pan */
   float fade, fstep;      /* extra gain ramp: 1 and 0, or a fade-out after a sample swap */
   int voice;              /* its voice: the voice envelope is applied to the sum of its grains */
+  int lv;                 /* its source level */
 } GcGrain;
 
 enum { GC_V_IDLE = 0, GC_V_ATTACK, GC_V_SUSTAIN, GC_V_RELEASE, GC_V_STEAL };
@@ -148,6 +151,7 @@ typedef struct {
   float src[GC_NSRC];     /* source values in this block */
   float mod[GC_NDST];     /* continuous destinations: summed modulation in this block */
   float level, level_prev;   /* Level destination: gain now and in the previous block */
+  int last_grain;         /* pool index of its newest grain (-1): a new one starts in phase with it */
 } GcVoice;
 
 typedef struct {
@@ -156,6 +160,7 @@ typedef struct {
   uint32_t gen;           /* incremented by every gc_set_source */
   int interp;             /* GC_INTERP_* */
   int use_levels;         /* 0: always level 0 (to compare in tests and the bench) */
+  int align;              /* 1: grains start in phase with the voice's sounding grain (source period known) */
   int nvoices;            /* 1..GC_VOICES voices */
   int mono;               /* nvoices == 1: back to a held key on release */
   int legato;             /* mono: a new key only changes the pitch (else it starts the voice again) */

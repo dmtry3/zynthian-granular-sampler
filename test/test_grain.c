@@ -601,6 +601,48 @@ static void test_bend(void) {
   free_src(&s);
 }
 
+/* Transposed notes: grains placed in phase with the sounding one do not comb (a sine stays a sine) */
+static double sine_ripple(int align, int note) {
+  GcParams p = poly_params();                       /* bell grains, 100 ms, 20 /s: they overlap */
+  p.root = 60.0f;
+  Src s = make_src(SR * 4, SR, 1, f_sine);          /* 480 Hz: period 100 frames */
+  s.src.period = 100.0f;
+  gc_init(&G, SR, 1);
+  G.align = align;
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, note, 127);
+  run(&p, 0.3, NULL);
+  double m = 0, m2 = 0;                             /* 10 ms RMS frames: their spread */
+  const int nf = 100;
+  for (int f = 0; f < nf; f++) {
+    double e = 0;
+    for (int k = 0; k < 480 / BUF + 1; k++) {
+      gc_process(&G, &p, L, R, BUF);
+      for (int i = 0; i < BUF; i++) e += (double)L[i] * L[i];
+    }
+    e = sqrt(e);
+    m += e; m2 += e * e;
+  }
+  m /= nf; m2 /= nf;
+  free_src(&s);
+  return sqrt(m2 - m * m) / m;
+}
+
+static void test_align(void) {
+  const double off2 = sine_ripple(0, 62), on2 = sine_ripple(1, 62), on5 = sine_ripple(1, 55);
+  CHECK(off2 > 0.04);                               /* not aligned: the level beats */
+  CHECK(on2 < 0.02 && on5 < 0.02 && on2 < off2 / 3); /* aligned: steady */
+  /* no period known: grains start where they would */
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_sine);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_note_on(&G, &p, 60, 127);
+  gc_process(&G, &p, L, R, BUF);
+  CHECK(G.voices[0].last_grain >= 0);
+  free_src(&s);
+}
+
 /* mono portamento: a new key glides from the sounding pitch in Glide ms */
 static void test_glide(void) {
   GcParams p = poly_params();
@@ -1143,6 +1185,7 @@ int main(void) {
   test_glide();
   test_sustain();
   test_bend();
+  test_align();
   test_spread();
   test_pitch();
   test_quantize();

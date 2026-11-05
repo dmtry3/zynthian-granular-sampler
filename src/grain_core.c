@@ -104,6 +104,7 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   for (int i = 0; i < GC_VOICES; i++) {
     GcVoice* v = &g->voices[i];
     v->note = -1;
+    v->last_grain = -1;
     v->level = v->level_prev = 1.0f;
     for (int k = 0; k < 2; k++) {          /* free LFOs: each voice from its own phase, chords move apart */
       v->lfo_ph[k] = rnd(g);
@@ -114,6 +115,7 @@ void gc_init(GrainCore* g, float sr, uint32_t seed) {
   g->nvoices = GC_VOICES;
   g->interp = GC_INTERP_LINEAR;
   g->use_levels = 1;
+  g->align = 1;
   double rms[GC_SHAPES];
   for (int s = 0; s < GC_SHAPES; s++) {
     double e = 0;
@@ -493,6 +495,28 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
 
   /* Pitched up: read a band-limited level at a lower rate, so nothing folds back above Nyquist. */
   float inc = (g->src.rate > 0 ? g->src.rate / g->sr : 1.0f) * exp2f((semis - p->root) / 12.0f);
+
+  /* In phase with the sounding grain (PSOLA-like): two grains reading a periodic sound at the same speed
+   * add up cleanly only if their read positions differ by whole periods; else they comb and beat (heard
+   * as a warble on every transposed note, and on frozen sounds). Move the start by less than half a period. */
+  const float per = g->src.period;
+  if (g->align && per > 2.0f && v->last_grain >= 0) {
+    const GcGrain* pg = &g->grains[v->last_grain];
+    const float pstep = pg->inc0 * (float)(1 << pg->lv);           /* its speed in level-0 frames */
+    const float mine = backwards ? -inc : inc;
+    if (pg->active && pg->voice == vi && pg->gen == g->gen && fabsf(pstep - mine) < 0.01f * fabsf(mine)) {
+      const int el = delay > pg->delay ? delay - pg->delay : 0;      /* its samples played when this one starts */
+      const double ppos = ((double)pg->idx + pg->frac + (double)pg->inc * el) * (double)(1 << pg->lv);
+      double d = fmod(ppos - start, (double)per);
+      if (d > 0.5 * per) d -= per;
+      if (d < -0.5 * per) d += per;
+      /* at the ends of the sample a whole period the other way: wrapping round would move it far */
+      const double room = (double)g->src.frames[0] - 2.0 - ((double)len * fabsf(inc) + 3.0);
+      if (start + d < 0.0) d += per;
+      else if (!backwards && start + d > room && start + d - per >= 0.0) d -= per;
+      start += d;
+    }
+  }
   int lv = 0;
   while (g->use_levels && lv + 1 < g->src.nlevels && inc > GC_MIP_UP) { inc *= 0.5f; start *= 0.5; lv++; }
   const int64_t frames = g->src.frames[lv];
@@ -533,6 +557,8 @@ static void spawn(GrainCore* g, const GcParams* p, int vi, int delay) {
   gr->fade = 1.0f;
   gr->fstep = 0.0f;
   gr->voice = vi;
+  gr->lv = lv;
+  v->last_grain = (int)(gr - g->grains);
   g->last_level = lv;
   g->nactive++;
   g->born++;
