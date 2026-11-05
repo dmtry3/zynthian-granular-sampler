@@ -784,6 +784,11 @@ def main():
                 if b[2] <= x <= b[4] and b[3] <= y <= b[5]:
                     return c.itemcget(t, "text")
     check("polarity shows +- (both ways)", side_text_in(pb) == "\u00b1")
+    glyph = [t for t in c.find_withtag("modside") if c.type(t) == "text" and c.itemcget(t, "text") == "\u00b1"]
+    gb = c.bbox(glyph[0]) if glyph else None
+    check("polarity button big (%d px, at least twice the font) and its sign fills it, inside" % (pb[4] - pb[2]),
+          pb[4] - pb[2] >= min(2 * wdg._font_size(), pb[5] - pb[3]) and gb and gb[3] - gb[1] >= 0.5 * (pb[5] - pb[3]) and
+          gb[0] >= pb[2] - 1 and gb[2] <= pb[4] + 1)
     wdg._on_press(Tap((pb[2] + pb[4]) / 2, (pb[3] + pb[5]) / 2)); wdg._on_release(None)
     pump(lambda: False, 0.05)
     check("tap: + (0..1), the shape stays", proc.v("lfo1_uni") == 1 and proc.v("lfo1_shape") == shape0 and

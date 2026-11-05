@@ -1170,7 +1170,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self._draw_mod_side()
 
     def _pol_w(self):
-        return max(14, self._font_size() + 2)
+        """Polarity button: a square as tall as the LFO box allows, at least twice the font"""
+        w, h, pad, top = self._mod_layout()[:4]
+        rh = (h - pad - top) / 5.0
+        return int(max(14, min(rh - 4, self._font_size() * 2.2)))
 
     def _draw_mod_side(self):
         vals = tuple(int(round(self._zval(b[0], 0))) for b in self._side_boxes())
@@ -1191,7 +1194,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 c.create_rectangle(x0, y0, x1, y1, outline="#707070", fill=(BUTTON_ON if on else BUTTON_OFF),
                                    tags="modside")
                 c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=("+" if on else "\u00b1"), tags="modside",
-                              fill=("#000000" if on else tx), font=(fam, fsmall))
+                              fill=("#000000" if on else tx), font=(fam, max(fs + 2, int((y1 - y0) * 0.5)), "bold"))
                 continue
             c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=BUTTON_OFF, tags="modside")
             if kind == "sync":
