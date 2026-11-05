@@ -19,11 +19,14 @@ PORT_DEFAULTS = [("position", 0), ("scan", 100), ("spray", 0), ("window", 100),
                  ("lfo1_rate", 61), ("lfo2_rate", 42), ("env1_time", 1), ("env2_time", 2)]
 # integer parameters in the plugin's order (granular_sampler.c), cells m_<src>_<dst> default 0
 SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
+XDSTS = ["lfo1_rate", "lfo2_rate", "lfo1_amt", "lfo2_amt", "env1_time", "env2_time"]   # X-Mod tab
 DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"]
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100),
-                ("glide", 0), ("bend_range", 2), ("root", 60), ("tune", 0), ("gain", 0), ("mark_start", 0), ("mark_end", 10000)] + \
-               [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS]
+                ("glide", 0), ("bend_range", 2), ("root", 60), ("tune", 0), ("gain", 0), ("mark_start", 0), ("mark_end", 10000),
+                ("lfo1_uni", 0), ("lfo2_uni", 0)] + \
+               [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS] + \
+               [("x_%s_%s" % (a, b), 0) for a in SRCS for b in XDSTS]
 PARAM_DEFAULTS = dict([("sample", "kalimba_c.wav")] + INT_DEFAULTS)   # voices 1 mono, 0 legato
 SINE, TRI, SAW_UP, SAW_DOWN, SQUARE_LFO, SH, SMOOTH = range(7)
 CHROMATIC, MAJOR, MINOR, DORIAN, MAJ_PENT, MIN_PENT = 0, 1, 2, 3, 9, 10

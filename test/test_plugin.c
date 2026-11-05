@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 81);                                      /* the path and the 80 integer parameters */
+  CHECK(last_reports == 125);                                     /* the path and the 124 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -297,6 +297,9 @@ int main(int argc, char** argv) {
   in_set_float("urn:granularsampler:sampler#mod_depth", 60.0f);
   in_set_float("urn:granularsampler:sampler#glide", 5000.0f);
   in_set_float("urn:granularsampler:sampler#lfo1_sync", 2.0f);
+  in_set_float("urn:granularsampler:sampler#lfo2_uni", 1.0f);
+  in_set_float("urn:granularsampler:sampler#x_env1_lfo1_amt", 70.0f);
+  in_set_float("urn:granularsampler:sampler#x_rnd_env2_time", -300.0f);
   in_get(); collect();
   CHECK(reported_int("urn:granularsampler:sampler#m_lfo1_pitch", -1) == 100);
   CHECK(reported_int("urn:granularsampler:sampler#m_env2_cutoff", 0) == -40);
@@ -306,6 +309,11 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#env2_shape", -1) == 50);    /* default */
   CHECK(reported_int("urn:granularsampler:sampler#glide", -1) == 2000);       /* clamped */
   CHECK(reported_int("urn:granularsampler:sampler#lfo1_sync", -1) == 2);      /* Tempo */
+  CHECK(reported_int("urn:granularsampler:sampler#lfo2_uni", -1) == 1);       /* 0..1 */
+  CHECK(reported_int("urn:granularsampler:sampler#lfo1_uni", -1) == 0);
+  CHECK(reported_int("urn:granularsampler:sampler#x_env1_lfo1_amt", 0) == 70);   /* cross-modulation */
+  CHECK(reported_int("urn:granularsampler:sampler#x_rnd_env2_time", 0) == -100); /* clamped */
+  CHECK(reported_int("urn:granularsampler:sampler#x_lfo1_lfo1_rate", -1) == 0);  /* the first cell */
   CHECK(reported_int("urn:granularsampler:sampler#lfo2_div", -1) == -1);      /* gone: the Rate knob in Tempo */
   CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 2);     /* default +-2 semitones */
   CHECK(reported_int("urn:granularsampler:sampler#root", -1) == 60);          /* C4 */
@@ -324,7 +332,8 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 81);                                               /* sample + 80 integer parameters */
+  CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#x_env1_lfo1_amt"))->val == 70);
+  CHECK(nst == 125);                                              /* sample + 124 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();

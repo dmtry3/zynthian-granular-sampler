@@ -119,7 +119,11 @@ static void random_event(GcParams* p) {
   else if (r < 94) gc_all_off(&G);
   else if (r < 95) gc_all_notes_off(&G);
   else if (r < 97) gc_set_sustain(&G, (int)(rnd() % 2));
-  else if (r < 99) gc_set_bend(&G, edge(-GC_BEND_MAX, GC_BEND_MAX));
+  else if (r < 98) gc_set_bend(&G, edge(-GC_BEND_MAX, GC_BEND_MAX));
+  else if (r < 99) {
+    if (rnd() % 2) gc_set_xmod_cell(&G, (int)(rnd() % GC_NSRC), (int)(rnd() % GC_NXDST), edge(-1, 1));
+    else gc_set_lfo_uni(&G, (int)(rnd() % 2), (int)(rnd() % 2));
+  }
   /* else: nothing this time */
 }
 

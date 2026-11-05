@@ -24,9 +24,13 @@
 # Mod:
 # - The 7 x 9 grid (LV2 parameters m_<source>_<destination>, -100..100): a finger up/down changes a cell,
 #   a double tap resets it; colour = sign, brightness = depth; sources in use are lit.
-# - LFO 1/2: a tap changes the shape; the sync button: a tap = Free / Key / Tempo. It shows what the LFO Rate
+# - LFO 1/2: a tap changes the shape; the small button in its corner: +- (LFO -1..1) or + (0..1); the sync button: a tap = Free / Key / Tempo. It shows what the LFO Rate
 #   knob (0..100) means in that mode: Hz in Free/Key, a cycle length (8 bars .. 1/32) in Tempo.
 #   Env 1/2 shape and Mod Depth: finger up/down.
+# X-Mod:
+# - The same 7 sources onto the modulators (LV2 parameters x_<source>_<destination>, -100..100): LFO 1/2 Rate and
+#   Env 1/2 Time (x 2^(+-3) at 100), LFO 1/2 Amount (the LFO times 0..1: a positive cell fades it in with the
+#   source, only negative cells fade it out). Rate cells of a tempo LFO are greyed out (they do nothing).
 # Tabs and knob pages go together: a tap on a tab selects its knob page (Wave -> Position, Grain, Pitch,
 # Filter, Mod) through Zynthian's control screen; turning to such a page shows its tab.
 # - At the top right, in a small font: the name of the current knob page (screen_title of Zynthian's control screen).
@@ -57,7 +61,7 @@ ZONE_COLOR = "#1d2a38"
 PLAYHEAD_COLOR = "#ffffff"
 GRAIN_COLOR = "#ffd43b"
 NGRAIN_MARKS = 16
-TABS = ["Wave", "Grain", "Pitch", "Filter", "Mod"]
+TABS = ["Wave", "Grain", "Pitch", "Filter", "Mod", "X-Mod"]
 MOD_SRCS = [("lfo1", "LFO1"), ("lfo2", "LFO2"), ("env1", "Env1"), ("env2", "Env2"), ("vel", "Vel"),
             ("wheel", "Wheel"), ("rnd", "Rnd")]
 MOD_DSTS = [("position", "Pos"), ("scan", "Scan"), ("spray", "Spray"), ("size", "Size"), ("density", "Dens"),
@@ -66,8 +70,12 @@ LFO_SHAPES = ["Sine", "Tri", "Saw up", "Saw dn", "Square", "S&H", "Smooth"]
 LFO_SYNCS = ["Free", "Key", "Tempo"]
 LFO_DIVS = ["8 bars", "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32"]  # gc_div_names
 LFO_MIN, LFO_MAX = 0.01, 20.0   # Hz at Rate 0 and 100 (GC_LFO_MIN/MAX, gc_rate_hz)
-TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod"]   # knob page (port group) of each tab
+TAB_GROUPS = ["g_position", "g_grain", "g_pitch", "g_filter", "g_mod", "g_mod"]   # knob page (port group) of each tab
 MOD_DSTS_SHORT = ["Pos", "Scn", "Spr", "Siz", "Dns", "Pit", "Pan", "Lvl", "Cut"]   # when the full names do not fit
+# X-Mod tab: the same sources onto the modulators (LV2 parameters x_<source>_<destination>, GC_XDST_*)
+XMOD_DSTS = [("lfo1_rate", "L1 Rate"), ("lfo2_rate", "L2 Rate"), ("lfo1_amt", "L1 Amt"), ("lfo2_amt", "L2 Amt"),
+             ("env1_time", "E1 Time"), ("env2_time", "E2 Time")]
+XMOD_DSTS_SHORT = ["L1R", "L2R", "L1A", "L2A", "E1T", "E2T"]
 MOD_POS = (77, 171, 247)        # positive cells: blue
 MOD_NEG = (255, 146, 43)        # negative cells: orange
 DOUBLE_TAP = 0.35               # s
@@ -514,7 +522,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         if self.tab in (1, 2):
             self._button_press(event)
             return
-        if self.tab == 4:
+        if self.tab in (4, 5):
             self._mod_press(event)
             return
         if self.tab != 0:
@@ -576,7 +584,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         if self.tab == 3:
             self._draw_filter()
             return
-        if self.tab == 4:
+        if self.tab in (4, 5):
             self._draw_mod()
             return
         size = (self.width, self.height, self._gain())
@@ -832,21 +840,40 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             if prev is None:
                 c.itemconfigure(item, state="normal")
 
+    def _tab_metrics(self, title):
+        """(font size, padding, widths, title shown): the tabs and the page title share the top line. The padding
+        shrinks first, then the font; if the tabs still do not fit beside the title, the title goes."""
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+
+        def measure(size, text):
+            try:
+                return tkinter.font.Font(family=fam, size=size).measure(text)
+            except Exception:
+                return len(text) * size
+        w = max(self.width, 80)
+        for show in ((True, False) if title else (False,)):
+            avail = w - 4 - (measure(fs, title) + 14 if show else 0)
+            for size in range(fs, max(7, fs - 4) - 1, -1):
+                for pad in (2 * size, size, size // 2):
+                    widths = [measure(size, t) + pad for t in TABS]
+                    if sum(widths) + 4 * len(TABS) <= avail:
+                        return size, pad, widths, show
+        size = max(7, fs - 4)
+        return size, size // 2, [measure(size, t) + size // 2 for t in TABS], False
+
     def _draw_tabs(self):
-        key = (self.tab, self.width, self.height)
+        title = self._page_title()
+        key = (self.tab, self.width, self.height, title)
         if key == self.tabs_drawn:
             return
         self.tabs_drawn = key
         c = self.widget_canvas
         c.delete("tabs")
-        fs = self._font_size()
         hh = self._header_h()
-        font = (zynthian_gui_config.font_family, fs)
-        try:
-            f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=fs)
-            widths = [f.measure(t) + 2 * fs for t in TABS]
-        except Exception:
-            widths = [len(t) * fs + 2 * fs for t in TABS]
+        size, pad, widths, show = self._tab_metrics(title)
+        self.title_shown = show
+        self.title = None                                 # the title follows (shown or not)
+        font = (zynthian_gui_config.font_family, size)
         x = 2
         self.tab_boxes = []
         for i, (t, tw) in enumerate(zip(TABS, widths)):
@@ -1021,7 +1048,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     def _mod_label_font(self, cw):
         """Largest small font (and names) whose column labels fit the cell width: no overlapping text."""
         fam, fs = zynthian_gui_config.font_family, self._font_size()
-        for names in ([d[1] for d in MOD_DSTS], MOD_DSTS_SHORT):
+        dsts, short = self._grid_dsts()
+        for names in ([d[1] for d in dsts], short):
             for size in range(max(6, fs - 4), 5, -1):
                 try:
                     f = tkinter.font.Font(family=fam, size=size)
@@ -1029,7 +1057,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                         return size, names
                 except Exception:
                     return max(6, fs - 4), names
-        return 6, MOD_DSTS_SHORT
+        return 6, short
 
     def _mod_row_label_w(self):
         """Width of the source names at the grid's small font (measured once per font size)."""
@@ -1047,21 +1075,32 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         pad = 6
         top = self._header_h() + 4
         fs = self._font_size()
-        gx1 = int(w * 0.66)                              # grid on the left two thirds
+        gx1 = int(w * 0.66) if self.tab == 4 else w - pad   # Mod: grid on the left two thirds; X-Mod: all
         label_w = self._mod_row_label_w()                # as wide as the source names, no more
         head_h = fs * 2
         gx0 = pad + label_w
         gy0 = top + head_h
         gy1 = h - pad
-        cw = (gx1 - gx0) / float(len(MOD_DSTS))
+        cw = (gx1 - gx0) / float(len(self._grid_dsts()[0]))
         ch = (gy1 - gy0) / float(len(MOD_SRCS))
         return w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch
 
+    def _grid_dsts(self):
+        """(destinations, short names) of the grid on this tab: Mod or X-Mod"""
+        return (XMOD_DSTS, XMOD_DSTS_SHORT) if self.tab == 5 else (MOD_DSTS, MOD_DSTS_SHORT)
+
     def _cell_sym(self, si, di):
+        if self.tab == 5:
+            return "x_%s_%s" % (MOD_SRCS[si][0], XMOD_DSTS[di][0])
         return "m_%s_%s" % (MOD_SRCS[si][0], MOD_DSTS[di][0])
 
+    def _xmod_idle(self, di):
+        """X-Mod: a Rate column does nothing while its LFO follows the tempo"""
+        return self.tab == 5 and di < 2 and int(round(self._zval("lfo%d_sync" % (di + 1), 0))) == 2
+
     def _side_boxes(self):
-        """Right column: (symbol, kind, x0, y0, x1, y1, label); kind: shape, sync, drag"""
+        """Right column: (symbol, kind, x0, y0, x1, y1, label); kind: pol, shape, sync, drag. The polarity
+        buttons (+- / +) sit in the top right corner of the shape boxes, so they come first (hit test)."""
         w, h, pad, top, gx0, gy0, gx1, gy1, cw, ch = self._mod_layout()
         x0, x1 = gx1 + pad * 2, w - pad
         rows = [("lfo1_shape", "shape", "LFO 1"), ("lfo1_sync", "sync", ""),
@@ -1070,6 +1109,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         rh = (h - pad - top) / 5.0
         out = []
         xm = x0 + (x1 - x0) * 0.62
+        pw = self._pol_w()                               # polarity button: a small square
+        for k in range(2):
+            y = top + k * rh
+            out.append(("lfo%d_uni" % (k + 1), "pol", xm - 3 - pw, y, xm - 3, y + pw, ""))
         out.append((rows[0][0], "shape", x0, top, xm - 3, top + rh - 4, rows[0][2]))
         out.append((rows[1][0], "sync", xm, top, x1, top + rh - 4, ""))
         out.append((rows[2][0], "shape", x0, top + rh, xm - 3, top + 2 * rh - 4, rows[2][2]))
@@ -1097,7 +1140,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             for si, (_, name) in enumerate(MOD_SRCS):
                 self.mod_labels.append(c.create_text(gx0 - 4, gy0 + (si + 0.5) * ch, anchor="e", text=name,
                                                      font=(fam, fsmall), tags="mod", fill="#606060"))
-                for di in range(len(MOD_DSTS)):
+                for di in range(len(self._grid_dsts()[0])):
                     x0, y0 = gx0 + di * cw + 1, gy0 + si * ch + 1
                     r = c.create_rectangle(x0, y0, x0 + cw - 2, y0 + ch - 2, fill=mix(MOD_POS, 0), width=0, tags="mod")
                     t = c.create_text(x0 + cw / 2 - 1, y0 + ch / 2 - 1, text="", font=(fam, self.mod_fsmall), tags="mod",
@@ -1109,17 +1152,25 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             v = int(round(self._zval(self._cell_sym(si, di), 0)))
             if v:
                 used[si] = True
-            if self.mod_vals.get((si, di)) == v:
+            idle = self._xmod_idle(di)
+            if self.mod_vals.get((si, di)) == (v, idle):
                 continue
-            self.mod_vals[(si, di)] = v
+            self.mod_vals[(si, di)] = (v, idle)
             f = min(abs(v), 100) / 100.0
-            c.itemconfigure(r, fill=mix(MOD_POS if v >= 0 else MOD_NEG, 0.25 + 0.75 * f if v else 0))
+            if idle:                                      # tempo LFO: its Rate cells are greyed out
+                c.itemconfigure(r, fill=mix((90, 90, 90), 0.35 * f + 0.1))
+            else:
+                c.itemconfigure(r, fill=mix(MOD_POS if v >= 0 else MOD_NEG, 0.25 + 0.75 * f if v else 0))
             c.itemconfigure(t, text=("%+d" % v) if v else "", fill=("#000000" if f > 0.5 else "#e0e0e0"))
         for si, item in enumerate(self.mod_labels):
             want = zynthian_gui_config.color_tx if used[si] else "#606060"
             if c.itemcget(item, "fill") != want:
                 c.itemconfigure(item, fill=want)
-        self._draw_mod_side()
+        if self.tab == 4:
+            self._draw_mod_side()
+
+    def _pol_w(self):
+        return max(14, self._font_size() + 2)
 
     def _draw_mod_side(self):
         vals = tuple(int(round(self._zval(b[0], 0))) for b in self._side_boxes())
@@ -1133,7 +1184,15 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         fam, fs = zynthian_gui_config.font_family, self._font_size()
         fsmall = max(7, fs - 2)
         tx, tx_off = zynthian_gui_config.color_tx, zynthian_gui_config.color_tx_off
-        for (sym, kind, x0, y0, x1, y1, label), v in zip(self._side_boxes(), vals):
+        items = sorted(zip(self._side_boxes(), vals), key=lambda bv: bv[0][1] == "pol")   # pol on top
+        for (sym, kind, x0, y0, x1, y1, label), v in items:
+            if kind == "pol":                             # +- (both ways) or + (0..1): what the LFO puts out
+                on = v == 1
+                c.create_rectangle(x0, y0, x1, y1, outline="#707070", fill=(BUTTON_ON if on else BUTTON_OFF),
+                                   tags="modside")
+                c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=("+" if on else "\u00b1"), tags="modside",
+                              fill=("#000000" if on else tx), font=(fam, fsmall))
+                continue
             c.create_rectangle(x0, y0, x1, y1, outline="#505050", fill=BUTTON_OFF, tags="modside")
             if kind == "sync":
                 on = v >= 1
@@ -1148,8 +1207,17 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                               fill=("#000000" if on else tx), font=(fam, fsmall))
                 continue
             # label and value on top, a picture of the shape below
-            if kind == "shape":
+            if kind == "shape":                           # the shape's name if it fits beside the +- button
                 text = "%s %s" % (label, LFO_SHAPES[min(max(v, 0), len(LFO_SHAPES) - 1)])
+                room = x1 - x0 - 8 - self._pol_w()
+                try:
+                    f = tkinter.font.Font(family=fam, size=fsmall)
+                    for t in (text, label, label.replace("LFO ", "L")):
+                        text = t
+                        if f.measure(t) <= room:
+                            break
+                except Exception:
+                    pass
             else:
                 text = "%s %d %%" % (label, v)
             c.create_text(x0 + 3, y0 + 2, anchor="nw", text=text, fill=tx, font=(fam, fsmall), tags="modside")
@@ -1174,13 +1242,15 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         now = time.monotonic()
         sym, lo, hi = None, 0, 100
         if gx0 <= event.x < gx1 and gy0 <= event.y < gy1:
-            di = min(int((event.x - gx0) / cw), len(MOD_DSTS) - 1)
+            di = min(int((event.x - gx0) / cw), len(self._grid_dsts()[0]) - 1)
             si = min(int((event.y - gy0) / ch), len(MOD_SRCS) - 1)
             sym, lo, hi = self._cell_sym(si, di), -100, 100
-        else:
+        elif self.tab == 4:
             for bsym, kind, x0, y0, x1, y1, _ in self._side_boxes():
                 if x0 <= event.x <= x1 and y0 <= event.y <= y1:
-                    if kind == "shape":
+                    if kind == "pol":
+                        self._zset(bsym, 1 - int(round(self._zval(bsym, 0))))
+                    elif kind == "shape":
                         self._zset(bsym, (int(round(self._zval(bsym, 0))) + 1) % len(LFO_SHAPES))
                     elif kind == "sync":
                         # a tap (no movement, see _on_release) cycles Free/Key/Tempo; the rate is on the knob
@@ -1192,6 +1262,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             if sym is None:
                 self.refresh_gui()
                 return
+        else:
+            return
         if self.last_tap[0] == sym and now - self.last_tap[1] < DOUBLE_TAP:
             default = 100 if sym == "mod_depth" else (10 if sym == "env1_shape" else (50 if sym == "env2_shape" else 0))
             self._zset(sym, default)                      # double tap: back to the default
@@ -1384,6 +1456,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
 
     def _draw_title(self):
         title = self._page_title()
+        if not getattr(self, "title_shown", True):
+            title = ""                                    # no room beside the tabs
         if title == self.title:
             return
         self.title = title

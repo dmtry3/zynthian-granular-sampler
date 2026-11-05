@@ -128,12 +128,14 @@ class Processor:
                                  "cutoff": NumCtrl("cutoff", 20000.0), "resonance": NumCtrl("resonance", 0.0),
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
-                       ("lfo1_rate", 61), ("lfo2_rate", 42),
+                       ("lfo1_rate", 61), ("lfo2_rate", 42), ("lfo1_uni", 0), ("lfo2_uni", 0),
                        ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
             for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
                 self.controllers_dict["m_%s_%s" % (a, b)] = NumCtrl("m_%s_%s" % (a, b), 0)
+            for b in ("lfo1_rate", "lfo2_rate", "lfo1_amt", "lfo2_amt", "env1_time", "env2_time"):
+                self.controllers_dict["x_%s_%s" % (a, b)] = NumCtrl("x_%s_%s" % (a, b), 0)
 
     def v(self, sym):
         return self.controllers_dict[sym].value
@@ -412,6 +414,7 @@ def main():
     pump(lambda: wdg.width < 400, 2)
     check("waveform redrawn after resize", c.find_withtag("wave") != before and wave_drawn() and
           wdg.wave_img.width() == wdg._wave_w())
+    check("360x200: all six tabs fit (%d px)" % wdg.tab_boxes[-1][1], wdg.tab_boxes[-1][1] <= wdg.width)
 
     # plugin error, file the widget can't read
     sample.value = "/no/such/file.wav"
@@ -469,7 +472,7 @@ def main():
     proc.engine.status = 2
     pump(lambda: wdg.peaks_path == PAD)
     img_before = wdg.wave_img
-    check("five tabs: Wave, Grain, Pitch, Filter, Mod", len(wdg.tab_boxes) == 5 and wdg.tab == 0)
+    check("six tabs: Wave, Grain, Pitch, Filter, Mod, X-Mod", len(wdg.tab_boxes) == 6 and wdg.tab == 0)
     nudges = sample.nudges
     hh = wdg._header_h()
     x0, x1 = wdg.tab_boxes[1]
@@ -768,6 +771,66 @@ def main():
     check("nothing redrawn when the values stay", configured == [] and c.find_withtag("modside") == side and
           wdg.mod_items == cells)
 
+    # LFO polarity: the small button in the corner of the shape box
+    pb = boxes["lfo1_uni"]
+    sb = boxes["lfo1_shape"]
+    check("polarity button inside the LFO 1 box, top right", sb[2] < pb[2] and pb[4] <= sb[4] and pb[3] == sb[3])
+    shape0 = proc.v("lfo1_shape")
+
+    def side_text_in(b):
+        for t in c.find_withtag("modside"):
+            if c.type(t) == "text":
+                x, y = c.coords(t)
+                if b[2] <= x <= b[4] and b[3] <= y <= b[5]:
+                    return c.itemcget(t, "text")
+    check("polarity shows +- (both ways)", side_text_in(pb) == "\u00b1")
+    wdg._on_press(Tap((pb[2] + pb[4]) / 2, (pb[3] + pb[5]) / 2)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("tap: + (0..1), the shape stays", proc.v("lfo1_uni") == 1 and proc.v("lfo1_shape") == shape0 and
+          side_text_in(pb) == "+")
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap((pb[2] + pb[4]) / 2, (pb[3] + pb[5]) / 2)); wdg._on_release(None)
+    check("tap again: back to +-", proc.v("lfo1_uni") == 0)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    lab = [t for t in c.find_withtag("modside") if c.type(t) == "text" and c.itemcget(t, "text").split(" ")[0:2] in (["LFO", "1"], ["L1"])]
+    pbt = [t for t in c.find_withtag("modside") if c.type(t) == "rectangle" and
+           [round(v) for v in c.coords(t)] == [round(v) for v in pb[2:6]]]
+    bl, br_ = c.bbox(lab[0]) if lab else None, c.bbox(pbt[-1]) if pbt else None
+    check("LFO 1 label clear of the polarity button", bl and br_ and bl[2] <= br_[0])
+
+    # X-Mod tab: 7 sources x 6 modulator targets
+    x0, x1 = wdg.tab_boxes[5]
+    wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+    pump(lambda: False, 0.05)
+    check("X-Mod tab: 42 cells (7 x 6), no side column", wdg.tab == 5 and len(wdg.mod_items) == 42 and
+          not c.find_withtag("modside"))
+    W_, H_, pad_, top_, gx0, gy0, gx1, gy1, cw, ch = wdg._mod_layout()
+    x, y = cell_xy(2, 2)                                  # Env1 -> LFO1 Amount
+    drag(x, y, 45)
+    check("finger up 45 px: +30 on Env1>L1 Amt", proc.v("x_env1_lfo1_amt") == 30 and proc.v("m_env1_spray") == 0)
+    wdg._on_press(Tap(x, y)); wdg._on_release(None); wdg._on_press(Tap(x, y)); wdg._on_release(None)
+    check("double tap resets it", proc.v("x_env1_lfo1_amt") == 0)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    x, y = cell_xy(4, 4)                                  # Vel -> Env1 Time
+    drag(x, y, -60)
+    pump(lambda: False, 0.05)
+    check("finger down: Vel>E1 Time -40, the Vel row lit", proc.v("x_vel_env1_time") == -40 and
+          c.itemcget(wdg.mod_labels[4], "fill") == cfg.color_tx)
+    x, y = cell_xy(1, 0)                                  # LFO2 -> LFO1 Rate
+    drag(x, y, 30)
+    pump(lambda: False, 0.05)
+    lit = c.itemcget(wdg.mod_items[(1, 0)][0], "fill")
+    proc.controllers_dict["lfo1_sync"].value = 2          # LFO 1 on the tempo: its Rate column does nothing
+    pump(lambda: False, 0.05)
+    grey = c.itemcget(wdg.mod_items[(1, 0)][0], "fill")
+    check("tempo LFO 1: its Rate cells greyed out, the others not",
+          grey != lit and c.itemcget(wdg.mod_items[(1, 1)][0], "fill") == c.itemcget(wdg.mod_items[(0, 3)][0], "fill"))
+    proc.controllers_dict["lfo1_sync"].value = 0
+    pump(lambda: False, 0.05)
+    check("Free again: the colour back", c.itemcget(wdg.mod_items[(1, 0)][0], "fill") == lit)
+    for k in ("x_vel_env1_time", "x_lfo2_lfo1_rate"):
+        proc.controllers_dict[k].value = 0
+
     x0, x1 = wdg.tab_boxes[0]
     wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
     proc.engine.playhead = 0.3
@@ -831,6 +894,23 @@ def main():
         first_cell = wdg.mod_items[(0, 0)][0]
         check("%s Mod: row labels clear of the grid" % geo,
               all(c.bbox(r)[2] <= c.bbox(first_cell)[0] + 1 for r in rows))
+        lab = [t for t in c.find_withtag("modside") if c.type(t) == "text" and c.itemcget(t, "text").startswith("LFO ")]
+        pols = [b_ for b_ in wdg._side_boxes() if b_[1] == "pol"]
+        check("%s Mod: LFO labels clear of the polarity buttons" % geo,
+              len(lab) == 2 and all(c.bbox(t)[2] <= pb_[2] for t, pb_ in zip(sorted(lab, key=lambda t: c.coords(t)[1]), pols)))
+        x0, x1 = wdg.tab_boxes[5]
+        wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+        pump(lambda: False, 0.05)
+        heads = [i for i in c.find_withtag("mod") if c.type(i) == "text" and c.itemcget(i, "text") in
+                 [d[1] for d in mod.XMOD_DSTS] + mod.XMOD_DSTS_SHORT]
+        heads.sort(key=lambda i: c.coords(i)[0])
+        check("%s X-Mod: 6 column labels, no overlap, inside the screen" % geo,
+              len(heads) == 6 and not any(overlap(c.bbox(a_), c.bbox(b_)) for a_, b_ in zip(heads, heads[1:])) and
+              c.bbox(heads[-1])[2] <= wdg.width)
+        check("%s X-Mod: the tab bar fits" % geo, wdg.tab_boxes[-1][1] <= wdg.width)
+        tt = [i for i in c.find_withtag("title") if c.type(i) == "text" and c.itemcget(i, "text")]
+        check("%s: the page title (if shown) clear of the tabs" % geo,
+              all(c.bbox(i)[0] >= wdg.tab_boxes[-1][1] for i in tt))
         inside = True
         for sb in wdg._side_boxes():
             if sb[1] != "sync":

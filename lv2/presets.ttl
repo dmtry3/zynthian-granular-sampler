@@ -53,6 +53,8 @@
         <urn:granularsampler:sampler#gain> 42 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -115,7 +117,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_cello_ensemble>
@@ -167,6 +211,8 @@
         <urn:granularsampler:sampler#gain> 116 ;
         <urn:granularsampler:sampler#mark_start> 500 ;
         <urn:granularsampler:sampler#mark_end> 9000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -229,7 +275,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_cello_frozen>
@@ -281,6 +369,8 @@
         <urn:granularsampler:sampler#gain> 116 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -343,7 +433,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_cello_legato>
@@ -395,6 +527,8 @@
         <urn:granularsampler:sampler#gain> 116 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -457,7 +591,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_kalimba_shimmer>
@@ -509,6 +685,8 @@
         <urn:granularsampler:sampler#gain> 82 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -571,7 +749,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_kalimba_box>
@@ -623,6 +843,8 @@
         <urn:granularsampler:sampler#gain> 42 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 6000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -685,7 +907,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_kalimba_cloud>
@@ -737,6 +1001,8 @@
         <urn:granularsampler:sampler#gain> 122 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -799,7 +1065,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_bowl_drone>
@@ -851,6 +1159,8 @@
         <urn:granularsampler:sampler#gain> 30 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -913,7 +1223,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_bowl_octaves>
@@ -965,6 +1317,8 @@
         <urn:granularsampler:sampler#gain> 60 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1027,7 +1381,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_cymbal_wash>
@@ -1079,6 +1475,8 @@
         <urn:granularsampler:sampler#gain> 61 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1141,7 +1539,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_cymbal_swell>
@@ -1193,6 +1633,8 @@
         <urn:granularsampler:sampler#gain> -9 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1255,7 +1697,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_break_stutter>
@@ -1307,6 +1791,8 @@
         <urn:granularsampler:sampler#gain> 40 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1369,7 +1855,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_break_scatter>
@@ -1421,6 +1949,8 @@
         <urn:granularsampler:sampler#gain> 60 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1483,7 +2013,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_break_filter>
@@ -1535,6 +2107,8 @@
         <urn:granularsampler:sampler#gain> 60 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1597,7 +2171,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_voice_choir>
@@ -1649,6 +2265,8 @@
         <urn:granularsampler:sampler#gain> 43 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1711,7 +2329,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_voice_robot>
@@ -1763,6 +2423,8 @@
         <urn:granularsampler:sampler#gain> 53 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1825,7 +2487,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_whisper_texture>
@@ -1877,6 +2581,8 @@
         <urn:granularsampler:sampler#gain> 155 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1939,7 +2645,49 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 
 <urn:granularsampler:sampler#preset_whisper_pulse>
@@ -1991,6 +2739,8 @@
         <urn:granularsampler:sampler#gain> 65 ;
         <urn:granularsampler:sampler#mark_start> 0 ;
         <urn:granularsampler:sampler#mark_end> 10000 ;
+        <urn:granularsampler:sampler#lfo1_uni> 0 ;
+        <urn:granularsampler:sampler#lfo2_uni> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2053,6 +2803,48 @@
         <urn:granularsampler:sampler#m_rnd_pitch> 0 ;
         <urn:granularsampler:sampler#m_rnd_pan> 0 ;
         <urn:granularsampler:sampler#m_rnd_level> 0 ;
-        <urn:granularsampler:sampler#m_rnd_cutoff> 0
+        <urn:granularsampler:sampler#m_rnd_cutoff> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_lfo2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env1_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env1_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_env2_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_env2_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_vel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_vel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_wheel_env2_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_rate> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo1_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_lfo2_amt> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env1_time> 0 ;
+        <urn:granularsampler:sampler#x_rnd_env2_time> 0
     ] .
 

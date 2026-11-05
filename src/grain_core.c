@@ -152,6 +152,19 @@ void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount) {
     for (int d = 0; d < GC_NDST; d++)
       if (g->mod_cell[s][d] != 0.0f) g->mod_list[g->nmod++] = s * GC_NDST + d;
 }
+void gc_set_xmod_cell(GrainCore* g, int src, int dst, float amount) {
+  if (src < 0 || src >= GC_NSRC || dst < 0 || dst >= GC_NXDST) return;
+  g->xmod_cell[src][dst] = clampf(amount, -1.0f, 1.0f);
+  g->nxmod = 0;
+  g->xamt_pos[0] = g->xamt_pos[1] = 0;
+  for (int s = 0; s < GC_NSRC; s++)
+    for (int d = 0; d < GC_NXDST; d++) {
+      const float c = g->xmod_cell[s][d];
+      if (c != 0.0f) g->xmod_list[g->nxmod++] = s * GC_NXDST + d;
+      if (c > 0.0f && (d == GC_XDST_LFO1_AMT || d == GC_XDST_LFO2_AMT)) g->xamt_pos[d - GC_XDST_LFO1_AMT] = 1;
+    }
+}
+void gc_set_lfo_uni(GrainCore* g, int i, int unipolar) { if (i >= 0 && i <= 1) g->lfo_uni[i] = unipolar != 0; }
 void gc_set_mod_depth(GrainCore* g, float depth) { g->mod_depth = clampf(depth, 0.0f, 1.0f); }
 void gc_set_modwheel(GrainCore* g, float value) { g->modwheel = clampf(value, 0.0f, 1.0f); }
 void gc_set_lfo(GrainCore* g, int i, int shape, int sync) {
@@ -230,6 +243,12 @@ static void voice_mod(GrainCore* g, const GcParams* p, GcVoice* v, int m) {
     return;
   }
   const float dt = (float)m / g->sr;
+  /* cross-modulation from the sources of the last block */
+  float xm[GC_NXDST] = { 0 };
+  for (int i = 0; i < g->nxmod; i++) {
+    const int s = g->xmod_list[i] / GC_NXDST, d = g->xmod_list[i] % GC_NXDST;
+    xm[d] += g->xmod_cell[s][d] * v->src[s];
+  }
   for (int k = 0; k < 2; k++) {
     int new_cycle = 0;
     if (g->lfo_sync[k] == GC_SYNC_TEMPO) {      /* phase from the beat clock: every voice the same */
@@ -239,7 +258,9 @@ static void voice_mod(GrainCore* g, const GcParams* p, GcVoice* v, int m) {
       new_cycle = n != v->lfo_cycle[k];
       v->lfo_cycle[k] = n;
     } else {
-      v->lfo_ph[k] += clampf(p->lfo_rate[k], GC_LFO_MIN, GC_LFO_MAX) * dt;
+      const float rate = p->lfo_rate[k] * (xm[GC_XDST_LFO1_RATE + k] != 0.0f ?
+                                           exp2f(xm[GC_XDST_LFO1_RATE + k] * GC_XMOD_OCTAVES) : 1.0f);
+      v->lfo_ph[k] += clampf(rate, GC_LFO_MIN, GC_LFO_MAX) * dt;
       if (v->lfo_ph[k] >= 1.0f) { v->lfo_ph[k] -= floorf(v->lfo_ph[k]); new_cycle = 1; }
     }
     if (new_cycle) {                            /* a new cycle: next random step */
@@ -247,10 +268,15 @@ static void voice_mod(GrainCore* g, const GcParams* p, GcVoice* v, int m) {
       v->lfo_b[k] = rnd(g) * 2.0f - 1.0f;
       if (g->lfo_shape[k] == GC_LFO_SH) v->lfo_a[k] = v->lfo_b[k];
     }
-    v->src[GC_SRC_LFO1 + k] = gc_lfo_value(g->lfo_shape[k], v->lfo_ph[k], v->lfo_a[k], v->lfo_b[k]);
+    float lfo = gc_lfo_value(g->lfo_shape[k], v->lfo_ph[k], v->lfo_a[k], v->lfo_b[k]);
+    if (g->lfo_uni[k]) lfo = 0.5f * (lfo + 1.0f);
+    const float amt = xm[GC_XDST_LFO1_AMT + k];
+    if (amt != 0.0f || g->xamt_pos[k]) lfo *= clampf((g->xamt_pos[k] ? 0.0f : 1.0f) + amt, 0.0f, 1.0f);
+    v->src[GC_SRC_LFO1 + k] = lfo;
     v->env_t[k] += dt;
-    v->src[GC_SRC_ENV1 + k] = gc_env_value(g->env_shape[k], v->env_t[k],
-                                           clampf(p->env_time[k], GC_ENV_MIN, GC_ENV_MAX));
+    const float et = p->env_time[k] * (xm[GC_XDST_ENV1_TIME + k] != 0.0f ?
+                                       exp2f(xm[GC_XDST_ENV1_TIME + k] * GC_XMOD_OCTAVES) : 1.0f);
+    v->src[GC_SRC_ENV1 + k] = gc_env_value(g->env_shape[k], v->env_t[k], clampf(et, GC_ENV_MIN, GC_ENV_MAX));
   }
   v->src[GC_SRC_VEL] = v->vel;
   v->src[GC_SRC_WHEEL] = g->modwheel;
@@ -343,6 +369,7 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
   }
   for (int k = 0; k < 2; k++) {
     v->env_t[k] = 0.0f;                    /* Env 1/2 start with the note */
+    v->src[GC_SRC_ENV1 + k] = 0.0f;        /* (cross-modulation reads the last block's sources) */
     if (g->lfo_sync[k] == GC_SYNC_KEY) v->lfo_ph[k] = 0.0f;
   }
   voice_set_note(g, v, note);             /* before the stage changes: a fresh voice does not glide */
@@ -350,6 +377,7 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
   v->gate = 1;
   v->sus = 0;
   v->vel = clampf(vel / 127.0f, 0.0f, 1.0f);
+  v->src[GC_SRC_VEL] = v->vel;
   v->playhead = g->src.frames[0] ? window_start(g, p) : 0.0;   /* every note starts reading at Position */
   v->next = 0.0f;                                              /* first grain right away */
   v->age = ++g->age;

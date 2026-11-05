@@ -1188,6 +1188,100 @@ static void test_mod_voices(void) {
   free_src(&s);
 }
 
+/* LFO polarity and cross-modulation (X-Mod tab) */
+static void test_xmod(void) {
+  GcParams p = poly_params();
+  Src s = make_src(SR, SR, 1, f_half);
+  gc_init(&G, SR, 1);
+  gc_set_source(&G, &s.src);
+  gc_set_mod_cell(&G, GC_SRC_LFO1, GC_DST_PAN, 0.5f);      /* something in the grid: sources are computed */
+  /* unipolar: 0..1 instead of -1..1 */
+  gc_set_lfo(&G, 0, GC_LFO_SAW_UP, GC_SYNC_KEY);
+  gc_note_on(&G, &p, 60, 100);
+  float lo = 9, hi = -9;
+  for (int k = 0; k < 2 * SR / GC_BLOCK; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    lo = fminf(lo, G.voices[0].src[GC_SRC_LFO1]); hi = fmaxf(hi, G.voices[0].src[GC_SRC_LFO1]);
+  }
+  CHECK(lo < -0.95f && hi > 0.95f);
+  gc_set_lfo_uni(&G, 0, 1);
+  lo = 9; hi = -9;
+  for (int k = 0; k < 2 * SR / GC_BLOCK; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    lo = fminf(lo, G.voices[0].src[GC_SRC_LFO1]); hi = fmaxf(hi, G.voices[0].src[GC_SRC_LFO1]);
+  }
+  CHECK(lo >= 0.0f && lo < 0.05f && hi > 0.95f && hi <= 1.0f);
+  gc_set_lfo_uni(&G, 0, 0);
+
+  /* Rate: +100 % of a source at 1 = x 2^3; the phase moves 8 times faster */
+  gc_all_off(&G);
+  gc_set_xmod_cell(&G, GC_SRC_VEL, GC_XDST_LFO1_RATE, 1.0f);
+  gc_note_on(&G, &p, 60, 127);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  const float ph0 = G.voices[0].lfo_ph[0];
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf((G.voices[0].lfo_ph[0] - ph0) - 8.0f * p.lfo_rate[0] * GC_BLOCK / SR) < 1e-4f);
+  gc_set_xmod_cell(&G, GC_SRC_VEL, GC_XDST_LFO1_RATE, -1.0f);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  const float ph1 = G.voices[0].lfo_ph[0];
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf((G.voices[0].lfo_ph[0] - ph1) - p.lfo_rate[0] / 8.0f * GC_BLOCK / SR) < 1e-5f);
+  gc_set_xmod_cell(&G, GC_SRC_VEL, GC_XDST_LFO1_RATE, 0.0f);
+  CHECK(G.nxmod == 0);
+
+  /* Amount, positive cell: Env 1 brings the LFO in (delayed vibrato); before it, nothing */
+  gc_all_off(&G);
+  gc_set_lfo(&G, 0, GC_LFO_SQUARE, GC_SYNC_KEY);          /* +1 in the first half: easy to see */
+  gc_set_env(&G, 0, 1.0f);                                /* Env 1: all attack, 0 -> 1 over env_time */
+  p.env_time[0] = 1.0f;
+  gc_set_xmod_cell(&G, GC_SRC_ENV1, GC_XDST_LFO1_AMT, 1.0f);
+  gc_note_on(&G, &p, 60, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].src[GC_SRC_LFO1]) < 0.01f);     /* env ~0: no LFO */
+  run(&p, 0.25, NULL);
+  const float half = G.voices[0].src[GC_SRC_LFO1], env = G.voices[0].src[GC_SRC_ENV1];
+  CHECK(fabsf(fabsf(half) - env) < 0.02f && env > 0.2f && env < 0.3f);   /* LFO x env (one block late) */
+  /* Amount, only a negative cell: the LFO is there and the source takes it away */
+  gc_set_xmod_cell(&G, GC_SRC_ENV1, GC_XDST_LFO1_AMT, 0.0f);
+  gc_set_xmod_cell(&G, GC_SRC_WHEEL, GC_XDST_LFO1_AMT, -1.0f);
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100);
+  gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].src[GC_SRC_LFO1] - 1.0f) < 1e-6f);   /* wheel 0: the whole LFO */
+  gc_set_modwheel(&G, 0.75f);
+  gc_process(&G, &p, L, R, GC_BLOCK); gc_process(&G, &p, L, R, GC_BLOCK);
+  CHECK(fabsf(G.voices[0].src[GC_SRC_LFO1] - 0.25f) < 1e-6f);
+  gc_set_modwheel(&G, 0.0f);
+  gc_set_xmod_cell(&G, GC_SRC_WHEEL, GC_XDST_LFO1_AMT, 0.0f);
+
+  /* Env Time: velocity 127 at -100 % makes Env 1 8 times shorter */
+  gc_set_xmod_cell(&G, GC_SRC_VEL, GC_XDST_ENV1_TIME, -1.0f);
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 127);
+  run(&p, 1.0 / 8.0 + 0.01, NULL);
+  CHECK(G.voices[0].src[GC_SRC_ENV1] > 0.99f);            /* the attack (= the whole time) is over */
+  gc_set_xmod_cell(&G, GC_SRC_VEL, GC_XDST_ENV1_TIME, 0.0f);
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 127);
+  run(&p, 1.0 / 8.0 + 0.01, NULL);
+  CHECK(G.voices[0].src[GC_SRC_ENV1] < 0.2f);
+
+  /* loops are fine: LFO 1 on LFO 2's rate and back, full scale, stays finite and in range */
+  gc_set_lfo(&G, 0, GC_LFO_SINE, GC_SYNC_FREE); gc_set_lfo(&G, 1, GC_LFO_SH, GC_SYNC_FREE);
+  gc_set_xmod_cell(&G, GC_SRC_LFO1, GC_XDST_LFO2_RATE, 1.0f);
+  gc_set_xmod_cell(&G, GC_SRC_LFO2, GC_XDST_LFO1_RATE, -1.0f);
+  gc_set_xmod_cell(&G, GC_SRC_LFO1, GC_XDST_LFO1_RATE, 1.0f);
+  gc_set_xmod_cell(&G, GC_SRC_LFO2, GC_XDST_LFO2_AMT, 1.0f);
+  gc_all_off(&G); gc_note_on(&G, &p, 60, 100);
+  int bad = 0;
+  for (int k = 0; k < 4 * SR / GC_BLOCK; k++) {
+    gc_process(&G, &p, L, R, GC_BLOCK);
+    for (int j = 0; j < 2; j++) {
+      const float x = G.voices[0].src[GC_SRC_LFO1 + j];
+      if (!isfinite(x) || x < -1.0f || x > 1.0f) bad++;
+    }
+  }
+  CHECK(bad == 0);
+  free_src(&s);
+}
+
 /* tempo-synced LFOs: phase from the beat clock, the same in every voice */
 static void test_lfo_tempo(void) {
   GcParams p = poly_params();
@@ -1280,6 +1374,7 @@ int main(void) {
   test_mod_dest();
   test_mod_voices();
   test_lfo_tempo();
+  test_xmod();
   printf(fails ? "%d FAILED\n" : "All grain tests passed\n", fails);
   return fails != 0;
 }

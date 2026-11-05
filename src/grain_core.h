@@ -53,6 +53,12 @@ enum { GC_DST_POSITION = 0, GC_DST_SCAN, GC_DST_SPRAY, GC_DST_SIZE, GC_DST_DENSI
 #define GC_MOD_SCAN     2.0f   /* x realtime */
 #define GC_MOD_SPRAY    1.0f   /* of the window */
 #define GC_MOD_OCTAVES  3.0f   /* Size and Density: x 2^(+-3) */
+/* Cross-modulation (X-Mod tab): the same sources onto the modulators themselves. Rate and Time: x 2^(+-3) at
+ * 100; Amount: the LFO's output times 0..1 (with a positive cell it starts from 0 and the source brings it in,
+ * with only negative cells it starts from 1 and the source takes it away). One block late (no loops to solve). */
+enum { GC_XDST_LFO1_RATE = 0, GC_XDST_LFO2_RATE, GC_XDST_LFO1_AMT, GC_XDST_LFO2_AMT, GC_XDST_ENV1_TIME,
+       GC_XDST_ENV2_TIME, GC_NXDST };
+#define GC_XMOD_OCTAVES 3.0f
 #define GC_MOD_PITCH    24.0f  /* semitones */
 #define GC_MOD_PAN      0.5f
 #define GC_MOD_CUTOFF   5.0f   /* octaves */
@@ -192,6 +198,10 @@ typedef struct {
   /* modulation settings (from the widget) */
   float mod_cell[GC_NSRC][GC_NDST];
   int mod_list[GC_NSRC * GC_NDST], nmod;   /* non-zero cells: empty ones cost nothing */
+  float xmod_cell[GC_NSRC][GC_NXDST];      /* cross-modulation, -1..1 */
+  int xmod_list[GC_NSRC * GC_NXDST], nxmod;
+  int xamt_pos[2];                         /* LFO Amount has a positive cell: it starts from 0 */
+  int lfo_uni[2];                          /* 1: LFO 0..1 (unipolar), 0: -1..1 */
   float mod_depth;        /* 0..1: the whole grid */
   float modwheel;         /* CC 1, 0..1 */
   int sustain;            /* CC 64 pedal down */
@@ -229,6 +239,8 @@ extern const char* const gc_scale_names[GC_NSCALES];
 float gc_snap(const GrainCore* g, float semis);
 /* Modulation settings */
 void gc_set_mod_cell(GrainCore* g, int src, int dst, float amount);   /* -1..1 */
+void gc_set_xmod_cell(GrainCore* g, int src, int xdst, float amount); /* -1..1, GC_XDST_* */
+void gc_set_lfo_uni(GrainCore* g, int i, int unipolar);
 void gc_set_mod_depth(GrainCore* g, float depth);                     /* 0..1 */
 void gc_set_modwheel(GrainCore* g, float value);                      /* 0..1 */
 /* Sustain pedal (CC 64): while down, released keys keep sounding; up, they go to release. */
