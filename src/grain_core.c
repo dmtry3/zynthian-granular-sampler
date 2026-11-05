@@ -770,6 +770,13 @@ float gc_vowel_pos(float fc) {
                          (GC_CUTOFF_MAX - GC_CUTOFF_MIN) + 1.0f);
   return 4.0f * x;
 }
+int gc_ftype(int knob, int slope24) {
+  static const int t12[GC_NKNOB_TYPES] = { GC_LP, GC_HP, GC_BP, GC_NOTCH, GC_COMB, GC_VOWEL };
+  static const int t24[GC_NKNOB_TYPES] = { GC_LP24, GC_HP24, GC_BP24, GC_NOTCH, GC_COMB, GC_VOWEL };
+  if (knob < 0) knob = 0;
+  if (knob >= GC_NKNOB_TYPES) knob = GC_NKNOB_TYPES - 1;
+  return slope24 ? t24[knob] : t12[knob];
+}
 /* Comb feedback from Resonance; the output is scaled by sqrt(1 - fb^2) (noise keeps its loudness) */
 float gc_comb_fb(float res) { return 0.3f + 0.67f * clampf(res, 0.0f, 1.0f); }
 
@@ -890,6 +897,22 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
           const float l2 = svf_tick(&c2, s + 2, h1, &b);
           x[i] = h1 - c2.k * b - l2;
         }
+      }
+    }
+    return;
+  }
+
+  if (type == GC_BP24) {
+    /* two equal band-passes in series: 12 dB/oct on each side; x k keeps the peak of the 12 dB band-pass */
+    const Svf c = svf_coef(fc, g->sr, kr);
+    for (int ch = 0; ch < 2; ch++) {
+      float* x = xs[ch];
+      float* s = v->fs[ch];
+      for (int i = 0; i < m; i++) {
+        float b1, b2;
+        svf_tick(&c, s, x[i], &b1);
+        svf_tick(&c, s + 2, b1, &b2);
+        x[i] = kr * b2;
       }
     }
     return;

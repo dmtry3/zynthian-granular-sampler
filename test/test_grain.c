@@ -926,6 +926,14 @@ static void test_filter(void) {
   CHECK(db(filter_gain(2000, GC_LP24, 1000, 0)) < -21.0 && db(filter_gain(2000, GC_LP, 1000, 0)) > -14.0);
   CHECK(db(filter_gain(500, GC_HP24, 1000, 0)) < -21.0 && fabs(db(filter_gain(5000, GC_HP24, 1000, 0))) < 0.5);
   CHECK(filter_gain(1000, GC_LP24, 1000, 1.0f) > 8.0);              /* resonance on the 24 dB too */
+  /* BP 24: the same peak as BP 12, steeper sides */
+  CHECK(fabs(db(filter_gain(1000, GC_BP24, 1000, 0.5f)) - db(filter_gain(1000, GC_BP, 1000, 0.5f))) < 0.3);
+  CHECK(db(filter_gain(4000, GC_BP24, 1000, 0)) < db(filter_gain(4000, GC_BP, 1000, 0)) - 8.0);
+  /* the Type knob and the 12/24 switch */
+  CHECK(gc_ftype(GC_KNOB_LP, 0) == GC_LP && gc_ftype(GC_KNOB_LP, 1) == GC_LP24 && gc_ftype(GC_KNOB_HP, 1) == GC_HP24 &&
+        gc_ftype(GC_KNOB_BP, 1) == GC_BP24 && gc_ftype(GC_KNOB_BP, 0) == GC_BP && gc_ftype(GC_KNOB_NOTCH, 1) == GC_NOTCH &&
+        gc_ftype(GC_KNOB_COMB, 0) == GC_COMB && gc_ftype(GC_KNOB_VOWEL, 1) == GC_VOWEL && gc_ftype(99, 0) == GC_VOWEL &&
+        gc_ftype(-3, 1) == GC_LP24);
   /* notch: a hole at the cutoff, flat away from it, narrower with Resonance */
   CHECK(db(filter_gain(1000, GC_NOTCH, 1000, 0)) < -25.0);
   CHECK(fabs(db(filter_gain(150, GC_NOTCH, 1000, 0))) < 1.0 && fabs(db(filter_gain(7000, GC_NOTCH, 1000, 0))) < 1.0);

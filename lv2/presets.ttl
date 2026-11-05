@@ -58,6 +58,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -219,6 +220,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -380,6 +382,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -541,6 +544,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -702,6 +706,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -863,6 +868,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1024,6 +1030,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1185,6 +1192,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1346,6 +1354,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1507,6 +1516,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1668,6 +1678,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1829,6 +1840,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -1990,6 +2002,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2151,6 +2164,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2312,6 +2326,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2473,6 +2488,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2634,6 +2650,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;
@@ -2795,6 +2812,7 @@
         <urn:granularsampler:sampler#filter_mix> 100 ;
         <urn:granularsampler:sampler#vowel_lows> 25 ;
         <urn:granularsampler:sampler#vowel_highs> 50 ;
+        <urn:granularsampler:sampler#filter_slope> 0 ;
         <urn:granularsampler:sampler#m_lfo1_position> 0 ;
         <urn:granularsampler:sampler#m_lfo1_scan> 0 ;
         <urn:granularsampler:sampler#m_lfo1_spray> 0 ;

@@ -59,7 +59,7 @@ static void measure(int grains, int interp) {
 }
 
 /* 8 voices, a chord, each wanting pool/8 grains: the stage 3 case (8 voices, all grains busy). */
-static const char* const ftype_names[GC_NFTYPES] = { "LP12", "HP12", "BP", "LP24", "HP24", "Notch", "Comb", "Vowel" };
+static const char* const ftype_names[GC_NFTYPES] = { "LP12", "HP12", "BP", "LP24", "HP24", "Notch", "Comb", "Vowel", "BP24" };
 /* filter: 0 off, else filter type + 1; mod: 0 none, 1 busy grid, 2 full grid */
 static void measure_poly(int interp, int filter, int mod) {
   static float l[PERIOD], r[PERIOD];

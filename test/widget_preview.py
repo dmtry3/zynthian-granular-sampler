@@ -129,7 +129,8 @@ class Processor:
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
                        ("lfo1_rate", 61), ("lfo2_rate", 42), ("lfo1_uni", 0), ("lfo2_uni", 0),
-                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100), ("filter_mix", 100), ("vowel_lows", 25), ("vowel_highs", 50)):
+                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100), ("filter_mix", 100), ("vowel_lows", 25), ("vowel_highs", 50),
+                       ("filter_slope", 0)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
             for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
@@ -660,12 +661,43 @@ def main():
     check("python curve = engine: Vowel keeps the top (-6 dB at 10 kHz)", -8 < gdb(10000, 20, 0.5, 7) < -4)
     check("python curve = engine: Vowel keeps the bottom, quieter (-12 dB at 60 Hz)", -14 < gdb(60, 20, 0.5, 7) < -10)
     texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
-    for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, knob_hz(0.625), "Vowel  I-O"),
-                        (6, 220.0, "Comb  220 Hz"), (3, 1000.0, "LP24  1.0 kHz")):
+    for t, fc, want in ((5, 20.0, "Vowel  A"), (5, vow_i, "Vowel  I"), (5, knob_hz(0.625), "Vowel  I-O"),
+                        (4, 220.0, "Comb  220 Hz"), (0, 1000.0, "LP 12  1.0 kHz"), (2, 1000.0, "BP 12  1.0 kHz")):
         proc.controllers_dict["ftype"].value = t
         proc.controllers_dict["cutoff"].value = fc
         pump(lambda: False, 0.05)
         check("Filter info: %s" % want, any(x.startswith(want + " ") for x in texts()))
+    # LP / HP / BP: 12 | 24 dB switch top left; none on Notch, Comb, Vowel
+    proc.controllers_dict["ftype"].value = 0
+    proc.controllers_dict["cutoff"].value = 1000.0
+    proc.controllers_dict["resonance"].value = 0.0
+    pump(lambda: False, 0.05)
+    fx0, fy0, fx1, fy1 = wdg._filter_layout()
+    sb = wdg.slope_boxes
+    check("LP: the 12 | 24 dB switch in the top left, 12 lit", len(sb) == 2 and sb[0][0][0] < fx0 + 10 and
+          "12 dB" in texts() and "24 dB" in texts() and proc.v("filter_slope") == 0)
+    lp12 = db_at(2000)
+    b24 = sb[1][0]
+    wdg._on_press(Tap((b24[0] + b24[2]) / 2, (b24[1] + b24[3]) / 2)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("tap on 24 dB: slope 1, LP 24 in the info, the curve twice as steep", proc.v("filter_slope") == 1 and
+          any(x.startswith("LP 24 ") for x in texts()) and abs(db_at(2000) - 2 * lp12) < 2.5)
+    proc.controllers_dict["ftype"].value = 2
+    pump(lambda: False, 0.05)
+    check("BP 24: same peak as BP 12, steeper sides", any(x.startswith("BP 24 ") for x in texts()) and
+          abs(db_at(1000) + 3.0) < 1.0 and db_at(4000) < -18)   # BP 12: -3 at the centre, -12 at 4k
+    check("python curve = engine: BP 24 peak = BP 12 peak",
+          abs(gdb(1000, 1000, 0.5, 8) - gdb(1000, 1000, 0.5, 2)) < 0.3)
+    for t, name in ((3, "Notch"), (4, "Comb"), (5, "Vowel")):
+        proc.controllers_dict["ftype"].value = t
+        pump(lambda: False, 0.05)
+        check("%s: no slope switch" % name, not wdg.slope_boxes and "24 dB" not in texts())
+    proc.controllers_dict["ftype"].value = 0
+    pump(lambda: False, 0.05)
+    b12 = wdg.slope_boxes[0][0]
+    wdg._on_press(Tap((b12[0] + b12[2]) / 2, (b12[1] + b12[3]) / 2)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("tap on 12 dB: back to 12", proc.v("filter_slope") == 0)
     # Mix (dry/wet): bar in the top right of the plot, finger left/right, double tap = 100 %
     mb = wdg.mix_box
     fx0, fy0, fx1, fy1 = wdg._filter_layout()
@@ -678,7 +710,7 @@ def main():
     wdg._on_press(Tap(mx, my)); wdg._on_motion(Tap(mx - mw / 2.0, my + 20)); wdg._on_release(None)
     pump(lambda: False, 0.05)
     check("Mix: finger left half the bar = 50 %", abs(proc.v("filter_mix") - 50) <= 1 and "Mix 50 %" in texts())
-    proc.controllers_dict["ftype"].value = 5
+    proc.controllers_dict["ftype"].value = 3                      # Notch
     proc.controllers_dict["cutoff"].value = 1000.0
     proc.controllers_dict["resonance"].value = 0.0               # a wide hole: the nearest curve point is in it
     pump(lambda: False, 0.05)
@@ -698,7 +730,7 @@ def main():
     # Vowel Lows / Highs: only with Vowel; Lows top left, Highs under Mix
     check("no Lows/Highs bars on a Notch", wdg.lows_box is None and wdg.highs_box is None and
           not any(x.startswith("Lows") or x.startswith("Highs") for x in texts()))
-    proc.controllers_dict["ftype"].value = 7
+    proc.controllers_dict["ftype"].value = 5                      # Vowel
     proc.controllers_dict["cutoff"].value = 20.0
     pump(lambda: False, 0.05)
     lb, hb, mb = wdg.lows_box, wdg.highs_box, wdg.mix_box
@@ -955,7 +987,7 @@ def main():
         axis = [t for t in texts if c.itemcget(t, "text") in ("100", "1k", "10k")]
         check("%s Filter: frequency labels clear of the info line" % geo,
               len(axis) == 3 and not any(overlap(c.bbox(t), c.bbox(info)) for t in axis))
-        proc.controllers_dict["ftype"].value = 7
+        proc.controllers_dict["ftype"].value = 5                  # Vowel
         pump(lambda: False, 0.05)
         texts = [i for i in c.find_withtag("filter") if c.type(i) == "text"]
         bars = {"Lows": wdg.lows_box, "Highs": wdg.highs_box, "Mix": wdg.mix_box}
@@ -966,6 +998,11 @@ def main():
               not overlap(bars["Lows"], bars["Highs"]) and not overlap(bars["Mix"], bars["Highs"]))
         proc.controllers_dict["ftype"].value = 0
         pump(lambda: False, 0.05)
+        texts = [i for i in c.find_withtag("filter") if c.type(i) == "text"]
+        ok = all(any(c.itemcget(t, "text") == "%d dB" % d and c.bbox(t)[0] >= b_[0] and c.bbox(t)[2] <= b_[2]
+                     for t in texts) for (b_, i), d in zip(wdg.slope_boxes, (12, 24)))
+        check("%s LP: 12 / 24 dB inside their buttons, clear of Mix" % geo,
+              ok and not overlap(wdg.slope_boxes[1][0], wdg.mix_box))
         x0, x1 = wdg.tab_boxes[4]
         wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
         pump(lambda: False, 0.05)

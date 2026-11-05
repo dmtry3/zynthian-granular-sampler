@@ -45,11 +45,11 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_LFO1_UNI, IP_LFO2_UNI, IP_FILTER_MIX, IP_VOWEL_LOWS, IP_VOWEL_HIGHS,
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_LFO1_UNI, IP_LFO2_UNI, IP_FILTER_MIX, IP_VOWEL_LOWS, IP_VOWEL_HIGHS, IP_FILTER_SLOPE,
        IP_CELL0, IP_XCELL0 = IP_CELL0 + GC_NSRC * GC_NDST, N_IPARAMS = IP_XCELL0 + GC_NSRC * GC_NXDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "bend_range", "root", "tune", "gain", "mark_start", "mark_end", "lfo1_uni", "lfo2_uni", "filter_mix", "vowel_lows", "vowel_highs" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "bend_range", "root", "tune", "gain", "mark_start", "mark_end", "lfo1_uni", "lfo2_uni", "filter_mix", "vowel_lows", "vowel_highs", "filter_slope" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
@@ -60,7 +60,8 @@ static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, G
   { 0, 0, 10000 }, { 10000, 0, 10000 },     /* markers: 1/10000 of the sample */
   { 0, 0, 1 }, { 0, 0, 1 },                   /* LFO polarity: 0 = -1..1, 1 = 0..1 */
   { 100, 0, 100 },                            /* filter dry/wet %: 0 = filter off */
-  { 25, 0, 100 }, { 50, 0, 100 } };           /* Vowel Lows / Highs: % gain of the input below 200 Hz / above 6 kHz */
+  { 25, 0, 100 }, { 50, 0, 100 },             /* Vowel Lows / Highs: % gain of the input below 200 Hz / above 6 kHz */
+  { 0, 0, 1 } };                              /* LP / HP / BP slope: 0 = 12, 1 = 24 dB/oct */
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const xdst_names[GC_NXDST] = { "lfo1_rate", "lfo2_rate", "lfo1_amt", "lfo2_amt",
   "env1_time", "env2_time" };
@@ -338,7 +339,9 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_FILTER_MIX: S->params.filter_mix = ip[IP_FILTER_MIX] * 0.01f; break;
     case IP_VOWEL_LOWS: S->params.vowel_lows = ip[IP_VOWEL_LOWS] * 0.01f; break;
     case IP_VOWEL_HIGHS: S->params.vowel_highs = ip[IP_VOWEL_HIGHS] * 0.01f; break;
-    default: if (i >= IP_XCELL0) {
+    case IP_FILTER_SLOPE: break;                    /* read with the Type knob (read_params) */
+    default: if (i < IP_CELL0) break;               /* a fixed one without a case: nothing to set */
+    if (i >= IP_XCELL0) {
       const int c = i - IP_XCELL0;
       gc_set_xmod_cell(&S->core, c / GC_NXDST, c % GC_NXDST, ip[i] * 0.01f);
     } else {
@@ -412,7 +415,7 @@ static void read_params(Sampler* S) {
   p->quantize    = ctl(S, P_QUANTIZE, 0.0f) * 0.01f;
   p->cutoff_hz   = ctl(S, P_CUTOFF, GC_CUTOFF_MAX);
   p->resonance   = ctl(S, P_RESONANCE, 0.0f) * 0.01f;
-  p->ftype       = clampi((int)lrintf(ctl(S, P_FTYPE, 0.0f)), GC_LP, GC_NFTYPES - 1);
+  p->ftype       = gc_ftype((int)lrintf(ctl(S, P_FTYPE, 0.0f)), S->ip[IP_FILTER_SLOPE]);
   p->keytrack    = ctl(S, P_KEYTRACK, 0.0f) * 0.01f;
   for (int k = 0; k < 2; k++) {                 /* Rate: Hz in Free/Key, a cycle length in Tempo */
     const float u = ctl(S, P_LFO1_RATE + k, k ? 42.0f : 61.0f);

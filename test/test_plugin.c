@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 128);                                     /* the path and the 127 integer parameters */
+  CHECK(last_reports == 129);                                     /* the path and the 128 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -304,6 +304,7 @@ int main(int argc, char** argv) {
   in_set_float("urn:granularsampler:sampler#x_env1_lfo1_amt", 70.0f);
   in_set_float("urn:granularsampler:sampler#filter_mix", 40.0f);
   in_set_float("urn:granularsampler:sampler#vowel_highs", 150.0f);
+  in_set_float("urn:granularsampler:sampler#filter_slope", 1.0f);
   in_set_float("urn:granularsampler:sampler#x_rnd_env2_time", -300.0f);
   in_get(); collect();
   CHECK(reported_int("urn:granularsampler:sampler#m_lfo1_pitch", -1) == 100);
@@ -319,6 +320,7 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#filter_mix", -1) == 40);     /* dry/wet */
   CHECK(reported_int("urn:granularsampler:sampler#vowel_highs", -1) == 100);   /* clamped */
   CHECK(reported_int("urn:granularsampler:sampler#vowel_lows", -1) == 25);     /* default */
+  CHECK(reported_int("urn:granularsampler:sampler#filter_slope", -1) == 1);    /* 24 dB */
   CHECK(reported_int("urn:granularsampler:sampler#x_env1_lfo1_amt", 0) == 70);   /* cross-modulation */
   CHECK(reported_int("urn:granularsampler:sampler#x_rnd_env2_time", 0) == -100); /* clamped */
   CHECK(reported_int("urn:granularsampler:sampler#x_lfo1_lfo1_rate", -1) == 0);  /* the first cell */
@@ -341,7 +343,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#x_env1_lfo1_amt"))->val == 70);
-  CHECK(nst == 128);                                              /* sample + 127 integer parameters */
+  CHECK(nst == 129);                                              /* sample + 128 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();

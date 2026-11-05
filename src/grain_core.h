@@ -91,7 +91,7 @@ typedef struct {
   float quantize;   /* 0..1: pull of the grain pitch to the nearest note of the scale */
   float cutoff_hz;  /* voice filter after the grains, before the envelope */
   float resonance;  /* 0..1: Q 0.707 .. 20 */
-  int ftype;        /* GC_LP .. GC_VOWEL */
+  int ftype;        /* GC_LP .. GC_BP24 (the plugin makes it from the Type knob and the 12/24 switch) */
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
   float filter_mix; /* 0..1: dry .. wet (the filtered sound); 0 = filter off */
   float vowel_lows, vowel_highs;   /* Vowel: the input below 200 Hz / above 6 kHz added back, 0..1 (gain) */
@@ -104,7 +104,9 @@ typedef struct {
 /* Filter types. 0..2 keep their numbers (snapshots). LP/HP 12 dB/oct, 24 dB/oct; Comb: a feedback comb tuned
  * to the cutoff (with Key Track 100 % to the note); Vowel: three formant band-passes, the cutoff moves
  * through A E I O U. */
-enum { GC_LP = 0, GC_HP, GC_BP, GC_LP24, GC_HP24, GC_NOTCH, GC_COMB, GC_VOWEL, GC_NFTYPES };
+enum { GC_LP = 0, GC_HP, GC_BP, GC_LP24, GC_HP24, GC_NOTCH, GC_COMB, GC_VOWEL, GC_BP24, GC_NFTYPES };
+/* The Type knob: LP, HP, BP (12 or 24 dB/oct by the slope switch in the widget), Notch, Comb, Vowel */
+enum { GC_KNOB_LP = 0, GC_KNOB_HP, GC_KNOB_BP, GC_KNOB_NOTCH, GC_KNOB_COMB, GC_KNOB_VOWEL, GC_NKNOB_TYPES };
 #define GC_COMB_LEN 4096  /* comb delay per voice and channel (power of 2): down to 12 Hz at 48 kHz */
 
 /* The sample as the engine reads it: interleaved stereo, GC_LEVELS rates, each level followed by
@@ -265,6 +267,7 @@ extern const char* const gc_div_names[GC_NDIVS];
 float gc_rate_hz(float units);
 int gc_rate_div(float units);
 float gc_hz_rate(float hz);                                      /* inverse of gc_rate_hz */
+int gc_ftype(int knob, int slope24);                             /* Type knob + slope -> GC_LP .. GC_BP24 */
 float gc_vowel_pos(float cutoff_hz);                             /* Vowel filter: 0..4 = A E I O U, from the knob */
 float gc_comb_fb(float resonance);                               /* Comb filter feedback */
 void gc_set_env(GrainCore* g, int i, float shape);

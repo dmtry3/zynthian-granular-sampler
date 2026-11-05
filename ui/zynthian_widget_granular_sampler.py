@@ -85,7 +85,16 @@ BEND_MAX = 24
 BEND_DEFAULT = 2
 ROOT_PER_PX = 0.125            # semitones of Root per px
 TUNE_PER_PX = 0.5              # cents of Tune per px
-FILTER_TYPES = ["LP12", "HP12", "BP", "LP24", "HP24", "Notch", "Comb", "Vowel"]   # 0..2 kept (snapshots)
+FILTER_TYPES = ["LP", "HP", "BP", "Notch", "Comb", "Vowel"]   # the Type knob; 0..2 kept (snapshots)
+FILTER_SLOPES = (12, 24)                          # LP / HP / BP slope switch in the widget (dB/oct)
+# engine types (grain_core.h): 0 LP 1 HP 2 BP 3 LP24 4 HP24 5 Notch 6 Comb 7 Vowel 8 BP24
+_FT12, _FT24 = (0, 1, 2, 5, 6, 7), (3, 4, 8, 5, 6, 7)
+
+
+def engine_ftype(knob, slope24):
+    """Type knob + slope switch -> the engine's filter type (gc_ftype)"""
+    knob = min(max(int(knob), 0), len(FILTER_TYPES) - 1)
+    return (_FT24 if slope24 else _FT12)[knob]
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -256,6 +265,8 @@ def filter_resp(f, fc, res, ftype, sr=SR, lows=None, highs=None):
         highs = VOWEL_AIR if highs is None else highs
         return h + highs * svf(min(VOWEL_AIR_HZ, top), 1.4142136)[2] + lows * svf(VOWEL_LOW_HZ, 1.4142136)[0]
     lo, band, hi = svf(fc, k)
+    if ftype == 8:
+        return k * band * band                    # BP 24: two band-passes, the peak of one
     if ftype == 1:
         return hi
     if ftype == 2:
@@ -392,6 +403,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.glide_box = None
         self.mix_box = None
         self.lows_box = self.highs_box = None
+        self.slope_boxes = []
         self.bend_box = None
         self.wave_boxes = {}
         self.wave_ctl = None
@@ -534,6 +546,9 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     self.refresh_gui()
             return
         if self.tab in (1, 2, 3) and self._slider_press(event):
+            return
+        if self.tab == 3:
+            self._slope_press(event)
             return
         if self.tab in (1, 2):
             self._button_press(event)
@@ -1341,12 +1356,15 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         import math
         fc = self._zval("cutoff", 20000.0)
         res = min(max(self._zval("resonance", 0.0) / 100.0, 0.0), 1.0)
-        ftype = min(max(int(round(self._zval("ftype", 0))), 0), len(FILTER_TYPES) - 1)
+        knob = min(max(int(round(self._zval("ftype", 0))), 0), len(FILTER_TYPES) - 1)
+        slope = 1 if int(round(self._zval("filter_slope", 0))) else 0
+        ftype = engine_ftype(knob, slope)                 # what the engine runs
         kt = self._zval("keytrack", 0.0)
         mix = min(max(int(round(self._zval("filter_mix", 100))), 0), 100)
         lows = min(max(int(round(self._zval("vowel_lows", 25))), 0), 100)
         highs = min(max(int(round(self._zval("vowel_highs", 50))), 0), 100)
         view = (round(fc), round(res * 100), ftype, round(kt), mix, lows, highs, self.width, self.height)
+        sloped = knob < 3                                 # LP, HP, BP: 12 or 24 dB/oct
         if view == self.filter_view:
             return
         self.filter_view = view
@@ -1385,7 +1403,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         else:
             xc = self._fx(min(max(fc, 20.0), 20000.0), x0, x1)
             c.create_line(xc, y0, xc, y1, fill="#5c7a99", dash=(3, 3), tags="filter")
-        info = "%s  %s  Res %d %%  Key %d %%%s" % (FILTER_TYPES[ftype], fct, round(res * 100), round(kt),
+        name = "%s %d" % (FILTER_TYPES[knob], FILTER_SLOPES[slope]) if sloped else FILTER_TYPES[knob]
+        info = "%s  %s  Res %d %%  Key %d %%%s" % (name, fct, round(res * 100), round(kt),
                                                  "  (off)" if (open_lp or open_hp or mix == 0) else "")
         c.create_text(x0, max(self.height, 60) - 1, anchor="sw", text=info, fill=tx_off,
                       font=(fam, fs), tags="filter")
@@ -1398,6 +1417,27 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.lows_box, self.highs_box = self._vowel_boxes()
             self._filter_bar(self.lows_box, lows, "Lows " + self._pct_db(lows))
             self._filter_bar(self.highs_box, highs, "Highs " + self._pct_db(highs))
+        # LP / HP / BP: the slope switch, 12 | 24 dB, in the top left
+        self.slope_boxes = []
+        if sloped:
+            bx0, by0, bx1, by1 = self._vowel_boxes()[0]
+            half = (bx1 - bx0) / 2.0
+            for i, db in enumerate(FILTER_SLOPES):
+                b = (bx0 + i * half, by0, bx0 + (i + 1) * half - (2 if i == 0 else 0), by1)
+                on = i == slope
+                c.create_rectangle(*b, fill=(BUTTON_ON if on else BUTTON_OFF), outline="#505050", tags="filter")
+                c.create_text((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, text="%d dB" % db, tags="filter",
+                              fill=("#000000" if on else zynthian_gui_config.color_tx), font=(fam, fs))
+                self.slope_boxes.append((b, i))
+
+    def _slope_press(self, event):
+        """Filter tab: a tap on 12 or 24 dB (LP, HP, BP)."""
+        for (x0, y0, x1, y1), i in self.slope_boxes:
+            if x0 <= event.x <= x1 and y0 <= event.y <= y1:
+                self._zset("filter_slope", i)
+                self.refresh_gui()
+                return True
+        return False
 
     @staticmethod
     def _pct_db(v):
