@@ -91,6 +91,7 @@ typedef struct {
   float resonance;  /* 0..1: Q 0.707 .. 20 */
   int ftype;        /* GC_LP .. GC_VOWEL */
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
+  float filter_mix; /* 0..1: dry .. wet (the filtered sound); 0 = filter off */
   float lfo_rate[2];/* Hz */
   float env_time[2];/* s: attack + decay of Env 1 / Env 2 */
   float mark_start, mark_end; /* 0..1: the part of the sample in use (markers); Position, Window and the
@@ -152,7 +153,8 @@ typedef struct {
   float glide_step;       /* semitones per sample while gliding */
   float fc_log;           /* filter cutoff, log2 Hz, smoothed toward the knob */
   float fc_hz;            /* the cutoff used in the last block (tests, widget) */
-  int filter_on;          /* 0: bypassed (LP fully open / HP fully closed) */
+  int filter_on;          /* 0: bypassed (LP fully open / HP fully closed / Mix 0) */
+  float fmix;             /* the dry/wet mix of the last block (ramped to the knob); -1 = take the knob */
   int ftype;              /* the type the state below belongs to; -1 = state to clear first */
   float fs[2][12];        /* SVF states, left and right: up to six SVFs (Vowel) */
   float comb_d;           /* comb delay in samples in the last block (0 = none yet) */

@@ -129,7 +129,7 @@ class Processor:
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
                        ("lfo1_rate", 61), ("lfo2_rate", 42), ("lfo1_uni", 0), ("lfo2_uni", 0),
-                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100)):
+                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100), ("filter_mix", 100)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
             for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
@@ -663,6 +663,35 @@ def main():
         proc.controllers_dict["cutoff"].value = fc
         pump(lambda: False, 0.05)
         check("Filter info: %s" % want, any(x.startswith(want + " ") for x in texts()))
+    # Mix (dry/wet): bar in the top right of the plot, finger left/right, double tap = 100 %
+    mb = wdg.mix_box
+    fx0, fy0, fx1, fy1 = wdg._filter_layout()
+    check("Mix bar in the top right corner of the plot", mb and mb[2] <= fx1 and mb[2] > fx1 - 10 and
+          mb[1] >= fy0 and mb[1] < fy0 + 10 and mb[0] > (fx0 + fx1) / 2 - 40)
+    check("Mix label: 100 %", "Mix 100 %" in texts())
+    mx, my = (mb[0] + mb[2]) / 2, (mb[1] + mb[3]) / 2
+    mw = mb[2] - mb[0]
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(mx, my)); wdg._on_motion(Tap(mx - mw / 2.0, my + 20)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("Mix: finger left half the bar = 50 %", abs(proc.v("filter_mix") - 50) <= 1 and "Mix 50 %" in texts())
+    proc.controllers_dict["ftype"].value = 5
+    proc.controllers_dict["cutoff"].value = 1000.0
+    proc.controllers_dict["resonance"].value = 0.0               # a wide hole: the nearest curve point is in it
+    pump(lambda: False, 0.05)
+    check("Mix 50 %: the notch hole is -6 dB on the curve", abs(db_at(1000) + 6.0) < 0.6)
+    check("python curve = engine: Mix 50 % on the notch -6.0 dB",
+          abs(20 * math.log10(mod.filter_gain(1000, 1000, 0, 5, mix=0.5)) + 6.02) < 0.1)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(mx, my)); wdg._on_motion(Tap(mx - 5000, my)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("Mix 0: dry, flat curve, (off) in the info", proc.v("filter_mix") == 0 and abs(db_at(1000)) < 0.5 and
+          "Mix 0 % (dry)" in texts() and any(x.endswith("(off)") for x in texts()))
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    for _ in range(2):
+        wdg._on_press(Tap(mx, my)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("Mix: double tap = 100 %", proc.v("filter_mix") == 100)
     proc.controllers_dict["ftype"].value = 0
     nudges0 = sample.nudges
     wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
@@ -883,7 +912,14 @@ def main():
         wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
         pump(lambda: False, 0.05)
         texts = [i for i in c.find_withtag("filter") if c.type(i) == "text"]
-        info = texts[-1]
+        info = [t for t in texts if c.itemcget(t, "text").split(" ")[0] in mod.FILTER_TYPES][0]
+        mixt = [t for t in texts if c.itemcget(t, "text").startswith("Mix")][0]
+        mb = wdg.mix_box
+        tb = c.bbox(mixt)
+        check("%s Filter: Mix label inside its bar, the bar below the tabs" % geo,
+              tb[0] >= mb[0] and tb[2] <= mb[2] and mb[1] >= wdg._header_h())
+        check("%s Filter: Mix bar clear of the dB labels" % geo,
+              not any(overlap(c.bbox(t), mb) for t in texts if t != mixt))
         axis = [t for t in texts if c.itemcget(t, "text") in ("100", "1k", "10k")]
         check("%s Filter: frequency labels clear of the info line" % geo,
               len(axis) == 3 and not any(overlap(c.bbox(t), c.bbox(info)) for t in axis))

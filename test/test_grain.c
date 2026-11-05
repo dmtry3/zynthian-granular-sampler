@@ -883,6 +883,7 @@ static double sine_hz = 1000.0;
 static float f_sine_hz(int64_t i, int64_t n) { (void)n; return 0.5f * (float)sin(2 * M_PI * sine_hz * i / SR); }
 
 /* Gain of the voice filter at `hz`: one long square grain of a sine, RMS in its middle, filter / no filter. */
+static float fmix = 1.0f;                           /* filter Mix in the filtered pass */
 static double filter_gain(double hz, int type, float cutoff, float res) {
   sine_hz = hz;
   Src s = make_src(SR * 2, SR, 1, f_sine_hz);
@@ -892,6 +893,7 @@ static double filter_gain(double hz, int type, float cutoff, float res) {
     p.size_ms = 1000; p.density = 0.5f; p.shape = 0.0f; p.scan = 0.0f; p.attack_ms = 1;
     p.ftype = type; p.cutoff_hz = pass ? cutoff : GC_CUTOFF_MAX; p.resonance = pass ? res : 0.0f;
     if (!pass) p.ftype = GC_LP;                      /* open low-pass = no filter */
+    if (pass) p.filter_mix = fmix;
     gc_init(&G, SR, 1);
     gc_set_source(&G, &s.src);
     gc_note_on(&G, &p, 60, 127);
@@ -945,6 +947,13 @@ static void test_filter(void) {
   const double i290 = filter_gain(290, GC_VOWEL, vow_i, 0.5f);
   CHECK(i290 > 4.0 * filter_gain(650, GC_VOWEL, vow_i, 0.5f));
   CHECK(filter_gain(1870, GC_VOWEL, vow_i, 0.5f) > 1.5 * filter_gain(1300, GC_VOWEL, vow_i, 0.5f));   /* 2nd formant */
+  /* dry/wet: Mix 0 is the dry sound, Mix 0.5 at the notch's hole is half of it */
+  fmix = 0.0f;
+  CHECK(fabs(db(filter_gain(1000, GC_NOTCH, 1000, 0))) < 0.05 && fabs(db(filter_gain(650, GC_VOWEL, 20, 1))) < 0.05);
+  fmix = 0.5f;
+  CHECK(fabs(db(filter_gain(1000, GC_NOTCH, 1000, 0)) + 6.02) < 0.1);
+  CHECK(fabs(db(filter_gain(8000, GC_LP24, 500, 0)) + 6.02) < 0.2);   /* far in the stop band */
+  fmix = 1.0f;
   printf("filters: lp24 2k %.1f dB, notch %.1f dB, comb %.1f/%.1f dB peak/dip, vowel A %.1f dB, I %.1f dB\n",
          db(filter_gain(2000, GC_LP24, 1000, 0)), db(filter_gain(1000, GC_NOTCH, 1000, 0)), db(c1), db(cd),
          db(a650), db(i290));

@@ -24,7 +24,7 @@ DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level",
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100),
                 ("glide", 0), ("bend_range", 2), ("root", 60), ("tune", 0), ("gain", 0), ("mark_start", 0), ("mark_end", 10000),
-                ("lfo1_uni", 0), ("lfo2_uni", 0)] + \
+                ("lfo1_uni", 0), ("lfo2_uni", 0), ("filter_mix", 100)] + \
                [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS] + \
                [("x_%s_%s" % (a, b), 0) for a in SRCS for b in XDSTS]
 PARAM_DEFAULTS = dict([("sample", "kalimba_c.wav")] + INT_DEFAULTS)   # voices 1 mono, 0 legato

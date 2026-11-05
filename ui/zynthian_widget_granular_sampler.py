@@ -209,9 +209,15 @@ def vowel_pos(fc):
     return 4.0 * math.log(fc / 20.0) / math.log(1000.0)
 
 
-def filter_gain(f, fc, res, ftype, sr=SR):
+def filter_gain(f, fc, res, ftype, sr=SR, mix=1.0):
     """|H| of the voice filter at f Hz, as grain_core.c computes it: the TPT SVF is the bilinear transform of
-    the analog prototype, so H is the analog formula at w = tan(pi f / sr) / tan(pi fc / sr)."""
+    the analog prototype, so H is the analog formula at w = tan(pi f / sr) / tan(pi fc / sr).
+    mix: the dry/wet Mix 0..1, |dry + mix (H - dry)|."""
+    return abs(1.0 + mix * (filter_resp(f, fc, res, ftype, sr) - 1.0))
+
+
+def filter_resp(f, fc, res, ftype, sr=SR):
+    """Complex H of the voice filter at f Hz (see filter_gain)."""
     import cmath
     import math
     top = 0.45 * sr
@@ -226,10 +232,10 @@ def filter_gain(f, fc, res, ftype, sr=SR):
     k = 1.4142136 * (1.0 - res) + 0.05 * res
     if ftype in (3, 4):                           # 24 dB: two Butterworth stages, Resonance on the second
         a, b = svf(fc, 1.847759), svf(fc, 0.765367 * (1.0 - res) + 0.05 * res)
-        return abs(a[0] * b[0]) if ftype == 3 else abs(a[2] * b[2])
+        return a[0] * b[0] if ftype == 3 else a[2] * b[2]
     if ftype == 6:                                # comb: y = x + fb y[n - sr/fc], scaled by sqrt(1 - fb^2)
         fb = 0.3 + 0.67 * res
-        return math.sqrt(1.0 - fb * fb) / abs(1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
+        return math.sqrt(1.0 - fb * fb) / (1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
     if ftype == 7:                                # three formants, two band-passes each, gliding between the vowels
         pos = vowel_pos(fc)
         i0 = min(int(pos), 3)
@@ -241,15 +247,15 @@ def filter_gain(f, fc, res, ftype, sr=SR):
             kk = min(max(VOWEL_BW[n] * bw / ff, 0.02), 2.0)
             amp = VOWEL_GAIN * kk * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
             h += amp * svf(ff, kk)[1] ** 2
-        return abs(h)
+        return h
     lo, band, hi = svf(fc, k)
     if ftype == 1:
-        return abs(hi)
+        return hi
     if ftype == 2:
-        return abs(band)
+        return band
     if ftype == 5:
-        return abs(lo + hi)                       # notch = low + high
-    return abs(lo)
+        return lo + hi                       # notch = low + high
+    return lo
 
 
 def read_peaks(path, npeaks=NPEAKS):
@@ -377,6 +383,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.mod_side = None
         self.drag = None
         self.glide_box = None
+        self.mix_box = None
         self.bend_box = None
         self.wave_boxes = {}
         self.wave_ctl = None
@@ -518,7 +525,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                     self._select_page(i)
                     self.refresh_gui()
             return
-        if self.tab in (1, 2) and self._slider_press(event):
+        if self.tab in (1, 2, 3) and self._slider_press(event):
             return
         if self.tab in (1, 2):
             self._button_press(event)
@@ -972,17 +979,19 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.buttons.append((x0, y0, x1, y1, sym, value))
 
     def _slider_press(self, event):
-        """Glide (Grain tab), Bend range (Pitch tab), Root and Tune (Wave tab): finger right/left
+        """Glide (Grain tab), Bend range (Pitch tab), Mix (Filter tab), Root and Tune (Wave tab): finger right/left
         (easier with a stylus than up/down), double tap back to the default.
-        Glide and Bend: one swipe across the bar covers the whole range."""
+        Glide, Bend and Mix: one swipe across the bar covers the whole range."""
         wb = self.wave_boxes if self.tab == 0 else {}
 
         def across(box, hi):
             return hi / float(max(box[2] - box[0], 20)) if box else 1.0
         gb = self.glide_box if self.tab == 1 else None
         bb = self.bend_box if self.tab == 2 else None
+        mb = self.mix_box if self.tab == 3 else None
         for box, sym, lo, hi, per_px, dflt in (
                 (gb, "glide", 0, GLIDE_MAX, across(gb, GLIDE_MAX), 0),
+                (mb, "filter_mix", 0, 100, across(mb, 100), 100),
                 (bb, "bend_range", 0, BEND_MAX, across(bb, BEND_MAX), BEND_DEFAULT),
                 (wb.get("root"), "root", 0, 127, ROOT_PER_PX, 60),
                 (wb.get("tune"), "tune", -50, 50, TUNE_PER_PX, 0)):
@@ -1322,7 +1331,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         res = min(max(self._zval("resonance", 0.0) / 100.0, 0.0), 1.0)
         ftype = min(max(int(round(self._zval("ftype", 0))), 0), len(FILTER_TYPES) - 1)
         kt = self._zval("keytrack", 0.0)
-        view = (round(fc), round(res * 100), ftype, round(kt), self.width, self.height)
+        mix = min(max(int(round(self._zval("filter_mix", 100))), 0), 100)
+        view = (round(fc), round(res * 100), ftype, round(kt), mix, self.width, self.height)
         if view == self.filter_view:
             return
         self.filter_view = view
@@ -1348,7 +1358,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         n = max(64, int(x1 - x0) // 3)
         for i in range(n + 1):
             f = 20.0 * 10 ** (3.0 * i / n)
-            g = 1.0 if (open_lp or open_hp) else filter_gain(f, fc, res, ftype)
+            g = 1.0 if (open_lp or open_hp or mix == 0) else filter_gain(f, fc, res, ftype, mix=mix / 100.0)
             pts.extend((self._fx(f, x0, x1), self._dby(20 * math.log10(max(g, 1e-9)), y0, y1)))
         c.create_line(pts, fill=WAVE_COLOR, width=2, tags="filter")
         fct = ("%.1f kHz" % (fc / 1000.0)) if fc >= 1000 else ("%d Hz" % round(fc))
@@ -1361,9 +1371,29 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             xc = self._fx(min(max(fc, 20.0), 20000.0), x0, x1)
             c.create_line(xc, y0, xc, y1, fill="#5c7a99", dash=(3, 3), tags="filter")
         info = "%s  %s  Res %d %%  Key %d %%%s" % (FILTER_TYPES[ftype], fct, round(res * 100), round(kt),
-                                                 "  (off)" if (open_lp or open_hp) else "")
+                                                 "  (off)" if (open_lp or open_hp or mix == 0) else "")
         c.create_text(x0, max(self.height, 60) - 1, anchor="sw", text=info, fill=tx_off,
                       font=(fam, fs), tags="filter")
+        # Mix (dry/wet): a bar in the top right corner of the plot, finger left/right, double tap = 100 %
+        mx0, my0, mx1, my1 = self.mix_box = self._mix_box()
+        c.create_rectangle(mx0, my0, mx1, my1, fill=BUTTON_OFF, outline="#505050", tags="filter")
+        if mix > 0:
+            c.create_rectangle(mx0 + 1, my0 + 1, mx0 + 1 + mix / 100.0 * (mx1 - mx0 - 2), my1 - 1, fill="#2d6c99",
+                               width=0, tags="filter")
+        c.create_text(mx0 + 6, (my0 + my1) / 2, anchor="w", text=("Mix %d %%" % mix) if mix else "Mix 0 % (dry)",
+                      fill=zynthian_gui_config.color_tx, font=(fam, fs), tags="filter")
+
+    def _mix_box(self):
+        """Filter Mix bar: top right inside the plot, about 40 % of its width, a button high."""
+        x0, y0, x1, y1 = self._filter_layout()
+        fs = self._font_size()
+        try:
+            tw = tkinter.font.Font(family=zynthian_gui_config.font_family, size=fs).measure("Mix 0 % (dry)") + 14
+        except Exception:
+            tw = fs * 9
+        bw = min(max(int((x1 - x0) * 0.4), tw), int(x1 - x0) - 4)
+        bh = min(self._button_h(), int((y1 - y0) * 0.3))
+        return (x1 - 3 - bw, y0 + 3, x1 - 3, y0 + 3 + bh)
 
     # ---------- Pitch tab ----------
     PITCH_ROWS = 4    # below the keys: 3 rows of scale buttons, then Bend range and the info

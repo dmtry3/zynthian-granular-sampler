@@ -139,7 +139,7 @@ void gc_default_params(GcParams* p) {
   p->mark_start = 0.0f; p->mark_end = 1.0f;
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
   p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
-  p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f;
+  p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f; p->filter_mix = 1.0f;
   p->lfo_rate[0] = 1.0f; p->lfo_rate[1] = 0.25f; p->env_time[0] = 1.0f; p->env_time[1] = 2.0f;
 }
 
@@ -365,6 +365,7 @@ static void voice_start(GrainCore* g, const GcParams* p, int vi, int note, int v
     v->ftype = -1;
     v->fc_log = filter_target_log(p, (float)note, 0.0f);
     v->filter_on = 0;
+    v->fmix = -1.0f;
     v->level = v->level_prev = 1.0f;
   }
   for (int k = 0; k < 2; k++) {
@@ -765,7 +766,7 @@ float gc_comb_fb(float res) { return 0.3f + 0.67f * clampf(res, 0.0f, 1.0f); }
 
 /* Voice filter on the sum of its grains. Coefficients once per block, cutoff smoothed in log2 Hz.
  * A low-pass fully open or a high-pass fully closed is bypassed (no cost). */
-static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
+static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m, int off) {
   const float target = filter_target_log(p, v->pitch, v->mod[GC_DST_CUTOFF]);
   const float a = 1.0f - expf(-(float)m / (GC_FILTER_SMOOTH * g->sr));
   v->fc_log += (target - v->fc_log) * a;
@@ -778,7 +779,7 @@ static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl,
   const int lp = type == GC_LP || type == GC_LP24, hp = type == GC_HP || type == GC_HP24;
   const int open = (lp && fc >= fminf(GC_CUTOFF_MAX * 0.97f, top) && res < 0.01f) ||
                    (hp && fc <= GC_CUTOFF_MIN * 1.05f && res < 0.01f);
-  if (open) { v->filter_on = 0; v->ftype = -1; return; }
+  if (open || off) { v->filter_on = 0; v->ftype = -1; return; }
   if (!v->filter_on || v->ftype != type) {   /* switching on or to another type: start from an empty state */
     memset(v->fs, 0, sizeof v->fs);
     if (type == GC_COMB) memset(v->comb, 0, sizeof v->comb);
@@ -881,6 +882,25 @@ static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl,
       const float l = svf_tick(&c, s, x[i], &b);
       x[i] = type == GC_LP ? l : type == GC_HP ? x[i] - kr * b - l : type == GC_BP ? b : x[i] - kr * b;  /* notch */
     }
+  }
+}
+
+/* The voice filter with its dry/wet Mix, ramped across the block. Mix 0 bypasses the filter (no cost),
+ * Mix 1 needs no dry copy. */
+static void voice_filter(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, float* br, int m) {
+  const float mix = clampf(p->filter_mix, 0.0f, 1.0f), mix0 = v->fmix < 0.0f ? mix : v->fmix;
+  v->fmix = mix;
+  if (mix0 >= 1.0f && mix >= 1.0f) { filter_wet(g, p, v, bl, br, m, 0); return; }
+  if (mix0 <= 0.0f && mix <= 0.0f) { filter_wet(g, p, v, bl, br, m, 1); return; }
+  float dl[GC_BLOCK], dr[GC_BLOCK];
+  memcpy(dl, bl, sizeof(float) * m);
+  memcpy(dr, br, sizeof(float) * m);
+  filter_wet(g, p, v, bl, br, m, 0);
+  const float step = (mix - mix0) / (float)m;
+  for (int i = 0; i < m; i++) {
+    const float w = mix0 + step * (float)(i + 1);
+    bl[i] = dl[i] + w * (bl[i] - dl[i]);
+    br[i] = dr[i] + w * (br[i] - dr[i]);
   }
 }
 

@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 125);                                     /* the path and the 124 integer parameters */
+  CHECK(last_reports == 126);                                     /* the path and the 125 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -299,6 +299,7 @@ int main(int argc, char** argv) {
   in_set_float("urn:granularsampler:sampler#lfo1_sync", 2.0f);
   in_set_float("urn:granularsampler:sampler#lfo2_uni", 1.0f);
   in_set_float("urn:granularsampler:sampler#x_env1_lfo1_amt", 70.0f);
+  in_set_float("urn:granularsampler:sampler#filter_mix", 40.0f);
   in_set_float("urn:granularsampler:sampler#x_rnd_env2_time", -300.0f);
   in_get(); collect();
   CHECK(reported_int("urn:granularsampler:sampler#m_lfo1_pitch", -1) == 100);
@@ -311,6 +312,7 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#lfo1_sync", -1) == 2);      /* Tempo */
   CHECK(reported_int("urn:granularsampler:sampler#lfo2_uni", -1) == 1);       /* 0..1 */
   CHECK(reported_int("urn:granularsampler:sampler#lfo1_uni", -1) == 0);
+  CHECK(reported_int("urn:granularsampler:sampler#filter_mix", -1) == 40);     /* dry/wet */
   CHECK(reported_int("urn:granularsampler:sampler#x_env1_lfo1_amt", 0) == 70);   /* cross-modulation */
   CHECK(reported_int("urn:granularsampler:sampler#x_rnd_env2_time", 0) == -100); /* clamped */
   CHECK(reported_int("urn:granularsampler:sampler#x_lfo1_lfo1_rate", -1) == 0);  /* the first cell */
@@ -333,7 +335,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#x_env1_lfo1_amt"))->val == 70);
-  CHECK(nst == 125);                                              /* sample + 124 integer parameters */
+  CHECK(nst == 126);                                              /* sample + 125 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
@@ -386,6 +388,7 @@ int main(int argc, char** argv) {
   CHECK(mx == 0.0f);                                              /* Level 0 */
   ctls[C_LEVEL] = 0.8f;
   /* filter: a high-pass at 20 kHz takes almost everything away from the slow ramp of st.wav */
+  in_set_float("urn:granularsampler:sampler#filter_mix", 100.0f);
   in_midi(0, 0x90, 60, 100);
   for (int k = 0; k < 20; k++) run_once();
   float open_peak = 0;
@@ -395,6 +398,12 @@ int main(int argc, char** argv) {
   float hp_peak = 0;
   for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) hp_peak = fmaxf(hp_peak, fabsf(out_l[i])); }
   CHECK(open_peak > 0.005f && hp_peak < open_peak * 0.01f);     /* st.wav is a slow ramp: -40 dB at least */
+  in_set_float("urn:granularsampler:sampler#filter_mix", 0.0f);   /* Mix 0: the dry sound again */
+  for (int k = 0; k < 4; k++) run_once();
+  float dry_peak = 0;
+  for (int k = 0; k < 10; k++) { run_once(); for (int i = 0; i < NFR; i++) dry_peak = fmaxf(dry_peak, fabsf(out_l[i])); }
+  CHECK(dry_peak > open_peak * 0.7f);
+  in_set_float("urn:granularsampler:sampler#filter_mix", 100.0f);
   ctls[C_FTYPE] = 0;
   in_midi(0, 0xB0, 120, 0); run_once();
   in_midi(0, 0xB0, 120, 0); run_once();                           /* All Sound Off */
@@ -443,9 +452,12 @@ int main(int argc, char** argv) {
     in_midi(0, 0x90, 57, 127);
     for (int k = 0; k < 40; k++) run_once();
     float e0 = 0, e1 = 0;
-    for (int k = 0; k < 300; k++) { run_once(); for (int i = 0; i < NFR; i++) e0 += out_l[i] * out_l[i]; }
-    in_set_float("urn:granularsampler:sampler#gain", 60.0f); run_once();
-    for (int k = 0; k < 300; k++) { run_once(); for (int i = 0; i < NFR; i++) e1 += out_l[i] * out_l[i]; }
+    for (int c = 0; c < 30; c++) {                                 /* alternating, so the random grains average out */
+      in_set_float("urn:granularsampler:sampler#gain", c & 1 ? 60.0f : 0.0f);
+      for (int k = 0; k < 8; k++) run_once();                      /* past the gain ramp */
+      float* e = c & 1 ? &e1 : &e0;
+      for (int k = 0; k < 20; k++) { run_once(); for (int i = 0; i < NFR; i++) *e += out_l[i] * out_l[i]; }
+    }
     CHECK(e0 > 0 && fabsf(sqrtf(e1 / e0) - 1.995f) < 0.1f);
     in_set_float("urn:granularsampler:sampler#gain", -999.0f); in_get(); collect();
     CHECK(reported_int("urn:granularsampler:sampler#gain", 0) == -240);

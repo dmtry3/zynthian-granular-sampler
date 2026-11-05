@@ -45,11 +45,11 @@ enum { P_POSITION = 0, P_SCAN, P_SPRAY, P_WINDOW,      /* page Position */
 /* Integer LV2 parameters (set in the widget, saved in State): fixed ones, then the 63 grid cells
  * m_<source>_<destination> (-100..100). */
 enum { IP_VOICES = 0, IP_SCALE, IP_KEY, IP_LFO1_SHAPE, IP_LFO2_SHAPE, IP_LFO1_SYNC, IP_LFO2_SYNC,
-       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_LFO1_UNI, IP_LFO2_UNI,
+       IP_ENV1_SHAPE, IP_ENV2_SHAPE, IP_MOD_DEPTH, IP_GLIDE, IP_BEND_RANGE, IP_ROOT, IP_TUNE, IP_GAIN, IP_MARK_START, IP_MARK_END, IP_LFO1_UNI, IP_LFO2_UNI, IP_FILTER_MIX,
        IP_CELL0, IP_XCELL0 = IP_CELL0 + GC_NSRC * GC_NDST, N_IPARAMS = IP_XCELL0 + GC_NSRC * GC_NXDST };
 #define N_FIXED IP_CELL0
 static const char* const ip_names[N_FIXED] = { "voices", "scale", "key", "lfo1_shape", "lfo2_shape",
-  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "bend_range", "root", "tune", "gain", "mark_start", "mark_end", "lfo1_uni", "lfo2_uni" };
+  "lfo1_sync", "lfo2_sync", "env1_shape", "env2_shape", "mod_depth", "glide", "bend_range", "root", "tune", "gain", "mark_start", "mark_end", "lfo1_uni", "lfo2_uni", "filter_mix" };
 /* default, minimum, maximum of the fixed ones */
 static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, GC_NSCALES - 1 }, { 0, 0, 11 },
   { GC_LFO_SINE, 0, GC_NLFO_SHAPES - 1 }, { GC_LFO_TRI, 0, GC_NLFO_SHAPES - 1 },
@@ -58,7 +58,8 @@ static const int ip_range[N_FIXED][3] = { { GC_VOICES, 0, GC_VOICES }, { 0, 0, G
   { 2, 0, (int)GC_BEND_MAX }, { 60, 0, 127 }, { 0, -50, 50 },
   { 0, -240, 240 },      /* gain: tenths of a dB */
   { 0, 0, 10000 }, { 10000, 0, 10000 },     /* markers: 1/10000 of the sample */
-  { 0, 0, 1 }, { 0, 0, 1 } };                 /* LFO polarity: 0 = -1..1, 1 = 0..1 */
+  { 0, 0, 1 }, { 0, 0, 1 },                   /* LFO polarity: 0 = -1..1, 1 = 0..1 */
+  { 100, 0, 100 } };                          /* filter dry/wet %: 0 = filter off */
 static const char* const src_names[GC_NSRC] = { "lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd" };
 static const char* const xdst_names[GC_NXDST] = { "lfo1_rate", "lfo2_rate", "lfo1_amt", "lfo2_amt",
   "env1_time", "env2_time" };
@@ -333,6 +334,7 @@ static void apply_iparam(Sampler* S, int i) {
     case IP_BEND_RANGE: gc_set_bend(&S->core, S->bend * (float)ip[IP_BEND_RANGE]); break;
     case IP_LFO1_UNI: gc_set_lfo_uni(&S->core, 0, ip[IP_LFO1_UNI]); break;
     case IP_LFO2_UNI: gc_set_lfo_uni(&S->core, 1, ip[IP_LFO2_UNI]); break;
+    case IP_FILTER_MIX: S->params.filter_mix = ip[IP_FILTER_MIX] * 0.01f; break;
     default: if (i >= IP_XCELL0) {
       const int c = i - IP_XCELL0;
       gc_set_xmod_cell(&S->core, c / GC_NXDST, c % GC_NXDST, ip[i] * 0.01f);
