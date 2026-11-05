@@ -354,9 +354,9 @@ def main():
     nudges0 = sample.nudges
     rb = wdg.wave_boxes["root"]
     wdg._on_press(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2))
-    wdg._on_motion(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2 + 16))
+    wdg._on_motion(Tap((rb[0] + rb[2]) // 2 - 16, (rb[1] + rb[3]) // 2))
     wdg._on_release(None)
-    check("drag down on Root: C4 -> A#3", proc.v("root") == 58 and sample.nudges == nudges0)
+    check("drag left on Root: C4 -> A#3", proc.v("root") == 58 and sample.nudges == nudges0)
     wdg.last_tap = (None, 0.0)
     for _ in range(2):
         wdg._on_press(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2))
@@ -459,10 +459,14 @@ def main():
     check("with 1 voice (mono) Glide is active", wdg.glide_box is not None)
     gb = wdg.glide_box
     gx, gy = (gb[0] + gb[2]) / 2, (gb[1] + gb[3]) / 2
-    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gy - 12)); wdg._on_release(None)
-    check("Glide: finger up 12 px = 120 ms", proc.v("glide") == 120)
+    gw = gb[2] - gb[0]
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx + gw / 4.0, gy - 30)); wdg._on_release(None)
+    check("Glide: finger right a quarter of the bar = 500 ms (up/down ignored)", abs(proc.v("glide") - 500) <= 10)
     time.sleep(mod.DOUBLE_TAP + 0.02)
-    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx, gy - 1000)); wdg._on_release(None)
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx - gw / 8.0, gy)); wdg._on_release(None)
+    check("Glide: finger left = shorter", abs(proc.v("glide") - 250) <= 10)
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(gx, gy)); wdg._on_motion(Tap(gx + 5000, gy)); wdg._on_release(None)
     check("Glide clamped at 2000 ms", proc.v("glide") == 2000)
     time.sleep(mod.DOUBLE_TAP + 0.02)
     wdg._on_press(Tap(gx, gy)); wdg._on_release(None)
@@ -517,9 +521,9 @@ def main():
     check("Pitch tab: Bend range box below the scale buttons", bb is not None and
           bb[1] > max(b[3] for b in wdg.buttons if b[4] == "scale") and bb[3] < wdg.height)
     wdg._on_press(Tap((bb[0] + bb[2]) // 2, (bb[1] + bb[3]) // 2))
-    wdg._on_motion(Tap((bb[0] + bb[2]) // 2, (bb[1] + bb[3]) // 2 - 80))
+    wdg._on_motion(Tap((bb[0] + bb[2]) // 2 + (bb[2] - bb[0]) * 10 / 24.0 + 1, (bb[1] + bb[3]) // 2))
     wdg._on_release(None)
-    check("drag up on Bend: range 12", proc.v("bend_range") == 12)
+    check("drag right on Bend: range 12", proc.v("bend_range") == 12)
     pump(lambda: False, 0.05)
     check("Bend label shows the range", any(c.itemcget(i, "text") == "Bend \u00b112"
                                            for i in c.find_withtag("pitch") if c.type(i) == "text"))

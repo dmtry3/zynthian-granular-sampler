@@ -63,9 +63,7 @@ MOD_POS = (77, 171, 247)        # positive cells: blue
 MOD_NEG = (255, 146, 43)        # negative cells: orange
 DOUBLE_TAP = 0.35               # s
 DRAG_PX = 1.5                   # px of finger movement per step (1 %)
-GLIDE_PER_PX = 10               # ms of Glide per px of finger movement
 GLIDE_MAX = 2000
-BEND_PER_PX = 0.125            # semitones of Bend range per px of finger movement
 BEND_MAX = 24
 BEND_DEFAULT = 2
 ROOT_PER_PX = 0.125            # semitones of Root per px
@@ -256,7 +254,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.mod_items = None        # Mod tab: {(s, d): (rect, text)} and side controls
         self.mod_vals = {}           # values the cells were drawn with
         self.mod_side = None         # values the side controls were drawn for
-        self.drag = None             # (symbol, start value, start y, lo, hi) while a finger is down
+        self.drag = None             # (symbol, start value, start y or x, lo, hi, per px[, "x"]) while a finger is down
         self.last_tap = (None, 0.0)  # (symbol, time) for a double tap
         self.last_group = None       # knob page (port group symbol) seen on the previous refresh
         self.pitch_notes = None      # sounding pitch classes drawn
@@ -758,12 +756,18 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.buttons.append((x0, y0, x1, y1, sym, value))
 
     def _slider_press(self, event):
-        """Glide (Grain tab), Bend range (Pitch tab), Root and Tune (Wave tab): finger up/down,
-        double tap back to the default."""
+        """Glide (Grain tab), Bend range (Pitch tab), Root and Tune (Wave tab): finger right/left
+        (easier with a stylus than up/down), double tap back to the default.
+        Glide and Bend: one swipe across the bar covers the whole range."""
         wb = self.wave_boxes if self.tab == 0 else {}
+
+        def across(box, hi):
+            return hi / float(max(box[2] - box[0], 20)) if box else 1.0
+        gb = self.glide_box if self.tab == 1 else None
+        bb = self.bend_box if self.tab == 2 else None
         for box, sym, lo, hi, per_px, dflt in (
-                (self.glide_box if self.tab == 1 else None, "glide", 0, GLIDE_MAX, GLIDE_PER_PX, 0),
-                (self.bend_box if self.tab == 2 else None, "bend_range", 0, BEND_MAX, BEND_PER_PX, BEND_DEFAULT),
+                (gb, "glide", 0, GLIDE_MAX, across(gb, GLIDE_MAX), 0),
+                (bb, "bend_range", 0, BEND_MAX, across(bb, BEND_MAX), BEND_DEFAULT),
                 (wb.get("root"), "root", 0, 127, ROOT_PER_PX, 60),
                 (wb.get("tune"), "tune", -50, 50, TUNE_PER_PX, 0)):
             if not box or not (box[0] <= event.x <= box[2] and box[1] <= event.y <= box[3]):
@@ -777,7 +781,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self.refresh_gui()
                 return True
             self.last_tap = (sym, now)
-            self.drag = (sym, int(round(self._zval(sym, dflt))), event.y, lo, hi, per_px)
+            self.drag = (sym, int(round(self._zval(sym, dflt))), event.x, lo, hi, per_px, "x")
             return True
         return False
 
@@ -999,9 +1003,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
     def _on_motion(self, event):
         if not self.drag:
             return
-        sym, start, y0, lo, hi, per_px = self.drag
-        v = int(min(max(start + (y0 - event.y) * per_px, lo), hi))
-        if abs(event.y - y0) > 6:
+        sym, start, p0, lo, hi, per_px = self.drag[:6]
+        d = event.x - p0 if self.drag[6:] == ("x",) else p0 - event.y    # right / up = more
+        v = int(min(max(start + d * per_px, lo), hi))
+        if abs(d) > 6:
             self.last_tap = (None, 0.0)                   # a drag is not a tap
         self._zset(sym, v)
         self.refresh_gui()
