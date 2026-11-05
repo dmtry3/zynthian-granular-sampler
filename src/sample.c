@@ -54,6 +54,74 @@ static void add_guard(float* d, int64_t frames) {
   }
 }
 
+/* ---------- pitch detection (YIN, de Cheveigne & Kawahara 2002) ---------- */
+#define PD_WINDOWS 9
+#define PD_FMIN    30.0     /* Hz */
+#define PD_FMAX    2000.0
+#define PD_THRESH  0.15     /* YIN absolute threshold: below it the period is trusted */
+
+/* Period in samples of x[0 .. n + maxlag), or 0. d: scratch of maxlag + 1. */
+static double yin_period(const float* x, int n, int minlag, int maxlag, double* d) {
+  double run = 0.0;
+  d[0] = 1.0;
+  for (int t = 1; t <= maxlag; t++) {
+    double sum = 0.0;
+    for (int i = 0; i < n; i++) { const double e = (double)x[i] - x[i + t]; sum += e * e; }
+    run += sum;
+    d[t] = run > 0.0 ? sum * t / run : 1.0;    /* cumulative mean normalized difference */
+  }
+  int best = -1;
+  for (int t = minlag; t < maxlag; t++)
+    if (d[t] < PD_THRESH) {                   /* first dip under the threshold, then down to its bottom */
+      while (t + 1 < maxlag && d[t + 1] < d[t]) t++;
+      best = t;
+      break;
+    }
+  if (best < 1) return 0.0;
+  const double a = d[best - 1], b = d[best], c = d[best + 1], den = a - 2.0 * b + c;
+  const double sh = den != 0.0 ? 0.5 * (a - c) / den : 0.0;   /* parabolic: a fraction of a sample */
+  return best + (sh > -1.0 && sh < 1.0 ? sh : 0.0);
+}
+
+static int cmp_float(const void* a, const void* b) {
+  const float x = *(const float*)a, y = *(const float*)b;
+  return x < y ? -1 : x > y;
+}
+
+float gs_detect_pitch(const float* data, int64_t frames, double rate) {
+  const int maxlag = (int)(rate / PD_FMIN), minlag = (int)(rate / PD_FMAX) > 2 ? (int)(rate / PD_FMAX) : 2;
+  const int n = 2 * maxlag;                   /* two periods of the lowest pitch */
+  if (frames < (int64_t)(n + maxlag) * 2) return -1.0f;
+  float* x = (float*)malloc((size_t)(n + maxlag) * sizeof(float));
+  double* d = (double*)malloc((size_t)(maxlag + 1) * sizeof(double));
+  float found[PD_WINDOWS];
+  int nf = 0;
+  if (x && d)
+    for (int w = 0; w < PD_WINDOWS; w++) {
+      /* windows from 10 % to 70 %: past the attack, before the tail */
+      const int64_t st = (int64_t)((double)(frames - n - maxlag) * (0.1 + 0.6 * w / (PD_WINDOWS - 1)));
+      double e = 0.0;
+      for (int i = 0; i < n + maxlag; i++) {
+        x[i] = 0.5f * (data[2 * (st + i)] + data[2 * (st + i) + 1]);
+        e += (double)x[i] * x[i];
+      }
+      if (e / (n + maxlag) < 1e-8) continue;  /* silence (-80 dB) */
+      const double per = yin_period(x, n, minlag, maxlag, d);
+      if (per > 0.0) found[nf++] = (float)(69.0 + 12.0 * log2(rate / per / 440.0));
+    }
+  free(x);
+  free(d);
+  if (nf < (PD_WINDOWS + 1) / 2) return -1.0f;   /* most windows must have a clear period */
+  qsort(found, (size_t)nf, sizeof(float), cmp_float);
+  const float med = found[nf / 2];
+  int agree = 0;
+  double sum = 0.0;
+  for (int i = 0; i < nf; i++)
+    if (fabsf(found[i] - med) < 0.5f) { agree++; sum += found[i]; }
+  if (agree < PD_WINDOWS - 2) return -1.0f;          /* a melody or a chord: no single pitch */
+  return (float)(sum / agree);
+}
+
 void gs_sample_free(GsSample* s) {
   if (!s) return;
   for (int k = 0; k < GS_LEVELS; k++) free(s->data[k]);
@@ -108,6 +176,10 @@ GsSample* gs_sample_load(const char* path, double max_seconds, int* err) {
   }
   s->channels = ch;
   s->rate = info.samplerate;
+  /* pitch on a level near 48 kHz or below: the cost grows with the square of the rate */
+  int pk = 0;
+  while (pk + 1 < GS_LEVELS && s->data[pk + 1] && s->rate / (1 << pk) > 60000.0) pk++;
+  s->pitch = gs_detect_pitch(s->data[pk], s->frames[pk], s->rate / (1 << pk));
   strcpy(s->path, path);
 
 out:

@@ -68,9 +68,17 @@ GLIDE_MAX = 2000
 BEND_PER_PX = 0.125            # semitones of Bend range per px of finger movement
 BEND_MAX = 24
 BEND_DEFAULT = 2
+ROOT_PER_PX = 0.125            # semitones of Root per px
+TUNE_PER_PX = 0.5              # cents of Tune per px
 FILTER_TYPES = ["LP", "HP", "BP"]
 SR = 48000.0
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+
+def note_name(n):
+    """MIDI note number -> name with octave, C4 = 60."""
+    n = int(n)
+    return "%s%d" % (NOTE_NAMES[n % 12], n // 12 - 1)
 # the same scales as gc_scale_names / scale_steps in grain_core.c
 SCALES = [("Chromatic", list(range(12))), ("Major", [0, 2, 4, 5, 7, 9, 11]), ("Minor", [0, 2, 3, 5, 7, 8, 10]),
           ("Dorian", [0, 2, 3, 5, 7, 9, 10]), ("Phrygian", [0, 1, 3, 5, 7, 8, 10]),
@@ -296,6 +304,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         self.drag = None
         self.glide_box = None
         self.bend_box = None
+        self.wave_boxes = {}
+        self.wave_ctl = None
         self.buttons = []
 
     # ---------- plugin access ----------
@@ -389,9 +399,10 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             return False
 
     def _area(self):
-        """Top and bottom of the waveform area (zone band and grain strip are just above it)."""
+        """Top and bottom of the waveform area (zone band and grain strip are just above it).
+        Below it one row: the file info and the sample controls (Root, Tune, Auto)."""
         h = max(self.height, 20)
-        return self._header_h() + ZONE_BAND + GRAIN_STRIP + 4, h - max(16, h // 6)
+        return self._header_h() + ZONE_BAND + GRAIN_STRIP + 4, h - self._button_h() - 6
 
     def _strip(self):
         top = self._area()[0]
@@ -423,6 +434,8 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self._mod_press(event)
             return
         if self.tab != 0:
+            return
+        if self._wave_press(event):
             return
         z = self._sample_ctrl()
         if z is None:
@@ -493,9 +506,58 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.wave_shown = True
             self.widget_canvas.tag_raise("zone")
             self.widget_canvas.tag_raise("marks")
+            self.widget_canvas.tag_raise("info")
         self._draw_zone()
         self._draw_marks()
+        self._draw_wave_ctl()
         self._draw_info(path)
+
+    def _draw_wave_ctl(self):
+        """Root, Tune and Auto at the right of the bottom row; redrawn only when their values change."""
+        root = int(round(self._zval("root", 60)))
+        tune = int(round(self._zval("tune", 0)))
+        det = self._mon("detected", -1.0)
+        det_r = round(det, 2) if det >= 0 else -1
+        view = (root, tune, det_r, self.width, self.height)
+        if view == self.wave_ctl:
+            return
+        self.wave_ctl = view
+        c = self.widget_canvas
+        c.delete("wctl")
+        w = max(self.width, 80)
+        fam, fs = zynthian_gui_config.font_family, self._font_size()
+        tx = zynthian_gui_config.color_tx
+        bh = self._button_h()
+        y0 = self._area()[1] + 3
+        y1 = y0 + bh
+        try:
+            f = tkinter.font.Font(family=fam, size=fs)
+            tw = lambda t: f.measure(t)
+        except Exception:
+            tw = lambda t: len(t) * fs * 0.6
+        if det >= 0:
+            dn = int(round(det))
+            auto_t = "Auto %s" % note_name(dn)
+        else:
+            auto_t = "Auto -"
+        items = [("root", "Root %s" % note_name(root), tw("Root C#4") + 10),
+                 ("tune", "%+dc" % tune, tw("+50c") + 10),
+                 ("auto", auto_t, tw("Auto C#4") + 10)]
+        x = w - 4
+        self.wave_boxes = {}
+        for sym, text, bw in reversed(items):
+            x0 = x - bw
+            if sym == "auto":
+                on = det >= 0 and root == int(round(det)) and tune == int(round((det - round(det)) * 100))
+                fill = BUTTON_ON if on else BUTTON_OFF
+                tcol = "#000000" if on else (tx if det >= 0 else "#505050")
+            else:
+                fill, tcol = BUTTON_OFF, tx
+            c.create_rectangle(x0, y0, x, y1, fill=fill, outline="#505050", tags="wctl")
+            c.create_text((x0 + x) / 2, (y0 + y1) / 2, text=text, fill=tcol, font=(fam, fs), tags="wctl")
+            self.wave_boxes[sym] = (x0, y0, x, y1)
+            x = x0 - 4
+        self.wave_ctl_left = x
 
     def _build_wave(self):
         """The waveform image, built once per file and size (kept across tab switches)."""
@@ -696,11 +758,14 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             self.buttons.append((x0, y0, x1, y1, sym, value))
 
     def _slider_press(self, event):
-        """Glide (Grain tab) and Bend range (Pitch tab): finger up/down, double tap back to the default."""
-        for box, sym, hi, per_px, dflt in ((self.glide_box if self.tab == 1 else None, "glide", GLIDE_MAX,
-                                            GLIDE_PER_PX, 0),
-                                           (self.bend_box if self.tab == 2 else None, "bend_range", BEND_MAX,
-                                            BEND_PER_PX, BEND_DEFAULT)):
+        """Glide (Grain tab), Bend range (Pitch tab), Root and Tune (Wave tab): finger up/down,
+        double tap back to the default."""
+        wb = self.wave_boxes if self.tab == 0 else {}
+        for box, sym, lo, hi, per_px, dflt in (
+                (self.glide_box if self.tab == 1 else None, "glide", 0, GLIDE_MAX, GLIDE_PER_PX, 0),
+                (self.bend_box if self.tab == 2 else None, "bend_range", 0, BEND_MAX, BEND_PER_PX, BEND_DEFAULT),
+                (wb.get("root"), "root", 0, 127, ROOT_PER_PX, 60),
+                (wb.get("tune"), "tune", -50, 50, TUNE_PER_PX, 0)):
             if not box or not (box[0] <= event.x <= box[2] and box[1] <= event.y <= box[3]):
                 continue
             now = time.monotonic()
@@ -712,9 +777,27 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
                 self.refresh_gui()
                 return True
             self.last_tap = (sym, now)
-            self.drag = (sym, int(round(self._zval(sym, dflt))), event.y, 0, hi, per_px)
+            self.drag = (sym, int(round(self._zval(sym, dflt))), event.y, lo, hi, per_px)
             return True
         return False
+
+    def _wave_press(self, event):
+        """Wave tab controls row: Root and Tune sliders, Auto takes the detected pitch."""
+        if event is None:                              # a press without a position: the file selector
+            return False
+        if self._slider_press(event):
+            return True
+        b = self.wave_boxes.get("auto")
+        if b and b[0] <= event.x <= b[2] and b[1] <= event.y <= b[3]:
+            det = self._mon("detected", -1.0)
+            if det >= 0:
+                root = int(round(det))
+                self._zset("root", root)
+                self._zset("tune", int(round((det - root) * 100)))
+                self.refresh_gui()
+            return True
+        # the whole row is controls: a miss there does not open the file selector
+        return event.y >= self._area()[1]
 
     def _button_press(self, event):
         for x0, y0, x1, y1, sym, value in self.buttons:
@@ -1101,7 +1184,7 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
         status = int(self._mon("status", 0))
         name = os.path.splitext(os.path.basename(path))[0] if path else ""
         if not path:
-            text = "No sample - tap to load"
+            text = "No file, tap to load"
         elif status == ST_LOADING:
             text = "%s  loading..." % name
         elif status == ST_ERROR:
@@ -1112,13 +1195,26 @@ class zynthian_widget_granular_sampler(zynthian_widget_base.zynthian_widget_base
             text = name
         if self.peaks_path != path and path:
             text += "  (reading wave)"
-        if text == self.info:
+        room = max(self.width, 80) - 16
+        if (text, room) == self.info:
             return
-        self.info = text
+        self.info = (text, room)
+        try:                                           # long names: cut, the controls stay readable
+            f = tkinter.font.Font(family=zynthian_gui_config.font_family, size=self._font_size())
+            while len(text) > 4 and f.measure(text) > room:
+                text = text[:-2] + "\u2026" if not text.endswith("\u2026") else text[:-2] + "\u2026"
+        except Exception:
+            pass
         c = self.widget_canvas
         c.delete("info")
-        h = max(self.height, 20)
-        fs = max(8, min(h // 12, 16))
-        c.create_text(6, h - 3, anchor="sw", text=text, tags="info",
-                      fill=("#ff6b6b" if status == ST_ERROR else zynthian_gui_config.color_tx),
-                      font=(zynthian_gui_config.font_family, fs))
+        fs = self._font_size()
+        y = self._area()[0] + 2                        # over the top left of the waveform, on a dark plate
+        t = c.create_text(6, y, anchor="nw", text=text, tags="info",
+                          fill=("#ff6b6b" if status == ST_ERROR else zynthian_gui_config.color_tx),
+                          font=(zynthian_gui_config.font_family, fs))
+        b = c.bbox(t)
+        if b:
+            plate = c.create_rectangle(b[0] - 3, b[1] - 1, b[2] + 3, b[3] + 1, fill=zynthian_gui_config.color_bg,
+                                       outline="", tags="info")
+            c.tag_lower(plate, t)
+        c.tag_raise("info")

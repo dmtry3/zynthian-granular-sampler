@@ -14,6 +14,7 @@ typedef struct {
   int64_t frames[GS_LEVELS];
   int channels;           /* channels in the file (only the first two are used) */
   double rate;            /* sample rate of the file */
+  float pitch;            /* detected pitch (MIDI, fractional), -1 = none found (drums, noise, a melody) */
   char path[GS_PATH_MAX];
 } GsSample;
 
@@ -23,6 +24,10 @@ enum { GS_LOAD_OK = 0, GS_LOAD_OPEN, GS_LOAD_EMPTY, GS_LOAD_TOO_LONG, GS_LOAD_NO
  * so the audio thread never takes a page fault on them. NULL on error, *err says why. */
 GsSample* gs_sample_load(const char* path, double max_seconds, int* err);
 void gs_sample_free(GsSample* s);
+
+/* Pitch of interleaved stereo frames (MIDI, fractional) or -1: YIN in several windows, they must agree.
+ * Runs in the worker when a sample loads (exported for tests). */
+float gs_detect_pitch(const float* data, int64_t frames, double rate);
 
 /* Halves the rate of an interleaved stereo buffer with a half-band low-pass (exported for tests). */
 void gs_decimate2(const float* in, int64_t n, float* out);

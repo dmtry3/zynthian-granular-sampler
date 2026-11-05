@@ -21,7 +21,7 @@ SRCS = ["lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"]
 DSTS = ["position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"]
 INT_DEFAULTS = [("voices", 8), ("scale", 0), ("key", 0), ("lfo1_shape", 0), ("lfo2_shape", 1),
                 ("lfo1_sync", 0), ("lfo2_sync", 0), ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100),
-                ("glide", 0), ("lfo1_div", 4), ("lfo2_div", 4), ("bend_range", 2)] + \
+                ("glide", 0), ("lfo1_div", 4), ("lfo2_div", 4), ("bend_range", 2), ("root", 60), ("tune", 0)] + \
                [("m_%s_%s" % (a, b), 0) for a in SRCS for b in DSTS]
 PARAM_DEFAULTS = dict([("sample", "test_pad.wav")] + INT_DEFAULTS)   # voices 1 mono, 0 legato
 SINE, TRI, SAW_UP, SAW_DOWN, SQUARE_LFO, SH, SMOOTH = range(7)

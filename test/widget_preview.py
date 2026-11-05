@@ -97,9 +97,11 @@ class Engine:
         self.playhead = -1.0
         self.grains = []
         self.notes = []
+        self.detected = -1.0
 
     def get_monitors_dict(self):
-        m = {"status": float(self.status), "seconds": float(self.seconds), "playhead": float(self.playhead)}
+        m = {"status": float(self.status), "seconds": float(self.seconds), "playhead": float(self.playhead),
+             "detected": float(self.detected)}
         for i in range(16):
             m["grain%d" % (i + 1)] = float(self.grains[i]) if i < len(self.grains) else -1.0
         for i in range(8):
@@ -117,6 +119,7 @@ class Processor:
                                  "density": NumCtrl("density", 20.0),
                                  "voices": NumCtrl("voices", 8), "glide": NumCtrl("glide", 0),
                                  "bend_range": NumCtrl("bend_range", 2),
+                                 "root": NumCtrl("root", 60), "tune": NumCtrl("tune", 0),
                                  "scale": NumCtrl("scale", 0), "key": NumCtrl("key", 0),
                                  "quantize": NumCtrl("quantize", 0.0), "pitch": NumCtrl("pitch", 0.0),
                                  "pitch_spray": NumCtrl("pitch_spray", 0.0),
@@ -209,7 +212,7 @@ def main():
         return any(tuple(img.get(x, y)) == wc for x in range(0, img.width(), 7))
 
     def info():
-        items = c.find_withtag("info")
+        items = [i for i in c.find_withtag("info") if c.type(i) == "text"]
         return c.itemcget(items[0], "text") if items else ""
 
     if show:
@@ -341,6 +344,42 @@ def main():
     pump(lambda: wdg.peaks_path == "/no/such/file.wav")
     check("missing file: error shown, no waveform", "can't load" in info() and not wave_drawn())
 
+    class Tap:
+        def __init__(self, x, y):
+            self.x, self.y = x, y
+
+    # Wave tab bottom row: Root, Tune, Auto
+    check("Wave tab: Root, Tune and Auto in the bottom row", set(wdg.wave_boxes) == {"root", "tune", "auto"} and
+          all(b[1] >= wdg._area()[1] and b[3] <= wdg.height and b[2] <= wdg.width for b in wdg.wave_boxes.values()))
+    nudges0 = sample.nudges
+    rb = wdg.wave_boxes["root"]
+    wdg._on_press(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2))
+    wdg._on_motion(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2 + 16))
+    wdg._on_release(None)
+    check("drag down on Root: C4 -> A#3", proc.v("root") == 58 and sample.nudges == nudges0)
+    wdg.last_tap = (None, 0.0)
+    for _ in range(2):
+        wdg._on_press(Tap((rb[0] + rb[2]) // 2, (rb[1] + rb[3]) // 2))
+        wdg._on_release(None)
+    check("double tap on Root: back to C4", proc.v("root") == 60)
+    ab = wdg.wave_boxes["auto"]
+    wdg._on_press(Tap((ab[0] + ab[2]) // 2, (ab[1] + ab[3]) // 2))
+    check("Auto without a detected pitch: nothing changes", proc.v("root") == 60 and sample.nudges == nudges0)
+    proc.engine.detected = 37.93                       # cello D2, 7 cents flat
+    pump(lambda: False, 0.1)
+    texts = [c.itemcget(i, "text") for i in c.find_withtag("wctl") if c.type(i) == "text"]
+    check("Auto shows the detected note", "Auto D2" in texts)
+    wdg._on_press(Tap((ab[0] + ab[2]) // 2, (ab[1] + ab[3]) // 2))
+    pump(lambda: False, 0.1)
+    texts = [c.itemcget(i, "text") for i in c.find_withtag("wctl") if c.type(i) == "text"]
+    check("tap on Auto: Root D2, Tune -7", proc.v("root") == 38 and proc.v("tune") == -7 and
+          "Root D2" in texts and "-7c" in texts)
+    wdg._on_press(Tap(5, (ab[1] + ab[3]) // 2))
+    check("a tap left in the bottom row does not open the file selector", sample.nudges == nudges0)
+    proc.controllers_dict["root"].value = 60
+    proc.controllers_dict["tune"].value = 0
+    proc.engine.detected = -1.0
+
     # clear: Zynthian sends "_"
     sample.value = "_"
     proc.engine.status = 0
@@ -355,10 +394,6 @@ def main():
     check("quick change: the last file wins", wdg.peaks == [] and wdg.loading_path is None)
 
     # ---------- tabs ----------
-    class Tap:
-        def __init__(self, x, y):
-            self.x, self.y = x, y
-
     sample.value = PAD
     proc.engine.status = 2
     pump(lambda: wdg.peaks_path == PAD)
@@ -693,6 +728,15 @@ def main():
         first_cell = wdg.mod_items[(0, 0)][0]
         check("%s Mod: row labels clear of the grid" % geo,
               all(c.bbox(r)[2] <= c.bbox(first_cell)[0] + 1 for r in rows))
+        x0, x1 = wdg.tab_boxes[0]
+        wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
+        pump(lambda: False, 0.1)
+        boxes = list(wdg.wave_boxes.values())
+        check("%s Wave: Root, Tune, Auto inside the widget, under the waveform" % geo,
+              len(boxes) == 3 and all(b[0] >= 0 and b[2] <= wdg.width and b[3] <= wdg.height and
+                                      b[1] >= wdg._area()[1] for b in boxes))
+        tinfo = [i for i in c.find_withtag("info") if c.type(i) == "text"]
+        check("%s Wave: file info inside the widget" % geo, tinfo and c.bbox(tinfo[0])[2] <= wdg.width)
         x0, x1 = wdg.tab_boxes[2]
         wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
         pump(lambda: False, 0.05)

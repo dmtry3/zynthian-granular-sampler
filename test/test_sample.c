@@ -23,6 +23,37 @@ static void write_file(const char* path, int format, int ch, int rate, int frame
   sf_close(f);
 }
 
+/* Mono file of f(i, rate). */
+static void write_fn(const char* path, int rate, int frames, float (*f)(int, int)) {
+  SF_INFO info = { 0 };
+  info.channels = 1; info.samplerate = rate; info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+  SNDFILE* sf = sf_open(path, SFM_WRITE, &info);
+  if (!sf) { fails++; return; }
+  for (int i = 0; i < frames; i++) { const float v = f(i, rate); sf_writef_float(sf, &v, 1); }
+  sf_close(sf);
+}
+static float sine220(int i, int r) { return 0.5f * (float)sin(2 * M_PI * 220.0 * i / r); }
+static float saw_d2(int i, int r) {                 /* D2 73.42 Hz, a few harmonics: the fundamental is weak */
+  float v = 0;
+  for (int h = 1; h <= 12; h++) v += (float)sin(2 * M_PI * 73.416 * h * i / r) / (h == 1 ? 4.0f : (float)h);
+  return 0.3f * v;
+}
+static float a4_96k(int i, int r) { return 0.5f * (float)sin(2 * M_PI * 440.0 * i / r); }
+static uint32_t nz = 1;
+static float noise(int i, int r) { (void)i; (void)r; nz = nz * 1664525u + 1013904223u; return (nz >> 8) / 16777216.0f - 0.5f; }
+static float two_notes(int i, int r) {              /* a melody: C4 then G4, half the file each */
+  const double hz = i < r ? 261.63 : 392.0;
+  return 0.5f * (float)sin(2 * M_PI * hz * i / r);
+}
+static float silence(int i, int r) { (void)i; (void)r; return 0.0f; }
+static float pitch_of(const char* path) {
+  int err;
+  GsSample* s = gs_sample_load(path, 600, &err);
+  const float p = s ? s->pitch : -99.0f;
+  gs_sample_free(s);
+  return p;
+}
+
 static int near(float a, float b) { return fabsf(a - b) < 1e-4f; }
 #define L(s, k, i) ((s)->data[k][2 * (i)])
 #define R(s, k, i) ((s)->data[k][2 * (i) + 1])
@@ -83,6 +114,20 @@ int main(void) {
   CHECK(fabsf(decimated_level(0.19) - 1.0f) < 0.01f);      /* 9.1 kHz: still in the passband */
   CHECK(decimated_level(0.30) < 1e-3f);                    /* 14.4 kHz -> would fold to 9.6 kHz: < -60 dB */
   CHECK(decimated_level(0.45) < 1e-3f);                    /* 21.6 kHz */
+  /* pitch detection */
+  write_fn("p_a3.wav", 48000, 48000, sine220);
+  CHECK(fabsf(pitch_of("p_a3.wav") - 57.0f) < 0.05f);
+  write_fn("p_d2.wav", 44100, 88200, saw_d2);
+  CHECK(fabsf(pitch_of("p_d2.wav") - 38.0f) < 0.05f);   /* a weak fundamental: no octave error */
+  write_fn("p_a4.wav", 96000, 96000, a4_96k);
+  CHECK(fabsf(pitch_of("p_a4.wav") - 69.0f) < 0.05f);   /* 96 kHz: found on a lower level */
+  write_fn("p_noise.wav", 48000, 48000, noise);
+  CHECK(pitch_of("p_noise.wav") == -1.0f);
+  write_fn("p_two.wav", 48000, 96000, two_notes);
+  CHECK(pitch_of("p_two.wav") == -1.0f);                /* no single pitch */
+  write_fn("p_silent.wav", 48000, 48000, silence);
+  CHECK(pitch_of("p_silent.wav") == -1.0f);
+  CHECK(pitch_of("tiny.wav") == -1.0f);                 /* too short to tell */
   /* errors */
   s = gs_sample_load("missing.wav", 600, &err);
   CHECK(!s && err == GS_LOAD_OPEN);

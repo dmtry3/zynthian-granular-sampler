@@ -67,7 +67,7 @@ static void work_all(void) {
 enum { C_SHAPE = 6, C_PITCH = 8, C_ATTACK = 12, C_RELEASE = 13, C_LEVEL = 15, C_CUTOFF = 16, C_FTYPE = 18 };
 static float ctls[NCTL] = { 0, 100, 0, 100, 100, 20, 67, 0, 0, 0, 0, 0, 10, 50, 0, 0.8f, 20000, 0, 0, 0,
                             1, 0.25f, 1, 2 };
-static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8];
+static float out_l[NFR], out_r[NFR], status, seconds, playhead, grains[16], notes[8], detected;
 enum { P_MIDI_IN = NCTL, P_OUT_L, P_OUT_R, P_NOTIFY, P_STATUS, P_SECONDS, P_PLAYHEAD, P_GRAIN0 };
 static union { LV2_Atom_Sequence seq; uint8_t raw[8192]; } in_buf, notify_buf;
 static LV2_Atom_Forge forge;
@@ -235,6 +235,7 @@ int main(int argc, char** argv) {
   d->connect_port(inst, P_PLAYHEAD, &playhead);
   for (int i = 0; i < 16; i++) d->connect_port(inst, P_GRAIN0 + i, &grains[i]);
   for (int i = 0; i < 8; i++) d->connect_port(inst, P_GRAIN0 + 16 + i, &notes[i]);
+  d->connect_port(inst, P_GRAIN0 + 24, &detected);
   lv2_atom_forge_init(&forge, &map);
   d->activate(inst);
 
@@ -246,6 +247,7 @@ int main(int argc, char** argv) {
   CHECK(status == 1);
   work_all(); run_once();
   CHECK(status == 2 && seconds > 0.226f && seconds < 0.227f);   /* 10000 frames at 44.1 kHz */
+  CHECK(detected == -1.0f);                                      /* a ramp has no pitch */
 
   /* the file selector scrolls fast: only the last of several requests is loaded */
   in_set_path("missing.wav"); in_set_path("mono.wav"); run_once();
@@ -265,7 +267,7 @@ int main(int argc, char** argv) {
   CHECK(reported_path() && !strcmp(reported_path(), "st.wav"));
   CHECK(reported(P_MODE) == NULL && reported_int(P_VOICES, -1) == 8);       /* default 8 voices, no mode */
   CHECK(reported_int(P_SCALE, -1) == 0 && reported_int(P_KEY, -1) == 0);     /* chromatic, C */
-  CHECK(last_reports == 78);                                      /* the path and the 77 integer parameters */
+  CHECK(last_reports == 80);                                      /* the path and the 79 integer parameters */
   run_once();
   CHECK(last_reports == 0);                                       /* answered once */
 
@@ -305,6 +307,8 @@ int main(int argc, char** argv) {
   CHECK(reported_int("urn:granularsampler:sampler#lfo1_sync", -1) == 2);      /* Tempo */
   CHECK(reported_int("urn:granularsampler:sampler#lfo2_div", -1) == 10);      /* 1/32 at most */
   CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 2);     /* default +-2 semitones */
+  CHECK(reported_int("urn:granularsampler:sampler#root", -1) == 60);          /* C4 */
+  CHECK(reported_int("urn:granularsampler:sampler#tune", -1) == 0);
   in_set_float(P_VOICES, 3.0f); run_once();
 
   /* state: save, clear, restore */
@@ -317,7 +321,7 @@ int main(int argc, char** argv) {
   CHECK(st_find(U(P_SCALE)) && *(const int32_t*)st_find(U(P_SCALE))->val == 2);
   CHECK(st_find(U(P_KEY)) && *(const int32_t*)st_find(U(P_KEY))->val == 9);
   CHECK(*(const int32_t*)st_find(U("urn:granularsampler:sampler#m_env2_cutoff"))->val == -40);
-  CHECK(nst == 78);                                               /* sample + 77 integer parameters */
+  CHECK(nst == 80);                                               /* sample + 79 integer parameters */
   in_set_float(P_SCALE, 0.0f); in_set_float(P_KEY, 0.0f);
   in_set_float(P_VOICES, 8.0f); run_once();
   in_set_path("_"); run_once(); work_all(); run_once();
@@ -416,6 +420,12 @@ int main(int argc, char** argv) {
   in_midi(0, 0xE0, 0, 0x40); in_get(); collect();
   CHECK(reported_int("urn:granularsampler:sampler#bend_range", -1) == 12);
   in_midi(0, 0x80, 60, 0); in_midi(0, 0xB0, 120, 0); run_once();
+  /* detected pitch of a sine at A3 (written by test_sample) */
+  in_set_path("p_a3.wav"); run_once(); work_all(); run_once();
+  CHECK(status == 2 && fabsf(detected - 57.0f) < 0.05f);
+  in_set_float("urn:granularsampler:sampler#root", 57.0f); in_set_float("urn:granularsampler:sampler#tune", 75.0f);
+  in_get(); collect();
+  CHECK(reported_int("urn:granularsampler:sampler#root", -1) == 57 && reported_int("urn:granularsampler:sampler#tune", 0) == 50);
   /* a new sample while playing: no stale pointers (ASan) */
   in_midi(0, 0x90, 60, 127); run_once();
   in_set_path("mono.wav"); run_once(); work_all();
