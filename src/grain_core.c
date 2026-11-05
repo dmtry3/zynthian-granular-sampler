@@ -140,6 +140,7 @@ void gc_default_params(GcParams* p) {
   p->attack_ms = 10.0f; p->release_ms = 500.0f; p->spread = 0.0f;
   p->pitch = 0.0f; p->pitch_spray = 0.0f; p->reverse = 0.0f; p->quantize = 0.0f;
   p->cutoff_hz = GC_CUTOFF_MAX; p->resonance = 0.0f; p->ftype = GC_LP; p->keytrack = 0.0f; p->filter_mix = 1.0f;
+  p->vowel_lows = GC_VOWEL_LOW; p->vowel_highs = GC_VOWEL_AIR;
   p->lfo_rate[0] = 1.0f; p->lfo_rate[1] = 0.25f; p->env_time[0] = 1.0f; p->env_time[1] = 2.0f;
 }
 
@@ -758,9 +759,7 @@ static const float vowel_a[5][GC_NFORM] = { { 1, 0.70f, 0.50f, 0.35f, 0.25f }, {
                                             { 1, 0.40f, 0.25f, 0.25f, 0.20f } };
 static const float vowel_bw[GC_NFORM] = { 80, 90, 120, 150, 200 };
 #define GC_VOWEL_AIR_HZ 6000.0f   /* the input above this (12 dB/oct high-pass) is added back: the "air" */
-#define GC_VOWEL_AIR 0.5f         /* -6 dB */
 #define GC_VOWEL_LOW_HZ 200.0f    /* and below this (12 dB/oct low-pass): the body, under F1 */
-#define GC_VOWEL_LOW 0.25f        /* -12 dB: the lows are cut more than the top (as Lows/Highs in other formant filters) */
 #define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
 /* Position 0..4 between the vowels A .. U from the Cutoff knob, evenly over its travel. Zynthian turns a
@@ -852,6 +851,7 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
     }
     const Svf air = svf_coef(fminf(GC_VOWEL_AIR_HZ, top), g->sr, 1.4142136f);
     const Svf low = svf_coef(GC_VOWEL_LOW_HZ, g->sr, 1.4142136f);
+    const float lows = clampf(p->vowel_lows, 0.0f, 1.0f), highs = clampf(p->vowel_highs, 0.0f, 1.0f);
     for (int ch = 0; ch < 2; ch++) {
       float* x = xs[ch];
       float* s = v->fs[ch];
@@ -866,7 +866,7 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
         float ab, lb;
         const float al = svf_tick(&air, s + 4 * GC_NFORM, x[i], &ab);
         const float ll = svf_tick(&low, s + 4 * GC_NFORM + 2, x[i], &lb);
-        x[i] = y + GC_VOWEL_AIR * (x[i] - air.k * ab - al) + GC_VOWEL_LOW * ll;
+        x[i] = y + highs * (x[i] - air.k * ab - al) + lows * ll;
       }
     }
     return;

@@ -884,6 +884,7 @@ static float f_sine_hz(int64_t i, int64_t n) { (void)n; return 0.5f * (float)sin
 
 /* Gain of the voice filter at `hz`: one long square grain of a sine, RMS in its middle, filter / no filter. */
 static float fmix = 1.0f;                           /* filter Mix in the filtered pass */
+static float vlows = GC_VOWEL_LOW, vhighs = GC_VOWEL_AIR;   /* Vowel Lows / Highs */
 static double filter_gain(double hz, int type, float cutoff, float res) {
   sine_hz = hz;
   Src s = make_src(SR * 2, SR, 1, f_sine_hz);
@@ -893,7 +894,7 @@ static double filter_gain(double hz, int type, float cutoff, float res) {
     p.size_ms = 1000; p.density = 0.5f; p.shape = 0.0f; p.scan = 0.0f; p.attack_ms = 1;
     p.ftype = type; p.cutoff_hz = pass ? cutoff : GC_CUTOFF_MAX; p.resonance = pass ? res : 0.0f;
     if (!pass) p.ftype = GC_LP;                      /* open low-pass = no filter */
-    if (pass) p.filter_mix = fmix;
+    if (pass) { p.filter_mix = fmix; p.vowel_lows = vlows; p.vowel_highs = vhighs; }
     gc_init(&G, SR, 1);
     gc_set_source(&G, &s.src);
     gc_note_on(&G, &p, 60, 127);
@@ -953,6 +954,9 @@ static void test_filter(void) {
   CHECK(filter_gain(3500, GC_VOWEL, GC_CUTOFF_MIN, 0.5f) > 0.5);    /* F4 */
   const double body = filter_gain(60, GC_VOWEL, GC_CUTOFF_MIN, 0.5f);
   CHECK(db(body) > -14.0 && db(body) < -10.0 && body < air);        /* the bottom stays too, quieter than the top */
+  vlows = 0.0f; vhighs = 1.0f;                                      /* the Lows / Highs knobs */
+  CHECK(fabs(db(filter_gain(12000, GC_VOWEL, GC_CUTOFF_MIN, 0.5f))) < 1.5 && db(filter_gain(40, GC_VOWEL, GC_CUTOFF_MIN, 0.5f)) < -40.0);
+  vlows = GC_VOWEL_LOW; vhighs = GC_VOWEL_AIR;
   const double i290 = filter_gain(290, GC_VOWEL, vow_i, 0.5f);
   CHECK(i290 > 4.0 * filter_gain(650, GC_VOWEL, vow_i, 0.5f));
   CHECK(filter_gain(1870, GC_VOWEL, vow_i, 0.5f) > 1.5 * filter_gain(1300, GC_VOWEL, vow_i, 0.5f));   /* 2nd formant */

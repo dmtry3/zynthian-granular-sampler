@@ -129,7 +129,7 @@ class Processor:
                                  "ftype": NumCtrl("ftype", 0), "keytrack": NumCtrl("keytrack", 0.0)}
         for sym, v in (("lfo1_shape", 0), ("lfo2_shape", 1), ("lfo1_sync", 0), ("lfo2_sync", 0),
                        ("lfo1_rate", 61), ("lfo2_rate", 42), ("lfo1_uni", 0), ("lfo2_uni", 0),
-                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100), ("filter_mix", 100)):
+                       ("env1_shape", 10), ("env2_shape", 50), ("mod_depth", 100), ("filter_mix", 100), ("vowel_lows", 25), ("vowel_highs", 50)):
             self.controllers_dict[sym] = NumCtrl(sym, v)
         for a in ("lfo1", "lfo2", "env1", "env2", "vel", "wheel", "rnd"):
             for b in ("position", "scan", "spray", "size", "density", "pitch", "pan", "level", "cutoff"):
@@ -695,6 +695,35 @@ def main():
         wdg._on_press(Tap(mx, my)); wdg._on_release(None)
     pump(lambda: False, 0.05)
     check("Mix: double tap = 100 %", proc.v("filter_mix") == 100)
+    # Vowel Lows / Highs: only with Vowel; Lows top left, Highs under Mix
+    check("no Lows/Highs bars on a Notch", wdg.lows_box is None and wdg.highs_box is None and
+          not any(x.startswith("Lows") or x.startswith("Highs") for x in texts()))
+    proc.controllers_dict["ftype"].value = 7
+    proc.controllers_dict["cutoff"].value = 20.0
+    pump(lambda: False, 0.05)
+    lb, hb, mb = wdg.lows_box, wdg.highs_box, wdg.mix_box
+    check("Vowel: Lows top left, Highs under Mix", lb and hb and lb[0] < fx0 + 10 and lb[1] == mb[1] and
+          hb[0] == mb[0] and hb[1] > mb[3] and lb[2] < mb[0])
+    check("Vowel: Lows -12 dB, Highs -6 dB", "Lows -12 dB" in texts() and "Highs -6 dB" in texts())
+    hx, hy = (hb[0] + hb[2]) / 2, (hb[1] + hb[3]) / 2
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(hx, hy)); wdg._on_motion(Tap(hx + 5000, hy)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("Highs: finger right to 100 % = 0 dB, the curve's top follows", proc.v("vowel_highs") == 100 and
+          "Highs 0 dB" in texts() and abs(db_at(12000)) < 1.5)
+    lx, ly = (lb[0] + lb[2]) / 2, (lb[1] + lb[3]) / 2
+    time.sleep(mod.DOUBLE_TAP + 0.02)
+    wdg._on_press(Tap(lx, ly)); wdg._on_motion(Tap(lx - 5000, ly)); wdg._on_release(None)
+    pump(lambda: False, 0.05)
+    check("Lows: finger left = off, the curve's bottom drops", proc.v("vowel_lows") == 0 and "Lows off" in texts() and
+          db_at(40) < -40)
+    for (x, y, sym, d) in ((hx, hy, "vowel_highs", 50), (lx, ly, "vowel_lows", 25)):
+        time.sleep(mod.DOUBLE_TAP + 0.02)
+        for _ in range(2):
+            wdg._on_press(Tap(x, y)); wdg._on_release(None)
+        pump(lambda: False, 0.05)
+        check("%s: double tap = default %d" % (sym, d), proc.v(sym) == d)
+    proc.controllers_dict["ftype"].value = 0
     proc.controllers_dict["ftype"].value = 0
     nudges0 = sample.nudges
     wdg._on_press(Tap(wdg.width // 2, wdg.height // 2))
@@ -926,6 +955,17 @@ def main():
         axis = [t for t in texts if c.itemcget(t, "text") in ("100", "1k", "10k")]
         check("%s Filter: frequency labels clear of the info line" % geo,
               len(axis) == 3 and not any(overlap(c.bbox(t), c.bbox(info)) for t in axis))
+        proc.controllers_dict["ftype"].value = 7
+        pump(lambda: False, 0.05)
+        texts = [i for i in c.find_withtag("filter") if c.type(i) == "text"]
+        bars = {"Lows": wdg.lows_box, "Highs": wdg.highs_box, "Mix": wdg.mix_box}
+        ok = all(any(c.itemcget(t, "text").startswith(k) and c.bbox(t)[0] >= b[0] and c.bbox(t)[2] <= b[2]
+                     for t in texts) for k, b in bars.items())
+        check("%s Vowel: Lows, Highs and Mix labels inside their bars" % geo, ok)
+        check("%s Vowel: the three bars do not overlap" % geo, not overlap(bars["Lows"], bars["Mix"]) and
+              not overlap(bars["Lows"], bars["Highs"]) and not overlap(bars["Mix"], bars["Highs"]))
+        proc.controllers_dict["ftype"].value = 0
+        pump(lambda: False, 0.05)
         x0, x1 = wdg.tab_boxes[4]
         wdg._on_press(Tap((x0 + x1) // 2, hh // 2))
         pump(lambda: False, 0.05)

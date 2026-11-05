@@ -38,6 +38,8 @@
 #define GC_CUTOFF_MIN  20.0f   /* Hz */
 #define GC_CUTOFF_MAX  20000.0f
 #define GC_FILTER_SMOOTH 0.01f /* s: cutoff glides to the knob (no zipper steps) */
+#define GC_VOWEL_AIR   0.5f    /* Vowel Highs default: -6 dB of the input above 6 kHz */
+#define GC_VOWEL_LOW   0.25f   /* Vowel Lows default: -12 dB below 200 Hz, cut more than the top (as in other formant filters) */
 #define GC_LFO_MIN     0.01f   /* Hz */
 #define GC_LFO_MAX     20.0f
 #define GC_ENV_MIN     0.005f  /* s: Env 1/2 Time */
@@ -92,6 +94,7 @@ typedef struct {
   int ftype;        /* GC_LP .. GC_VOWEL */
   float keytrack;   /* 0..1: the cutoff follows the note (1 = semitone for semitone, from C4) */
   float filter_mix; /* 0..1: dry .. wet (the filtered sound); 0 = filter off */
+  float vowel_lows, vowel_highs;   /* Vowel: the input below 200 Hz / above 6 kHz added back, 0..1 (gain) */
   float lfo_rate[2];/* Hz */
   float env_time[2];/* s: attack + decay of Env 1 / Env 2 */
   float mark_start, mark_end; /* 0..1: the part of the sample in use (markers); Position, Window and the
