@@ -20,111 +20,105 @@
     rdfs:label "Init" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_freeze>
+<urn:granularsampler:sampler#preset_cello_ensemble>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Freeze" ;
+    rdfs:label "Cello Ensemble" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_drift>
+<urn:granularsampler:sampler#preset_cello_frozen>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Slow Drift" ;
+    rdfs:label "Cello Frozen Bow" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_dense>
+<urn:granularsampler:sampler#preset_cello_legato>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Dense" ;
+    rdfs:label "Cello Mono Legato" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pluck_cloud>
+<urn:granularsampler:sampler#preset_kalimba_shimmer>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pluck Cloud" ;
+    rdfs:label "Kalimba Shimmer" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pluck_mono>
+<urn:granularsampler:sampler#preset_kalimba_box>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pluck Mono Lead" ;
+    rdfs:label "Kalimba Music Box" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_stutter>
+<urn:granularsampler:sampler#preset_kalimba_cloud>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Stutter" ;
+    rdfs:label "Kalimba Melody Cloud" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_reverse>
+<urn:granularsampler:sampler#preset_bowl_drone>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Reverse" ;
+    rdfs:label "Bowl Drone" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_freeze>
+<urn:granularsampler:sampler#preset_bowl_octaves>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Freeze Spray" ;
+    rdfs:label "Bowl Octaves" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_shimmer>
+<urn:granularsampler:sampler#preset_cymbal_wash>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Shimmer Octaves" ;
+    rdfs:label "Cymbal Wash" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pluck_scale>
+<urn:granularsampler:sampler#preset_cymbal_swell>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pluck Spray in D dorian" ;
+    rdfs:label "Cymbal Reverse Swell" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_backwards>
+<urn:granularsampler:sampler#preset_break_stutter>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Half Reverse" ;
+    rdfs:label "Break Stutter" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_pitch_down>
+<urn:granularsampler:sampler#preset_break_scatter>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Octave Down" ;
+    rdfs:label "Break Slice Scatter" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_dark>
+<urn:granularsampler:sampler#preset_break_filter>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Dark Resonant" ;
+    rdfs:label "Break Tempo Filter" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_band>
+<urn:granularsampler:sampler#preset_voice_choir>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Band-pass" ;
+    rdfs:label "Voice Granular Choir" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pad_sweep>
+<urn:granularsampler:sampler#preset_voice_robot>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad LFO Filter Sweep" ;
+    rdfs:label "Voice Robot" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_pluck_random>
+<urn:granularsampler:sampler#preset_whisper_texture>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pluck Random Cloud" ;
+    rdfs:label "Whisper Texture" ;
     rdfs:seeAlso <presets.ttl> .
 
-<urn:granularsampler:sampler#preset_drums_env>
+<urn:granularsampler:sampler#preset_whisper_pulse>
     a pset:Preset ;
     lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Drums Env Size and Pitch" ;
-    rdfs:seeAlso <presets.ttl> .
-
-<urn:granularsampler:sampler#preset_pad_tempo>
-    a pset:Preset ;
-    lv2:appliesTo <urn:granularsampler:sampler> ;
-    rdfs:label "Pad Tempo Gate" ;
+    rdfs:label "Whisper Pulse" ;
     rdfs:seeAlso <presets.ttl> .
 

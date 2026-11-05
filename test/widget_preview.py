@@ -2,7 +2,6 @@
 # Runs the Granular Sampler widget outside Zynthian with stub modules (same approach as Generative Arp).
 #   python3 test/widget_preview.py          scripted tests (PASS/FAIL)
 #   python3 test/widget_preview.py --show   open a window: tap = "file selector" cycles through the samples
-# Needs samples/test_pad.wav: python3 scripts/gen_samples.py
 import importlib.util
 import os
 import sys
@@ -11,7 +10,7 @@ import tkinter
 import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAD = os.path.join(ROOT, "samples", "test_pad.wav")
+PAD = os.path.join(ROOT, "samples", "cello_d2.wav")
 
 # ---------- stub zyngui modules ----------
 cfg = types.ModuleType("zyngui.zynthian_gui_config")
@@ -175,7 +174,7 @@ def load_widget():
 def main():
     show = "--show" in sys.argv
     if not os.path.exists(PAD):
-        print("Missing %s: run python3 scripts/gen_samples.py" % PAD)
+        print("Missing %s" % PAD)
         return 2
     mod = load_widget()
     throttle = mod.UPDATE_PERIOD
@@ -284,14 +283,14 @@ def main():
     check("waveform read in the background", got and mod.NPEAKS - 8 <= len(wdg.peaks) <= mod.NPEAKS)
     check("waveform drawn into one image", wave_drawn())
     polys = [i for i in c.find_withtag("wave") if c.type(i) == "image"]
-    check("status from the plugin: loading", "loading" in info() and "test_pad" in info())
+    check("status from the plugin: loading", "loading" in info() and "cello_d2" in info())
     lo = min(p[0] for p in wdg.peaks)
     hi = max(p[1] for p in wdg.peaks)
-    check("peaks look like the pad (about +-0.55)", -0.6 < lo < -0.3 and 0.3 < hi < 0.6)
+    check("peaks look like the cello (peak 0.23)", -0.26 < lo < -0.1 and 0.1 < hi < 0.26)
 
-    proc.engine.status, proc.engine.seconds = 2, 6.0
+    proc.engine.status, proc.engine.seconds = 2, 4.91
     pump(lambda: False, 0.05)
-    check("status from the plugin: loaded, length", info() == "test_pad  6.0 s")
+    check("status from the plugin: loaded, length", info() == "cello_d2  4.9 s")
 
     # zone, playhead and grain marks
     proc.controllers_dict["position"].value = 25.0

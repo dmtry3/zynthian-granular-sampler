@@ -13,7 +13,6 @@ if [ -f "$ROOT/ui/zynthian_widget_granular_sampler.py" ]; then
 fi
 # Samples: Zynthian's file selector shows files/Samples as "User Samples". Our factory samples
 # are a link inside it; the user's own samples go next to it, straight into files/Samples.
-python3 "$ROOT/scripts/gen_samples.py"
 mkdir -p "$MY_DATA/files/Samples"
 ln -sfn "$ROOT/samples" "$MY_DATA/files/Samples/granular-sampler"
 echo "Samples: $MY_DATA/files/Samples (factory ones in granular-sampler/)"
