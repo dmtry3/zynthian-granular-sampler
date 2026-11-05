@@ -658,6 +658,7 @@ def main():
     check("python curve = engine: Vowel A +9.5 dB at 650 Hz, I +9.5 dB at 290 Hz",
           abs(gdb(650, 20, 0.5, 7) - 9.5) < 0.5 and abs(gdb(290, vow_i, 0.5, 7) - 9.5) < 0.5)
     check("python curve = engine: Vowel keeps the top (-6 dB at 10 kHz)", -8 < gdb(10000, 20, 0.5, 7) < -4)
+    check("python curve = engine: Vowel keeps the bottom, quieter (-12 dB at 60 Hz)", -14 < gdb(60, 20, 0.5, 7) < -10)
     texts = lambda: [c.itemcget(i, "text") for i in c.find_withtag("filter") if c.type(i) == "text"]
     for t, fc, want in ((7, 20.0, "Vowel  A"), (7, vow_i, "Vowel  I"), (7, knob_hz(0.625), "Vowel  I-O"),
                         (6, 220.0, "Comb  220 Hz"), (3, 1000.0, "LP24  1.0 kHz")):

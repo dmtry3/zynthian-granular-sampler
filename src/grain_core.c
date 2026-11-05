@@ -758,7 +758,9 @@ static const float vowel_a[5][GC_NFORM] = { { 1, 0.70f, 0.50f, 0.35f, 0.25f }, {
                                             { 1, 0.40f, 0.25f, 0.25f, 0.20f } };
 static const float vowel_bw[GC_NFORM] = { 80, 90, 120, 150, 200 };
 #define GC_VOWEL_AIR_HZ 6000.0f   /* the input above this (12 dB/oct high-pass) is added back: the "air" */
-#define GC_VOWEL_AIR 0.5f
+#define GC_VOWEL_AIR 0.5f         /* -6 dB */
+#define GC_VOWEL_LOW_HZ 200.0f    /* and below this (12 dB/oct low-pass): the body, under F1 */
+#define GC_VOWEL_LOW 0.25f        /* -12 dB: the lows are cut more than the top (as Lows/Highs in other formant filters) */
 #define GC_VOWEL_GAIN 3.0f   /* make-up: narrow bands keep little of the input */
 
 /* Position 0..4 between the vowels A .. U from the Cutoff knob, evenly over its travel. Zynthian turns a
@@ -829,7 +831,7 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
   if (type == GC_VOWEL) {
     /* five formants, each two equal band-passes in series (24 dB/oct skirts: the dips between the formants
      * are deep, so the vowel is heard clearly), normalized to the formant level at the peak (1/k each stage);
-     * between two vowels the formants glide. Plus the air: the input's top, so the sound is not dull. */
+     * between two vowels the formants glide. Plus the input's top (air) and, quieter, its bottom (body). */
     /* the knob picks the vowel; Key Track and the Cutoff modulation move it as they move a cutoff
      * (the whole 20 Hz .. 20 kHz = the whole A .. U); smoothed like the cutoff */
     const float knob = clampf(p->cutoff_hz, GC_CUTOFF_MIN, GC_CUTOFF_MAX);
@@ -849,6 +851,7 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
       amp[f] = GC_VOWEL_GAIN * k * k * (vowel_a[i0][f] + t * (vowel_a[i0 + 1][f] - vowel_a[i0][f]));
     }
     const Svf air = svf_coef(fminf(GC_VOWEL_AIR_HZ, top), g->sr, 1.4142136f);
+    const Svf low = svf_coef(GC_VOWEL_LOW_HZ, g->sr, 1.4142136f);
     for (int ch = 0; ch < 2; ch++) {
       float* x = xs[ch];
       float* s = v->fs[ch];
@@ -860,9 +863,10 @@ static void filter_wet(GrainCore* g, const GcParams* p, GcVoice* v, float* bl, f
           svf_tick(&c[f], s + 4 * f + 2, b1, &b2);
           y += amp[f] * b2;
         }
-        float ab;
+        float ab, lb;
         const float al = svf_tick(&air, s + 4 * GC_NFORM, x[i], &ab);
-        x[i] = y + GC_VOWEL_AIR * (x[i] - air.k * ab - al);
+        const float ll = svf_tick(&low, s + 4 * GC_NFORM + 2, x[i], &lb);
+        x[i] = y + GC_VOWEL_AIR * (x[i] - air.k * ab - al) + GC_VOWEL_LOW * ll;
       }
     }
     return;

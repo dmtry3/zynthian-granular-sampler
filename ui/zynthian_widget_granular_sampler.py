@@ -203,6 +203,7 @@ VOWEL_A = [(1, 0.70, 0.50, 0.35, 0.25), (1, 0.55, 0.45, 0.35, 0.25), (1, 0.50, 0
 VOWEL_GAIN = 3.0
 VOWEL_BW = (80, 90, 120, 150, 200)
 VOWEL_AIR_HZ, VOWEL_AIR = 6000.0, 0.5             # the input's top added back: the voice is not dull
+VOWEL_LOW_HZ, VOWEL_LOW = 200.0, 0.25             # and its bottom, quieter (-12 dB): the body
 
 
 def vowel_pos(fc):
@@ -240,7 +241,7 @@ def filter_resp(f, fc, res, ftype, sr=SR):
     if ftype == 6:                                # comb: y = x + fb y[n - sr/fc], scaled by sqrt(1 - fb^2)
         fb = 0.3 + 0.67 * res
         return math.sqrt(1.0 - fb * fb) / (1.0 - fb * cmath.exp(-2j * math.pi * f / fc))
-    if ftype == 7:                                # five formants, two band-passes each, gliding; plus the air
+    if ftype == 7:                                # five formants, two band-passes each, gliding; plus the air and the body
         pos = vowel_pos(fc)
         i0 = min(int(pos), 3)
         t = pos - i0
@@ -251,7 +252,7 @@ def filter_resp(f, fc, res, ftype, sr=SR):
             kk = min(max(VOWEL_BW[n] * bw / ff, 0.02), 2.0)
             amp = VOWEL_GAIN * kk * kk * (VOWEL_A[i0][n] + t * (VOWEL_A[i0 + 1][n] - VOWEL_A[i0][n]))
             h += amp * svf(ff, kk)[1] ** 2
-        return h + VOWEL_AIR * svf(min(VOWEL_AIR_HZ, top), 1.4142136)[2]
+        return h + VOWEL_AIR * svf(min(VOWEL_AIR_HZ, top), 1.4142136)[2] + VOWEL_LOW * svf(VOWEL_LOW_HZ, 1.4142136)[0]
     lo, band, hi = svf(fc, k)
     if ftype == 1:
         return hi
